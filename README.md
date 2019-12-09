@@ -1,11 +1,15 @@
 # Radio Paradise song info desktop notification
 For Windows 10
 
+[Download](https://github.com/gvajda/radio-paradise-song-notification/releases/latest/download/RP_Notify.exe)
+
 ## Summary
 
 A tray-only application to track the songs played on [Radio Paradise](https://radioparadise.com/) via Desktop notification.
 The goal was to get non-intrusive but detailed updates of what's currently playing and the option of rating the songs without the need to interrupt what I'm doing and open the website.
+
 **Note:** the notifications are synchronized with live streams, not with the browser-based advanced player.
+
 **Disclaimer:** This is not an official Radio Paradise product. The logo is owned by Radio Paradise and the source of all displayed data - including album art - is the Radio Paradise REST API.
 
 ## Features:
@@ -29,7 +33,9 @@ The goal was to get non-intrusive but detailed updates of what's currently playi
 ### Foobar2000 integration
 
 If this feature is enabled in the menu and an RP stream is played with the F2K player then the desktop notification is adjusted to the played stream and displaying the desktop notification turns on/off with the playback. Requires a plugin for Foobar2000 that provides REST interface to the player.
+
 [Download foobar2000 for Windows](https://www.foobar2000.org/download)
+
 [Download foo_beefweb plugin](https://www.foobar2000.org/components/view/foo_beefweb)
 
 
@@ -37,15 +43,15 @@ If this feature is enabled in the menu and an RP stream is played with the F2K p
 
 **Simple notification when a song starts**
 
-![notification-simple](.screenshots\notification-simple.png)
+![notification-simple](.screenshots/notification-simple.png)
 
 **Detailed notification - when double-click on tray icon**
 
-![notification-detailed](.screenshots\notification-detailed.png)
+![notification-detailed](.screenshots/notification-detailed.png)
 
 **Tray menu**
 
-![tray-menu](.screenshots\tray-menu.png)
+![tray-menu](.screenshots/tray-menu.png)
 
 
 ## About the project
