@@ -65,6 +65,5 @@ This is hobby a project to obtain deeper knowledge in C# and practice
 
 ### To-do
 - Improve login panel (Toast notifications don't support masking input text boxes for passwords)
-- Add "About" panel and user guide in app
 - Clean up Toast notification XML generating code
 - Display history and upcoming songs
