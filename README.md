@@ -24,9 +24,9 @@ The goal was to get non-intrusive but detailed updates of what's currently playi
  - The application will write data in folder:
  *c:\Users\<username>\AppData\Roaming\RP_Notify*
     - The *config.ini* file in the folder referred above is synchronized with memory so besides of storing configuration it can act as an API to change settings
-    - In case the user logs in the cached cookie file will be kept in the same folder
+    - In case the user logs in via the app, the cached cookie file will be kept in the same folder
     - Logging can be enabled only by editing the *config.ini* file. Logs will be kept in the same folder
-- When the application is running, the shortcut of the app will apperar in the Start menu (this is required for the Desktop notifications). This shortcut will be left in Start menu or deleted upon eciting the app depending on the settings in the tray menu.
+- When the application is running, the shortcut of the app will apperar in the Start menu (this is required for the Desktop notifications). This shortcut will be left in Start menu or deleted upon exiting the app depending on the settings in the tray menu.
 
  Note: The app wasn't tested with insufficient user rights.
 
