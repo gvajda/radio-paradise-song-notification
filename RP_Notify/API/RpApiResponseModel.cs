@@ -191,8 +191,17 @@ namespace RP_Notify.API.ResponseModel
         [JsonProperty("title")]
         public string Title { get; set; }
 
+        [JsonProperty("source")]
+        public string Source { get; set; }
+
         [JsonProperty("stream_name")]
         public string StreamName { get; set; }
+
+        [JsonProperty("player_id")]
+        public string PlayerId { get; set; }
+
+        [JsonProperty("type")]
+        public string Type { get; set; }
     }
 
     public class GetBlock
@@ -287,4 +296,40 @@ namespace RP_Notify.API.ResponseModel
         [JsonProperty("status")]
         public string Status { get; set; }
     }
+
+    public class Sync_v2
+    {
+
+        [JsonProperty("sync_id")]
+        public string SyncId { get; set; }
+
+        [JsonProperty("num_players")]
+        public int NumPlayers { get; set; }
+
+        [JsonProperty("players")]
+        public IList<Player> Players { get; set; }
+
+        [JsonProperty("channels")]
+        public IList<Channel> Channels { get; set; }
+    }
+
+    public class Player
+    {
+
+        [JsonProperty("source")]
+        public string Source { get; set; }
+
+        [JsonProperty("player_id")]
+        public string PlayerId { get; set; }
+
+        [JsonProperty("user_id")]
+        public string UserId { get; set; }
+
+        [JsonProperty("type")]
+        public string Type { get; set; }
+
+        [JsonProperty("chan")]
+        public string Chan { get; set; }
+    }
+
 }

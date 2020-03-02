@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RP_Notify.RP_Tracking;
+using System;
 
 namespace RP_Notify.Config
 {
@@ -6,7 +7,7 @@ namespace RP_Notify.Config
     {
         event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
 
-        // Internal valuespublic 
+        // Internal values 
         string LogFilePath { get; }
         string RpApiBaseUrl { get; }
         string RpImageBaseUrl { get; }
@@ -17,6 +18,7 @@ namespace RP_Notify.Config
         string IconPath { get; }
         string ConfigBaseFolder { get; }
         bool LoggedIn { get; }
+        RpTrackingConfig RpTrackingConfig { get; set; }
 
         // INI Values
         bool ShowOnNewSong { get; set; }
@@ -24,6 +26,7 @@ namespace RP_Notify.Config
         bool EnableLoggingToFile { get; set; }
         bool LargeAlbumArt { get; set; }
         bool ShowSongRating { get; set; }
+        bool PromptForRating { get; set; }
         bool LeaveShorcutInStartMenu { get; set; }
         int Channel { get; set; }
 

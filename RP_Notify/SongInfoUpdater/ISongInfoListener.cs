@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RP_Notify.Config;
+using System;
 using System.Threading;
 
 namespace RP_Notify.SongInfoUpdater
@@ -8,6 +9,7 @@ namespace RP_Notify.SongInfoUpdater
         CancellationTokenSource nextSongWaiterCancellationTokenSource { get; }
 
         event EventHandler<TooltipChangeEventArgs> TooltipUpdateChangedEventHandler;
+        event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
 
         void Run();
     }

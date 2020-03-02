@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Foobar2000.RESTClient.Api;
+using Microsoft.Extensions.DependencyInjection;
 using RP_Notify.API;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
@@ -22,6 +23,7 @@ namespace RP_Notify
             var serviceProvider = new ServiceCollection()
                 .AddSingleton<IConfig, IniConfig>()
                 .AddSingleton<ILog, Log>()
+                .AddSingleton<PlayerApi>()
                 .AddSingleton<IRpApiHandler, RpApiHandler>()
                 .AddScoped<IToastHandler, ToastHandler>()
                 .AddSingleton<IPlayerWatcher, Foobar2000Watcher.Foobar2000Watcher>()

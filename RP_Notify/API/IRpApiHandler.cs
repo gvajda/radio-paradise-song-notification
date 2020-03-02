@@ -11,13 +11,14 @@ namespace RP_Notify.API
         DateTime SongInfoExpiration { get; }
         bool IsUserAuthenticated { get; }
         void UpdateSongInfo();
-        NowplayingList GetNowplayingList(string channel = "0");
+        NowplayingList GetNowplayingList(string channel = "0", string player_id = null, int list_num = 1);
         NowPlaying GetNowPlaying(string channel = "0");
         GetBlock GetGetBlock(string channel = "0", string info = "true", string bitrate = "4");
         Info GetInfo(string songId = null);
         Rating GetRating(string songId, int rating);
         List<Channel> GetChannelList();
         Auth GetAuth(string username = null, string passwd = null);
+        Sync_v2 GetSync_v2();
 
         //Task<NowplayingList> NowplayingListAsync(string channel = "0");
         //Task<NowPlaying> NowplayingAsync(string channel = "0");

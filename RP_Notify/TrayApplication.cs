@@ -1,4 +1,5 @@
-﻿using RP_Notify.API;
+﻿using Microsoft.Win32;
+using RP_Notify.API;
 using RP_Notify.API.ResponseModel;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
@@ -11,6 +12,8 @@ using Serilog;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace RP_Notify
@@ -43,6 +46,10 @@ namespace RP_Notify
             _playerWatcher = playerWatcher;
 
             resetFlag = false;
+            if (_config.Channel == 99)      // Reset channel if Favourites were tracked at exit
+            {
+                _config.Channel = 0;
+            }
 
             // Init fields
             _shortcutHelper = new ShortcutHelper(config);
@@ -61,11 +68,14 @@ namespace RP_Notify
             _playerWatcher.ConfigChangedEventHandler += ConfigChangeHandler;
             _songInfoListener.TooltipUpdateChangedEventHandler += (sender, e) => TrayIcon.Text = e.ToolTipText;
             Application.ApplicationExit += this.ApplicationExitHandler;
+            SystemEvents.PowerModeChanged += WakeUpHandler;
 
             // Start background tasks
             _log.Information("Start background tasks");
             _playerWatcher.StartChannelWatch();
+            Task.Run(() => Task.Delay(1500)).Wait();
             _songInfoListener.Run();
+
         }
 
         private NotifyIcon CreateTrayIcon()
@@ -98,8 +108,8 @@ namespace RP_Notify
                     _toastHandler.ShowSongStartToast();
                 }
             };
+            showOnNewSong.Enabled = !(_config.EnablePlayerWatcher && _playerWatcher.PlayerIsActive);
             ContextMenu.MenuItems.Add(showOnNewSong);
-            ContextMenu.MenuItems[ContextMenu.MenuItems.Count - 1].Enabled = !(_config.EnablePlayerWatcher && _playerWatcher.PlayerIsActive);
 
             ContextMenu.MenuItems.Add(new MenuItem("-"));
 
@@ -129,6 +139,18 @@ namespace RP_Notify
             toastFormat.MenuItems.AddRange(new MenuItem[] { largeAlbumArt, showSongRating });
             ContextMenu.MenuItems.Add(toastFormat);
 
+            MenuItem promptForRating = new MenuItem("Prompt for Rating")
+            {
+                Checked = _config.PromptForRating,
+                Enabled = _config.LoggedIn
+            };
+            promptForRating.Click += (sender, e) =>
+            {
+                promptForRating.Checked = !promptForRating.Checked;
+                _config.PromptForRating = promptForRating.Checked;
+            };
+            ContextMenu.MenuItems.Add(promptForRating);
+
             MenuItem leaveShorcutInStartMenu = new MenuItem("Leave shortcut in Start menu")
             {
                 Checked = _config.LeaveShorcutInStartMenu
@@ -140,7 +162,20 @@ namespace RP_Notify
             };
             ContextMenu.MenuItems.Add(leaveShorcutInStartMenu);
 
-            MenuItem enablePlayerWatcher = new MenuItem("Enable Foobar2000 watcher")
+            MenuItem reset = new MenuItem("Delete app data");
+            reset.Click += ResetHandler;
+            ContextMenu.MenuItems.Add(reset);
+
+            MenuItem appSettings = new MenuItem("App settings");
+            appSettings.MenuItems.Add(promptForRating);
+            appSettings.MenuItems.Add(leaveShorcutInStartMenu);
+            appSettings.MenuItems.Add(new MenuItem("-"));
+            appSettings.MenuItems.Add(reset);
+            ContextMenu.MenuItems.Add(appSettings);
+
+            ContextMenu.MenuItems.Add(new MenuItem("-"));
+
+            MenuItem enablePlayerWatcher = new MenuItem("Track Foobar2000")
             {
                 Checked = _config.EnablePlayerWatcher
             };
@@ -149,22 +184,63 @@ namespace RP_Notify
                 _config.EnablePlayerWatcher = !enablePlayerWatcher.Checked;
                 if (_config.EnablePlayerWatcher)
                 {
-                    _toastHandler.ShowSongStartToast();
+                    _config.RpTrackingConfig = new RP_Tracking.RpTrackingConfig();
+                    _config.RpTrackingConfig.ActivePlayerId = "Foobar2000";
+                    _songInfoListener.nextSongWaiterCancellationTokenSource.Cancel();
+                }
+                else
+                {
+                    _config.RpTrackingConfig.ActivePlayerId = null;
                 }
                 BuildContextMenu();
             };
             ContextMenu.MenuItems.Add(enablePlayerWatcher);
 
-            MenuItem reset = new MenuItem("Delete app data");
-            reset.Click += ResetHandler;
-            ContextMenu.MenuItems.Add(reset);
+            ContextMenu.MenuItems.Add(new MenuItem("-"));
 
-            MenuItem appSettings = new MenuItem("App settings");
-            appSettings.MenuItems.Add(enablePlayerWatcher);
-            appSettings.MenuItems.Add(leaveShorcutInStartMenu);
-            appSettings.MenuItems.Add(new MenuItem("-"));
-            appSettings.MenuItems.Add(reset);
-            ContextMenu.MenuItems.Add(appSettings);
+            MenuItem rpTracking = new MenuItem("RP Tracking")
+            {
+                Checked = _config.RpTrackingConfig.Enabled
+            };
+            rpTracking.Click += (sender, e) =>
+            {
+                _config.RpTrackingConfig.Enabled = !_config.RpTrackingConfig.Enabled;
+                if (_config.RpTrackingConfig.Enabled)
+                {
+                    _config.RpTrackingConfig.Players = _apihandler.GetSync_v2().Players;
+                }
+                else
+                {
+                    _config.RpTrackingConfig = new RP_Tracking.RpTrackingConfig();
+                    _config.Channel = 0;
+                }
+                BuildContextMenu();
+            };
+
+            ContextMenu.MenuItems.Add(rpTracking);
+
+            if (_config.RpTrackingConfig.Players.Any())
+            {
+                ContextMenu.MenuItems.Add(new MenuItem("-"));
+            }
+
+            foreach (var player in _config.RpTrackingConfig.Players)
+            {
+                MenuItem trackedPlayer = new MenuItem(player.Source)
+                {
+                    RadioCheck = true,
+                    Checked = _config.RpTrackingConfig.ActivePlayerId == player.PlayerId,
+                };
+                trackedPlayer.Click += (sender, e) =>
+                {
+                    _config.RpTrackingConfig.ActivePlayerId = player.PlayerId;
+                    _config.Channel = Int32.Parse(player.Chan);
+                    _songInfoListener.nextSongWaiterCancellationTokenSource.Cancel();
+                    _config.EnablePlayerWatcher = false;
+                    BuildContextMenu();
+                };
+                ContextMenu.MenuItems.Add(trackedPlayer);
+            }
 
             ContextMenu.MenuItems.Add(new MenuItem("-"));
 
@@ -193,7 +269,10 @@ namespace RP_Notify
                     _songInfoListener.nextSongWaiterCancellationTokenSource.Cancel();
                 };
                 ContextMenu.MenuItems.Add(channelMenuItem);
-                ContextMenu.MenuItems[ContextMenu.MenuItems.Count - 1].Enabled = !(_config.EnablePlayerWatcher && _playerWatcher.PlayerIsActive);
+                ContextMenu.MenuItems[ContextMenu.MenuItems.Count - 1].Enabled =
+                    loopChannel.Chan != "99"
+                    && (!((_config.EnablePlayerWatcher && _playerWatcher.PlayerIsActive)
+                        || _config.RpTrackingConfig.IsValidPlayerId()));
             }
 
             ContextMenu.MenuItems.Add(new MenuItem("-"));
@@ -210,7 +289,7 @@ namespace RP_Notify
         private void TrayIconDoubleClickHandler(object sender, MouseEventArgs e)
         {
             _log.Information("TrayIconDoubleClickHandler - Invoked - Sender: {Sender}", sender.GetType());
-            _toastHandler.ShowSongDetailToast();
+            Task.Run(() => _toastHandler.ShowSongDetailToast());
 
         }
 
@@ -227,6 +306,15 @@ namespace RP_Notify
                 || (e.PlayerStateChanged && _playerWatcher.PlayerIsActive))     // Playback started
             {
                 _toastHandler.ShowSongStartToast();
+            }
+        }
+
+        private void WakeUpHandler(object sender, PowerModeChangedEventArgs e)
+        {
+            if (e.Mode == PowerModes.Resume)
+            {
+                _log.Information("WakeUpHandler - PC woke up - RESTART");
+                Application.Restart();
             }
         }
 

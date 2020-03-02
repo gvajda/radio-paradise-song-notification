@@ -1,5 +1,6 @@
 ﻿using MadMilkman.Ini;
 using RP_Notify.ErrorHandler;
+using RP_Notify.RP_Tracking;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +19,7 @@ namespace RP_Notify.Config
         private bool showOnNewSong;
         private bool largeAlbumArt;
         private bool showSongRating;
+        private bool promptForRating;
         private bool leaveShorcutInStartMenu;
         private bool enablePlayerWatcher;
         private bool enableLoggingToFile;
@@ -25,7 +27,7 @@ namespace RP_Notify.Config
 
         public bool ShowOnNewSong
         {
-            get { return showOnNewSong; }
+            get => showOnNewSong;
             set
             {
                 showOnNewSong = value;
@@ -34,7 +36,7 @@ namespace RP_Notify.Config
         }
         public bool LargeAlbumArt
         {
-            get { return largeAlbumArt; }
+            get => largeAlbumArt;
             set
             {
                 largeAlbumArt = value;
@@ -43,16 +45,25 @@ namespace RP_Notify.Config
         }
         public bool ShowSongRating
         {
-            get { return showSongRating; }
+            get => showSongRating;
             set
             {
                 showSongRating = value;
                 SetIniValue("Toast", "ShowSongRating", value);
             }
         }
+        public bool PromptForRating
+        {
+            get => promptForRating;
+            set
+            {
+                promptForRating = value;
+                SetIniValue("AppSettings", "PromptForRating", value);
+            }
+        }
         public bool LeaveShorcutInStartMenu
         {
-            get { return leaveShorcutInStartMenu; }
+            get => leaveShorcutInStartMenu;
             set
             {
                 leaveShorcutInStartMenu = value;
@@ -61,7 +72,7 @@ namespace RP_Notify.Config
         }
         public bool EnablePlayerWatcher
         {
-            get { return enablePlayerWatcher; }
+            get => enablePlayerWatcher;
             set
             {
                 enablePlayerWatcher = value;
@@ -70,7 +81,7 @@ namespace RP_Notify.Config
         }
         public bool EnableLoggingToFile
         {
-            get { return enableLoggingToFile; }
+            get => enableLoggingToFile;
             set
             {
                 enableLoggingToFile = value;
@@ -79,7 +90,7 @@ namespace RP_Notify.Config
         }
         public int Channel
         {
-            get { return channel; }
+            get => channel;
             set
             {
                 channel = value;
@@ -99,6 +110,7 @@ namespace RP_Notify.Config
         public string RpImageBaseUrl { get; }
         public string ToastAppID { get; }
         public string ToastActivatorCLSID { get; }
+        public RpTrackingConfig RpTrackingConfig { get; set; }
 
         public IniConfig()
         {
@@ -113,13 +125,19 @@ namespace RP_Notify.Config
             IconPath = Path.Combine(_iniHelper._iniFolder, "rp.ico");
             ConfigBaseFolder = _iniHelper._iniFolder;
             LoggedIn = File.Exists(CookieCachePath);
+
             ToastAppID = "GergelyVajda.RP_Notify";
             ToastActivatorCLSID = "8a8d7d8c-b191-4b17-b527-82c795243a12";
             RpApiBaseUrl = "https://api.radioparadise.com";
             RpImageBaseUrl = "https://img.radioparadise.com";
 
+            RpTrackingConfig = new RpTrackingConfig();
+
             // Parse config from Ini
             SyncMemoryConfig();
+            PromptForRating = LoggedIn
+                ? promptForRating
+                : false;
 
             // FileWatcher setup
             StartConfigWatcher();
@@ -173,6 +191,7 @@ namespace RP_Notify.Config
             iniFile.Sections["AppSettings"].Keys["LeaveShorcutInStartMenu"].TryParseValue(out leaveShorcutInStartMenu);
             iniFile.Sections["AppSettings"].Keys["EnablePlayerWatcher"].TryParseValue(out enablePlayerWatcher);
             iniFile.Sections["AppSettings"].Keys["EnableLoggingToFile"].TryParseValue(out enableLoggingToFile);
+            iniFile.Sections["AppSettings"].Keys["PromptForRating"].TryParseValue(out promptForRating);
             iniFile.Sections["Toast"].Keys["ShowOnNewSong"].TryParseValue(out showOnNewSong);
             iniFile.Sections["Toast"].Keys["LargeAlbumArt"].TryParseValue(out largeAlbumArt);
             iniFile.Sections["Toast"].Keys["ShowSongRating"].TryParseValue(out showSongRating);

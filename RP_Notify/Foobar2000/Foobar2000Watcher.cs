@@ -17,18 +17,20 @@ namespace RP_Notify.Foobar2000Watcher
         private readonly IConfig _config;
         private readonly IRpApiHandler _apiHandler;
         private readonly ILogger _log;
+        private readonly PlayerApi _playerApi;
         private int checkDelayMillisecs;
         public event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
         public CancellationTokenSource PlayerWatcherCancellationTokenSource { get; }
         public bool PlayerIsActive { get; set; }
 
 
-        public Foobar2000Watcher(IConfig config, IRpApiHandler apiHandler, ILog log)
+        public Foobar2000Watcher(IConfig config, IRpApiHandler apiHandler, ILog log, PlayerApi playerApi)
         {
             PlayerIsActive = false;
             _config = config;
             _apiHandler = apiHandler;
             _log = log.Logger;
+            _playerApi = playerApi;
             checkDelayMillisecs = 5000;
             PlayerWatcherCancellationTokenSource = new CancellationTokenSource();
             Application.ApplicationExit += (sender, e) => PlayerWatcherCancellationTokenSource.Cancel();
@@ -65,7 +67,10 @@ namespace RP_Notify.Foobar2000Watcher
                     else
                     {
                         checkDelayMillisecs = 5000;
-                        HandleInactivePlayer(showOnNewSongUserSetting);
+                        if (!_config.RpTrackingConfig.Enabled)
+                        {
+                            HandleInactivePlayer(showOnNewSongUserSetting);
+                        }
                     }
                     await Task.Delay(checkDelayMillisecs, PlayerWatcherCancellationTokenSource.Token);
                 }
@@ -76,14 +81,12 @@ namespace RP_Notify.Foobar2000Watcher
         private bool TryGetPlayedFilePath(out string playedFilePath)
         {
             playedFilePath = null;
-
-            var foobarApi = new PlayerApi();
             var columns = new List<string>();
             columns.Add("%path%");
 
             try
             {
-                var foobarApiResp = foobarApi.GetPlayerStateAsync(columns).Result;
+                var foobarApiResp = _playerApi.GetPlayerStateAsync(columns).Result;
                 playedFilePath = foobarApiResp.Player.ActiveItem.Columns.First();
                 return true;
             }
@@ -116,6 +119,7 @@ namespace RP_Notify.Foobar2000Watcher
             bool sendShowOnNewSongChangeEvent = false;
             bool sendChannelChangeEvent = false;
             bool playerStateChanged = false;
+            _config.RpTrackingConfig.ActivePlayerId = "Foobar2000";
             if (!_config.ShowOnNewSong)
             {
                 _config.ShowOnNewSong = !_config.ShowOnNewSong;
@@ -147,6 +151,8 @@ namespace RP_Notify.Foobar2000Watcher
 
         private void HandleInactivePlayer(bool showOnNewSong)
         {
+
+            _config.RpTrackingConfig.ActivePlayerId = null;
             bool sendShowOnNewSongChangeEvent = false;
             bool playerStateChanged = false;
             if (_config.ShowOnNewSong != showOnNewSong)

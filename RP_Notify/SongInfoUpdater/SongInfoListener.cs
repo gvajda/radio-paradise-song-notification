@@ -21,6 +21,7 @@ namespace RP_Notify.SongInfoUpdater
         private readonly CancellationTokenSource listenerCancellationTokenSource;
         private readonly ILogger _log;
         public event EventHandler<TooltipChangeEventArgs> TooltipUpdateChangedEventHandler;
+        public event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
 
         public CancellationTokenSource nextSongWaiterCancellationTokenSource { get; set; }
 
@@ -57,6 +58,7 @@ namespace RP_Notify.SongInfoUpdater
                         nextSongWaiterCancellationTokenSource = new CancellationTokenSource();
                         var cancellationToken = nextSongWaiterCancellationTokenSource.Token;
 
+                        CheckTrackedPlayerStatus();
                         _apiHandler.UpdateSongInfo();
 
                         if ((_config.ShowOnNewSong && lastLoopSongId != _apiHandler.SongInfo.SongId)
@@ -68,19 +70,27 @@ namespace RP_Notify.SongInfoUpdater
 
                         lastLoopSongId = _apiHandler.SongInfo.SongId;
 
+                        var timeLeftFromSongMilliseconds = (int)(_apiHandler.SongInfoExpiration - DateTime.Now).TotalMilliseconds;
                         try
                         {
-                            var waitForNextSong = Task.Delay((int)(_apiHandler.SongInfoExpiration - DateTime.Now).TotalMilliseconds, cancellationToken);
-                            var song = _apiHandler.SongInfo;
+                            var loopWaitMilliseconds = _config.RpTrackingConfig.IsValidPlayerId()
+                                ? Math.Min(7000, timeLeftFromSongMilliseconds)
+                                : timeLeftFromSongMilliseconds;
+                            var waitForNextSong = Task.Delay(loopWaitMilliseconds, cancellationToken);
+
                             while (!waitForNextSong.IsCompleted && !cancellationToken.IsCancellationRequested)
                             {
                                 SendUpdateTooltipEvent();
+                                PromptRatingAtEndOfSongOrIfCanceled();
                                 await Task.Delay(1000, cancellationToken);
                             }
+
+
                         }
                         catch (TaskCanceledException)
                         {
                             configChanged = true;
+                            PromptRatingAtEndOfSongOrIfCanceled(true);
                             _log.Information("SongInfoListener - External configuration change");
                         }
                     }
@@ -88,13 +98,40 @@ namespace RP_Notify.SongInfoUpdater
                     {
                         _log.Error($"SongInfoListener - Loop breaking inner ERROR - {e.Message}");
                         _toastHandler.SongInfoListenerError();
-                        await Task.Delay(10000, listenerCancellationTokenSource.Token);
+                        await Task.Delay(10000);
+                        Application.Restart();
                     }
                 }
             }, listenerCancellationTokenSource.Token);
 
             _log.Information("SongInfoListener - Running in background");
         }
+
+        private void PromptRatingAtEndOfSongOrIfCanceled(bool isCancellationRequested = false)
+        {
+            if (_config.ShowOnNewSong)
+            {
+                var triggerSecondsBeforeSongEnds = 20;
+                var secondsLeft = Math.Abs((DateTime.Now - _apiHandler.SongInfoExpiration).TotalSeconds);
+                try
+                {
+                    if (!_config.PromptForRating
+                        || (Int32.TryParse(_apiHandler.SongInfo.UserRating, out int userRating) && userRating > 0)
+                        || secondsLeft < (triggerSecondsBeforeSongEnds - 1)
+                        || (!isCancellationRequested && secondsLeft > triggerSecondsBeforeSongEnds))
+                    {
+                        return;
+                    }
+
+                    _toastHandler.ShowSongRatingToast();
+                }
+                catch (Exception e)
+                {
+                    _log.Error(e.Message);
+                }
+            }
+        }
+
         private void SendUpdateTooltipEvent()
         {
             //Update tooltip
@@ -104,6 +141,42 @@ namespace RP_Notify.SongInfoUpdater
             trayIconText = trayIconText.Length < 64 ? trayIconText : trayIconText.Substring(0, 63);
             TooltipUpdateChangedEventHandler?
                 .Invoke(this, new TooltipChangeEventArgs() { ToolTipText = trayIconText });
+        }
+
+        private void CheckTrackedPlayerStatus()
+        {
+            if (_config.RpTrackingConfig.Enabled)
+            {
+                _log.Information("-- SongInfoListener - CheckTrackedPlayerStatus: Enabled");
+                _config.RpTrackingConfig.Players = _apiHandler.GetSync_v2().Players;
+
+                var channelChanged = false;
+                if (_config.RpTrackingConfig.IsValidPlayerId())
+                {
+                    _log.Information("-- SongInfoListener - CheckTrackedPlayerStatus: Player is active");
+                    var currentChannel = Int32.Parse(
+                        _config.RpTrackingConfig.Players
+                        .Where(p => p.PlayerId == _config.RpTrackingConfig.ActivePlayerId)
+                        .First()
+                        .Chan
+                        );
+                    if (_config.Channel != currentChannel)
+                    {
+                        _config.Channel = currentChannel;
+                        channelChanged = true;
+                    }
+                }
+
+                if (channelChanged)
+                {
+                    ConfigChangedEventHandler?
+                        .Invoke(this,
+                            new ConfigChangeEventArgs()
+                            {
+                                ChannelChanged = channelChanged
+                            });
+                }
+            }
         }
     }
 

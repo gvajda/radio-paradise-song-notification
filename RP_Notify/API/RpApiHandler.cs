@@ -5,6 +5,7 @@ using RP_Notify.ErrorHandler;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -21,16 +22,10 @@ namespace RP_Notify.API
         public PlayListSong SongInfo { get; set; }
         public DateTime SongInfoExpiration
         {
-            get
-            {
-                return DateTime.Compare(DateTime.Now, songInfoExpiration) <= 0      // If expiration timestamp is in the future
+            get => DateTime.Compare(DateTime.Now, songInfoExpiration) <= 0      // If expiration timestamp is in the future
                     ? songInfoExpiration
                     : DateTime.Now;
-            }
-            set
-            {
-                songInfoExpiration = value;
-            }
+            set => songInfoExpiration = value;
         }
         public bool IsUserAuthenticated { get; set; }
 
@@ -63,16 +58,25 @@ namespace RP_Notify.API
 
         public void UpdateSongInfo()
         {
-            _log.Information("UpdateSongInfo - Invoked - Channel: {Channel}", _config.Channel.ToString());
-            var nowPlayingList = GetNowplayingList(_config.Channel.ToString());
+            string player_id = _config.RpTrackingConfig.Enabled
+                    && _config.RpTrackingConfig.Players
+                        .Any(p => p.PlayerId == _config.RpTrackingConfig.ActivePlayerId)
+                ? _config.RpTrackingConfig.ActivePlayerId
+                : null;
+
+            var logMessageDetail = !string.IsNullOrEmpty(player_id)
+                ? $"Channel: {_config.Channel.ToString()}"
+                : $"Player_ID: {player_id}";
+            _log.Information($"UpdateSongInfo - Invoked - {logMessageDetail}");
+            var nowPlayingList = GetNowplayingList(_config.Channel.ToString(), player_id);
             nowPlayingList.Song.TryGetValue("0", out var nowPlayingSong);
 
-            _log.Information("UpdateSongInfo - RP API call returned successfully - Song info: {@Songdata}", nowPlayingSong);
+            _log.Information("UpdateSongInfo - RP API call returned successfully - SongId: {@sonId}", nowPlayingSong.SongId);
 
             // Update class attributes
             if (string.IsNullOrEmpty(SongInfo.SongId) || nowPlayingSong.SongId != SongInfo.SongId)
             {
-                _log.Information("UpdateSongInfo - New song - Start downloading album art");
+                _log.Information("UpdateSongInfo - New song - Start downloading album art - Song info: {@Songdata}", nowPlayingSong);
                 SongInfoExpiration = DateTime.Now.Add(TimeSpan.FromSeconds(nowPlayingList.Refresh));
                 // Download album art
                 using (WebClient client = new WebClient())
@@ -93,10 +97,18 @@ namespace RP_Notify.API
 
 
 
-        public NowplayingList GetNowplayingList(string channel = "0")
+        public NowplayingList GetNowplayingList(string channel = null, string player_id = null, int list_num = 1)
         {
             var request = new RestRequest("api/nowplaying_list", Method.GET);
-            request.AddParameter("chan", channel);
+            if (!string.IsNullOrEmpty(player_id))
+            {
+                request.AddParameter("player_id", player_id);
+            }
+            if (!string.IsNullOrEmpty(channel) && channel != "99")      // Exclude empty and Favourites
+            {
+                request.AddParameter("chan", channel);
+            }
+            request.AddParameter("list_num", list_num);
 
             var response = Task.Run(async () => await RestApiCallAsync<NowplayingList>(request)).Result;
             return response;
@@ -162,6 +174,15 @@ namespace RP_Notify.API
             return response;
         }
 
+        public Sync_v2 GetSync_v2()
+        {
+            var request = new RestRequest("api/sync_v2", Method.GET);
+            request.AddParameter("mode", "track");
+
+            var response = Task.Run(async () => await RestApiCallAsync<Sync_v2>(request)).Result;
+            return response;
+        }
+
         private Task<T> RestApiCallAsync<T>(RestRequest request) where T : new()
         {
             try
@@ -170,7 +191,7 @@ namespace RP_Notify.API
                 var taskCompletionSource = new TaskCompletionSource<T>();
                 _restClient.ExecuteAsync<T>(request, (response) =>
                 {
-                    RefreshCookieCache(response.Cookies);
+                    if (request.Resource.Contains("auth")) { RefreshCookieCache(response.Cookies); }
                     taskCompletionSource.SetResult(response.Data);
                 });
                 _log.Information("-- RestApiCallAsync returned - Result type: {ResultType}", taskCompletionSource.Task.Result.GetType());

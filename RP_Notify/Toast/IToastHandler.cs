@@ -3,6 +3,7 @@
     public interface IToastHandler
     {
         void ShowSongStartToast();
+        void ShowSongRatingToast();
         void ShowSongDetailToast();
         void SongInfoListenerError();
     }
