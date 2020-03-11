@@ -35,7 +35,6 @@ namespace RP_Notify.SongInfoUpdater
             nextSongWaiterCancellationTokenSource = new CancellationTokenSource();
             listenerCancellationTokenSource = new CancellationTokenSource();
 
-
             Application.ApplicationExit += (sender, e) => listenerCancellationTokenSource.Cancel();
         }
 
@@ -135,7 +134,7 @@ namespace RP_Notify.SongInfoUpdater
             var timeLeft = (DateTime.Now - _apiHandler.SongInfoExpiration).ToString(@"m\:ss");
             string chanTitle = _apiHandler.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.Channel).First().Title;
             var trayIconText = $"{_apiHandler.SongInfo.Artist}\n{_apiHandler.SongInfo.Title}\n-{timeLeft}\n{chanTitle}";
-            trayIconText = trayIconText.Length < 64
+            trayIconText = trayIconText.Length <= 64
                 ? trayIconText
                 : trayIconText.Substring(0, 63);
             TooltipUpdateChangedEventHandler?

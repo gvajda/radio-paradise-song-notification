@@ -10,6 +10,7 @@ using RP_Notify.StartMenuShortcut;
 using RP_Notify.Toast;
 using Serilog;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -98,11 +99,39 @@ namespace RP_Notify
             _log.Information("Build context menu");
             ContextMenu.MenuItems.Clear();
 
+            ContextMenu.MenuItems.Add(CreateMenuEntryShowOnNewSong());
+            ContextMenu.MenuItems.Add("-");
+            MenuItem toastFormat = new MenuItem("Toast format");
+            toastFormat.MenuItems.Add(CreateMenuEntryLargeAlbumArt());
+            toastFormat.MenuItems.Add(CreateMenuEntryShowSongRating());
+            ContextMenu.MenuItems.Add(toastFormat);
+            MenuItem appSettings = new MenuItem("App settings");
+            appSettings.MenuItems.Add(CreateMenuEntryPromptForRating());
+            appSettings.MenuItems.Add(CreateMenuEntryLeaveShorcutInStartMenu());
+            appSettings.MenuItems.Add("-");
+            appSettings.MenuItems.Add(CreateMenuEntryReset());
+            ContextMenu.MenuItems.Add(appSettings);
+            ContextMenu.MenuItems.Add("-");
+            ContextMenu.MenuItems.Add(CreateMenuEntryEnablePlayerWatcher());
+            ContextMenu.MenuItems.Add("-");
+            ContextMenu.MenuItems.Add(CreateMenuEntryRpTracking());
+            ContextMenu.MenuItems.AddRange(CreateMenuEntryListTrackablePlayers());
+            ContextMenu.MenuItems.Add("-");
+            ContextMenu.MenuItems.AddRange(CreateMenuEntryListChannels());
+            ContextMenu.MenuItems.Add("-");
+            ContextMenu.MenuItems.Add(CreateMenuEntryAbout());
+            ContextMenu.MenuItems.Add(CreateMenuEntryExit());
+        }
+
+        private MenuItem CreateMenuEntryShowOnNewSong()
+        {
             MenuItem showOnNewSong = new MenuItem("Show on new song")
             {
                 Checked = _config.ShowOnNewSong
-                    || (_config.EnablePlayerWatcher && _playerWatcher.PlayerIsActive)
+                    || (_config.EnablePlayerWatcher && _playerWatcher.PlayerIsActive),
+                Enabled = !(_config.EnablePlayerWatcher && _playerWatcher.PlayerIsActive)
             };
+
             showOnNewSong.Click += (sender, e) =>
             {
                 showOnNewSong.Checked = !showOnNewSong.Checked;
@@ -112,49 +141,61 @@ namespace RP_Notify
                     _toastHandler.ShowSongStartToast();
                 }
             };
-            showOnNewSong.Enabled = !(_config.EnablePlayerWatcher && _playerWatcher.PlayerIsActive);
-            ContextMenu.MenuItems.Add(showOnNewSong);
 
-            ContextMenu.MenuItems.Add(new MenuItem("-"));
+            return showOnNewSong;
+        }
 
+        private MenuItem CreateMenuEntryLargeAlbumArt()
+        {
             MenuItem largeAlbumArt = new MenuItem("Large album art")
             {
                 Checked = _config.LargeAlbumArt
             };
+
             largeAlbumArt.Click += (sender, e) =>
             {
                 largeAlbumArt.Checked = !largeAlbumArt.Checked;
                 _config.LargeAlbumArt = largeAlbumArt.Checked;
             };
-            ContextMenu.MenuItems.Add(largeAlbumArt);
 
+            return largeAlbumArt;
+        }
+
+        private MenuItem CreateMenuEntryShowSongRating()
+        {
             MenuItem showSongRating = new MenuItem("Show song rating")
             {
                 Checked = _config.ShowSongRating
             };
+
             showSongRating.Click += (sender, e) =>
             {
                 showSongRating.Checked = !showSongRating.Checked;
                 _config.ShowSongRating = showSongRating.Checked;
             };
-            ContextMenu.MenuItems.Add(showSongRating);
 
-            MenuItem toastFormat = new MenuItem("Toast format");
-            toastFormat.MenuItems.AddRange(new MenuItem[] { largeAlbumArt, showSongRating });
-            ContextMenu.MenuItems.Add(toastFormat);
+            return showSongRating;
+        }
 
+        private MenuItem CreateMenuEntryPromptForRating()
+        {
             MenuItem promptForRating = new MenuItem("Prompt for Rating")
             {
                 Checked = _config.PromptForRating,
                 Enabled = _config.LoggedIn
             };
+
             promptForRating.Click += (sender, e) =>
             {
                 promptForRating.Checked = !promptForRating.Checked;
                 _config.PromptForRating = promptForRating.Checked;
             };
-            ContextMenu.MenuItems.Add(promptForRating);
 
+            return promptForRating;
+        }
+
+        private MenuItem CreateMenuEntryLeaveShorcutInStartMenu()
+        {
             MenuItem leaveShorcutInStartMenu = new MenuItem("Leave shortcut in Start menu")
             {
                 Checked = _config.LeaveShorcutInStartMenu
@@ -164,25 +205,26 @@ namespace RP_Notify
                 leaveShorcutInStartMenu.Checked = !leaveShorcutInStartMenu.Checked;
                 _config.LeaveShorcutInStartMenu = leaveShorcutInStartMenu.Checked;
             };
-            ContextMenu.MenuItems.Add(leaveShorcutInStartMenu);
 
+            return leaveShorcutInStartMenu;
+        }
+
+        private MenuItem CreateMenuEntryReset()
+        {
             MenuItem reset = new MenuItem("Delete app data");
             reset.Click += ResetHandler;
             ContextMenu.MenuItems.Add(reset);
 
-            MenuItem appSettings = new MenuItem("App settings");
-            appSettings.MenuItems.Add(promptForRating);
-            appSettings.MenuItems.Add(leaveShorcutInStartMenu);
-            appSettings.MenuItems.Add(new MenuItem("-"));
-            appSettings.MenuItems.Add(reset);
-            ContextMenu.MenuItems.Add(appSettings);
+            return reset;
+        }
 
-            ContextMenu.MenuItems.Add(new MenuItem("-"));
-
+        private MenuItem CreateMenuEntryEnablePlayerWatcher()
+        {
             MenuItem enablePlayerWatcher = new MenuItem("Track Foobar2000")
             {
                 Checked = _config.EnablePlayerWatcher
             };
+
             enablePlayerWatcher.Click += (sender, e) =>
             {
                 _config.EnablePlayerWatcher = !enablePlayerWatcher.Checked;
@@ -199,14 +241,17 @@ namespace RP_Notify
                 }
                 BuildContextMenu();
             };
-            ContextMenu.MenuItems.Add(enablePlayerWatcher);
 
-            ContextMenu.MenuItems.Add(new MenuItem("-"));
+            return enablePlayerWatcher;
+        }
 
+        private MenuItem CreateMenuEntryRpTracking()
+        {
             MenuItem rpTracking = new MenuItem("RP Tracking")
             {
                 Checked = _config.RpTrackingConfig.Enabled
             };
+
             rpTracking.Click += (sender, e) =>
             {
                 _config.RpTrackingConfig.Enabled = !_config.RpTrackingConfig.Enabled;
@@ -222,42 +267,59 @@ namespace RP_Notify
                 BuildContextMenu();
             };
 
-            ContextMenu.MenuItems.Add(rpTracking);
+            return rpTracking;
+        }
+
+        private MenuItem[] CreateMenuEntryListTrackablePlayers()
+        {
+            List<MenuItem> TrackablePlayers = new List<MenuItem>();
 
             if (_config.RpTrackingConfig.Players.Any())
             {
-                ContextMenu.MenuItems.Add(new MenuItem("-"));
+                TrackablePlayers.Add(new MenuItem("-"));
+
+                foreach (var player in _config.RpTrackingConfig.Players)
+                {
+                    MenuItem trackedPlayer = new MenuItem(player.Source)
+                    {
+                        RadioCheck = true,
+                        Checked = _config.RpTrackingConfig.ActivePlayerId == player.PlayerId,
+                    };
+
+                    trackedPlayer.Click += (sender, e) =>
+                    {
+                        _config.RpTrackingConfig.ActivePlayerId = player.PlayerId;
+                        _config.Channel = Int32.Parse(player.Chan);
+                        _songInfoListener.nextSongWaiterCancellationTokenSource.Cancel();
+                        _config.EnablePlayerWatcher = false;
+                        BuildContextMenu();
+                    };
+
+                    TrackablePlayers.Add(trackedPlayer);
+                }
             }
 
-            foreach (var player in _config.RpTrackingConfig.Players)
-            {
-                MenuItem trackedPlayer = new MenuItem(player.Source)
-                {
-                    RadioCheck = true,
-                    Checked = _config.RpTrackingConfig.ActivePlayerId == player.PlayerId,
-                };
-                trackedPlayer.Click += (sender, e) =>
-                {
-                    _config.RpTrackingConfig.ActivePlayerId = player.PlayerId;
-                    _config.Channel = Int32.Parse(player.Chan);
-                    _songInfoListener.nextSongWaiterCancellationTokenSource.Cancel();
-                    _config.EnablePlayerWatcher = false;
-                    BuildContextMenu();
-                };
-                ContextMenu.MenuItems.Add(trackedPlayer);
-            }
+            return TrackablePlayers.ToArray();
+        }
 
-            ContextMenu.MenuItems.Add(new MenuItem("-"));
+        private MenuItem[] CreateMenuEntryListChannels()
+        {
+            List<MenuItem> Channels = new List<MenuItem>();
 
             foreach (Channel loopChannel in _apihandler.ChannelList)
             {
                 TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
+
                 MenuItem channelMenuItem = new MenuItem(textInfo.ToTitleCase(loopChannel.StreamName))
                 {
                     RadioCheck = true,
                     Checked = _config.Channel.Equals(Int32.Parse(loopChannel.Chan)),
-                    Tag = loopChannel
+                    Tag = loopChannel,
+                    Enabled = loopChannel.Chan != "99"
+                        && (!((_config.EnablePlayerWatcher && _playerWatcher.PlayerIsActive)
+                        || _config.RpTrackingConfig.IsValidPlayerId()))
                 };
+
                 channelMenuItem.Click += (sender, e) =>
                 {
                     foreach (MenuItem menu in ContextMenu.MenuItems)
@@ -273,22 +335,30 @@ namespace RP_Notify
                     _config.Channel = Int32.Parse(loopChannel.Chan);
                     _songInfoListener.nextSongWaiterCancellationTokenSource.Cancel();
                 };
-                ContextMenu.MenuItems.Add(channelMenuItem);
-                ContextMenu.MenuItems[ContextMenu.MenuItems.Count - 1].Enabled =
-                    loopChannel.Chan != "99"
-                    && (!((_config.EnablePlayerWatcher && _playerWatcher.PlayerIsActive)
-                        || _config.RpTrackingConfig.IsValidPlayerId()));
+
+                Channels.Add(channelMenuItem);
             }
 
-            ContextMenu.MenuItems.Add(new MenuItem("-"));
+            return Channels.ToArray();
+        }
 
+        private MenuItem CreateMenuEntryAbout()
+        {
             MenuItem about = new MenuItem("About");
-            about.Click += (sender, e) => { System.Diagnostics.Process.Start("https://github.com/gvajda/radio-paradise-song-notification"); };
-            ContextMenu.MenuItems.Add(about);
+            about.Click += (sender, e) =>
+            {
+                System.Diagnostics.Process.Start("https://github.com/gvajda/radio-paradise-song-notification");
+            };
 
+            return about;
+        }
+
+        private MenuItem CreateMenuEntryExit()
+        {
             MenuItem exit = new MenuItem("E&xit");
             exit.Click += (sender, e) => { ExitThread(); };
-            ContextMenu.MenuItems.Add(exit);
+
+            return exit;
         }
 
         private void TrayIconDoubleClickHandler(object sender, MouseEventArgs e)
