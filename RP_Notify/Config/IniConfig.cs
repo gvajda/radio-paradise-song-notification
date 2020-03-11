@@ -258,7 +258,6 @@ namespace RP_Notify.Config
             }
         }
 
-
         private string CheckForCustomIniPath()
         {
             foreach (string arg in Environment.GetCommandLineArgs())
@@ -272,7 +271,7 @@ namespace RP_Notify.Config
                     else
                     {
                         try
-                        {       // Should run once
+                        {   // Should run once
                             InitIni(arg);
                         }
                         catch (Exception)
@@ -300,6 +299,7 @@ namespace RP_Notify.Config
             });
         }
     }
+
     public class ConfigChangeEventArgs : EventArgs
     {
         public ConfigChangeEventArgs()

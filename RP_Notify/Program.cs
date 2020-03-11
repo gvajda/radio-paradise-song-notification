@@ -1,5 +1,6 @@
 ﻿using Foobar2000.RESTClient.Api;
 using Microsoft.Extensions.DependencyInjection;
+using RestSharp;
 using RP_Notify.API;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
@@ -21,6 +22,7 @@ namespace RP_Notify
         {
 
             var serviceProvider = new ServiceCollection()
+                .AddSingleton<RestClient>()
                 .AddSingleton<IConfig, IniConfig>()
                 .AddSingleton<ILog, Log>()
                 .AddSingleton<PlayerApi>()

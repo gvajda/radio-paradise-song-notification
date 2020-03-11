@@ -28,13 +28,15 @@ namespace RP_Notify.API
         }
         public bool IsUserAuthenticated { get; set; }
 
-        public RpApiHandler(IConfig config, ILog log)
+        public RpApiHandler(IConfig config, ILog log, RestClient restClient)
         {
             _config = config;
-            _restClient = new RestClient(config.RpApiBaseUrl);
+            _restClient = restClient;
             _log = log.Logger;
             SongInfo = new PlayListSong();
             ChannelList = new List<Channel>();
+
+            _restClient.BaseUrl = new Uri(config.RpApiBaseUrl);
 
             Init();
         }
