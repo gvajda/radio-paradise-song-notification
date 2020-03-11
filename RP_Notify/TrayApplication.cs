@@ -55,27 +55,31 @@ namespace RP_Notify
             _shortcutHelper = new ShortcutHelper(config);
             _shortcutHelper.TryCreateShortcut();    // Add shortcut to Start menu (required for Toast Notifications)
 
-            // Add context menu
-            _log.Information("Create tray icon");
-            ContextMenu = new ContextMenu();
-            BuildContextMenu();
-            TrayIcon = CreateTrayIcon();
-
             // Set up event handlers
             _log.Information("Create event listeners");
-            TrayIcon.MouseDoubleClick += this.TrayIconDoubleClickHandler;
             _config.ConfigChangedEventHandler += ConfigChangeHandler;
-            _playerWatcher.ConfigChangedEventHandler += ConfigChangeHandler;
             _songInfoListener.TooltipUpdateChangedEventHandler += (sender, e) => TrayIcon.Text = e.ToolTipText;
             Application.ApplicationExit += this.ApplicationExitHandler;
             SystemEvents.PowerModeChanged += WakeUpHandler;
 
             // Start background tasks
             _log.Information("Start background tasks");
-            _playerWatcher.StartChannelWatch();
-            Task.Run(() => Task.Delay(1500)).Wait();
+            if (config.EnablePlayerWatcher)
+            {
+                _playerWatcher.Start();
+                Task.Run(() => Task.Delay(1500)).Wait();
+            }
             _songInfoListener.Run();
 
+            // Run only after song updater
+            _playerWatcher.ConfigChangedEventHandler += ConfigChangeHandler;
+
+            // Add context menu
+            _log.Information("Create tray icon");
+            ContextMenu = new ContextMenu();
+            BuildContextMenu();
+            TrayIcon = CreateTrayIcon();
+            TrayIcon.MouseDoubleClick += this.TrayIconDoubleClickHandler;
         }
 
         private NotifyIcon CreateTrayIcon()
@@ -186,11 +190,12 @@ namespace RP_Notify
                 {
                     _config.RpTrackingConfig = new RP_Tracking.RpTrackingConfig();
                     _config.RpTrackingConfig.ActivePlayerId = "Foobar2000";
-                    _songInfoListener.nextSongWaiterCancellationTokenSource.Cancel();
+                    _playerWatcher.Start();
                 }
                 else
                 {
                     _config.RpTrackingConfig.ActivePlayerId = null;
+                    _playerWatcher.Stop();
                 }
                 BuildContextMenu();
             };
@@ -299,13 +304,21 @@ namespace RP_Notify
             BuildContextMenu();
             if (e.ChannelChanged)
             {
-                // nextSongWaiterCancellationTokenSource.Cancel();
                 _songInfoListener.nextSongWaiterCancellationTokenSource.Cancel();
             }
             else if ((e.ShowOnNewSongChanged && _config.ShowOnNewSong)   // ShowOnChanged turned on
-                || (e.PlayerStateChanged && _playerWatcher.PlayerIsActive))     // Playback started
+                || (e.PlayerStateChanged && _playerWatcher.PlayerIsActive))     // Playback just started
             {
                 _toastHandler.ShowSongStartToast();
+            }
+
+            if (_config.EnablePlayerWatcher)
+            {
+                _playerWatcher.Start();
+            }
+            else
+            {
+                _playerWatcher.Stop();
             }
         }
 

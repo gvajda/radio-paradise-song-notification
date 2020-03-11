@@ -159,8 +159,8 @@ namespace RP_Notify.Config
         private void HandleExternalConfigChange(object source, EventArgs e)
         {
             // var isChannelChanged = IsChannelChnaged();
-            var isChannelChanged = IsPropertyChnaged(channel, "Channel", "Channel");
-            var isShowOnNewSongChanged = IsPropertyChnaged(showOnNewSong, "Toast", "ShowOnNewSong");
+            var isChannelChanged = IniPropertyChnaged(channel, "Channel", "Channel");
+            var isShowOnNewSongChanged = IniPropertyChnaged(showOnNewSong, "Toast", "ShowOnNewSong");
             SyncMemoryConfig();
             ConfigChangedEventHandler?.
                 Invoke(this,
@@ -171,14 +171,7 @@ namespace RP_Notify.Config
                     });
         }
 
-        private bool IsChannelChnaged()
-        {
-            var iniFile = _iniHelper.ReadIniFile();
-            iniFile.Sections["Channel"].Keys["Channel"].TryParseValue(out int iniChannel);
-            return iniChannel != channel;
-        }
-
-        private bool IsPropertyChnaged<T>(T property, string sectionName, string keyName)
+        private bool IniPropertyChnaged<T>(T property, string sectionName, string keyName)
         {
             var iniFile = _iniHelper.ReadIniFile();
             iniFile.Sections[sectionName].Keys[keyName].TryParseValue(out T iniValue);
@@ -188,6 +181,9 @@ namespace RP_Notify.Config
         private void SyncMemoryConfig()
         {
             var iniFile = _iniHelper.ReadIniFile();
+
+            // foreach(var sections in iniFile.Sections)
+
             iniFile.Sections["AppSettings"].Keys["LeaveShorcutInStartMenu"].TryParseValue(out leaveShorcutInStartMenu);
             iniFile.Sections["AppSettings"].Keys["EnablePlayerWatcher"].TryParseValue(out enablePlayerWatcher);
             iniFile.Sections["AppSettings"].Keys["EnableLoggingToFile"].TryParseValue(out enableLoggingToFile);
@@ -196,6 +192,11 @@ namespace RP_Notify.Config
             iniFile.Sections["Toast"].Keys["LargeAlbumArt"].TryParseValue(out largeAlbumArt);
             iniFile.Sections["Toast"].Keys["ShowSongRating"].TryParseValue(out showSongRating);
             iniFile.Sections["Channel"].Keys["Channel"].TryParseValue(out channel);
+        }
+
+        private void CheckIniIntegrity()
+        {
+
         }
 
         void SetIniValue<T>(string section, string key, T value)

@@ -46,9 +46,10 @@ namespace RP_Notify.SongInfoUpdater
                 Thread.Sleep(200);      // Allow time the playerwatcher to find played channel
             }
             _log.Information("SongInfoListener - Invoked");
+
             Task.Run(async () =>
             {
-                string lastLoopSongId = "1";
+                string lastLoopSongId = "-1";
                 bool configChanged = false;
                 while (!listenerCancellationTokenSource.Token.IsCancellationRequested)     // keep getting new song info
                 {
@@ -113,21 +114,17 @@ namespace RP_Notify.SongInfoUpdater
             {
                 var triggerSecondsBeforeSongEnds = 20;
                 var secondsLeft = Math.Abs((DateTime.Now - _apiHandler.SongInfoExpiration).TotalSeconds);
-                try
-                {
-                    if (!_config.PromptForRating
-                        || (Int32.TryParse(_apiHandler.SongInfo.UserRating, out int userRating) && userRating > 0)
-                        || secondsLeft < (triggerSecondsBeforeSongEnds - 1)
-                        || (!isCancellationRequested && secondsLeft > triggerSecondsBeforeSongEnds))
-                    {
-                        return;
-                    }
 
-                    _toastHandler.ShowSongRatingToast();
-                }
-                catch (Exception e)
+                bool alreadyRated = Int32.TryParse(_apiHandler.SongInfo.UserRating, out int userRating)
+                    && userRating > 0;
+                bool closeToEndOfSong = triggerSecondsBeforeSongEnds > secondsLeft
+                    && secondsLeft > (triggerSecondsBeforeSongEnds - 1);
+                bool canceledBeforePrompting = isCancellationRequested && secondsLeft > triggerSecondsBeforeSongEnds;
+
+                if ((!_config.PromptForRating || alreadyRated)
+                    && (closeToEndOfSong || canceledBeforePrompting))
                 {
-                    _log.Error(e.Message);
+                    _toastHandler.ShowSongRatingToast();
                 }
             }
         }
@@ -138,9 +135,11 @@ namespace RP_Notify.SongInfoUpdater
             var timeLeft = (DateTime.Now - _apiHandler.SongInfoExpiration).ToString(@"m\:ss");
             string chanTitle = _apiHandler.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.Channel).First().Title;
             var trayIconText = $"{_apiHandler.SongInfo.Artist}\n{_apiHandler.SongInfo.Title}\n-{timeLeft}\n{chanTitle}";
-            trayIconText = trayIconText.Length < 64 ? trayIconText : trayIconText.Substring(0, 63);
+            trayIconText = trayIconText.Length < 64
+                ? trayIconText
+                : trayIconText.Substring(0, 63);
             TooltipUpdateChangedEventHandler?
-                .Invoke(this, new TooltipChangeEventArgs() { ToolTipText = trayIconText });
+                .Invoke(this, new TooltipChangeEventArgs(trayIconText));
         }
 
         private void CheckTrackedPlayerStatus()
@@ -150,30 +149,16 @@ namespace RP_Notify.SongInfoUpdater
                 _log.Information("-- SongInfoListener - CheckTrackedPlayerStatus: Enabled");
                 _config.RpTrackingConfig.Players = _apiHandler.GetSync_v2().Players;
 
-                var channelChanged = false;
-                if (_config.RpTrackingConfig.IsValidPlayerId())
+                if (_config.RpTrackingConfig.TryGetTrackedChannel(out int currentChannel) && _config.Channel != currentChannel)
                 {
-                    _log.Information("-- SongInfoListener - CheckTrackedPlayerStatus: Player is active");
-                    var currentChannel = Int32.Parse(
-                        _config.RpTrackingConfig.Players
-                        .Where(p => p.PlayerId == _config.RpTrackingConfig.ActivePlayerId)
-                        .First()
-                        .Chan
-                        );
-                    if (_config.Channel != currentChannel)
-                    {
-                        _config.Channel = currentChannel;
-                        channelChanged = true;
-                    }
-                }
+                    _log.Information($"-- SongInfoListener - CheckTrackedPlayerStatus: Tracking is active - Tracked channel: {currentChannel}");
 
-                if (channelChanged)
-                {
+                    _config.Channel = currentChannel;
                     ConfigChangedEventHandler?
                         .Invoke(this,
                             new ConfigChangeEventArgs()
                             {
-                                ChannelChanged = channelChanged
+                                ChannelChanged = true
                             });
                 }
             }
@@ -182,9 +167,10 @@ namespace RP_Notify.SongInfoUpdater
 
     public class TooltipChangeEventArgs : EventArgs
     {
-        public TooltipChangeEventArgs()
-        {
-        }
         public string ToolTipText { get; set; }
+        public TooltipChangeEventArgs(string tooltipText)
+        {
+            ToolTipText = tooltipText;
+        }
     }
 }

@@ -18,9 +18,12 @@ namespace RP_Notify.Foobar2000Watcher
         private readonly IRpApiHandler _apiHandler;
         private readonly ILogger _log;
         private readonly PlayerApi _playerApi;
+
         private int checkDelayMillisecs;
+        private bool isRunning;
+
         public event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
-        public CancellationTokenSource PlayerWatcherCancellationTokenSource { get; }
+        public CancellationTokenSource PlayerWatcherCancellationTokenSource { get; set; }
         public bool PlayerIsActive { get; set; }
 
 
@@ -33,27 +36,35 @@ namespace RP_Notify.Foobar2000Watcher
             _playerApi = playerApi;
             checkDelayMillisecs = 5000;
             PlayerWatcherCancellationTokenSource = new CancellationTokenSource();
-            Application.ApplicationExit += (sender, e) => PlayerWatcherCancellationTokenSource.Cancel();
+            Application.ApplicationExit += (sender, e) => Stop();
         }
 
-        public void StartChannelWatch()
+        public void Start()
         {
-            _log.Information("StartChannelWatch - Invoked");
+            if (isRunning)
+            {
+                return;
+            }
+
+            _log.Information("Foobar2000Watcher - Started");
+            PlayerWatcherCancellationTokenSource = new CancellationTokenSource();
+
             Task.Run(async () =>
             {
+                isRunning = true;
                 string matchingChannel = null;
                 bool showOnNewSongUserSetting = _config.ShowOnNewSong;
+
                 while (!PlayerWatcherCancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    if (!PlayerIsActive)
+                    try
                     {
-                        showOnNewSongUserSetting = _config.ShowOnNewSong;
-                    }
+                        if (!PlayerIsActive)
+                        {
+                            showOnNewSongUserSetting = _config.ShowOnNewSong;
+                        }
 
-                    if (_config.EnablePlayerWatcher)
-                    {
-                        if (TryGetPlayedFilePath(out string playedFilePath)
-                            && RpChannelIsPlaying(playedFilePath, out matchingChannel))
+                        if (RpChannelIsPlaying(out matchingChannel))
                         {
                             checkDelayMillisecs = 1000;
                             HandleChannelMatch(matchingChannel);
@@ -63,24 +74,37 @@ namespace RP_Notify.Foobar2000Watcher
                             checkDelayMillisecs = 5000;
                             HandleInactivePlayer(showOnNewSongUserSetting);
                         }
+
+                        await Task.Delay(checkDelayMillisecs, PlayerWatcherCancellationTokenSource.Token);
                     }
-                    else
+                    catch (TaskCanceledException)
                     {
-                        checkDelayMillisecs = 5000;
-                        if (!_config.RpTrackingConfig.Enabled)
-                        {
-                            HandleInactivePlayer(showOnNewSongUserSetting);
-                        }
+                        continue;       // Don't log error for stopping
                     }
-                    await Task.Delay(checkDelayMillisecs, PlayerWatcherCancellationTokenSource.Token);
+                    catch (Exception ex)
+                    {
+                        _log.Error($"Foobar2000Watcher - ERROR - {ex.Message}");
+                    }
                 }
+
+                isRunning = false;
+                _log.Information("Foobar2000Watcher - Stopped");
+
             }, PlayerWatcherCancellationTokenSource.Token);
-            _log.Information("StartChannelWatch - Running in background");
+            _log.Information("Foobar2000Watcher - Running in background");
+        }
+
+        public void Stop()
+        {
+            if (isRunning)
+            {
+                _log.Information("Foobar2000Watcher - Initiate shutdown");
+                PlayerWatcherCancellationTokenSource.Cancel();
+            }
         }
 
         private bool TryGetPlayedFilePath(out string playedFilePath)
         {
-            playedFilePath = null;
             var columns = new List<string>();
             columns.Add("%path%");
 
@@ -92,25 +116,30 @@ namespace RP_Notify.Foobar2000Watcher
             }
             catch
             {
+                playedFilePath = null;
                 return false;
             }
 
         }
 
-        private bool RpChannelIsPlaying(string playedFilePath, out string matchingChannel)
+        private bool RpChannelIsPlaying(out string matchingChannel)
         {
-            matchingChannel = "0";
-            if (!playedFilePath.Contains("radioparadise"))
+            if (TryGetPlayedFilePath(out string playedFilePath)
+                && playedFilePath.Contains("radioparadise"))
             {
+                matchingChannel = _apiHandler.ChannelList
+                    .Where(channel => playedFilePath.Contains(channel.StreamName))
+                    .DefaultIfEmpty(_apiHandler.ChannelList.First())
+                    .FirstOrDefault()
+                    .Chan;
+
+                return true;
+            }
+            else
+            {
+                matchingChannel = "-1";
                 return false;
             }
-
-            foreach (var channel in _apiHandler.ChannelList.Where(channel => playedFilePath.Contains(channel.StreamName)))
-            {
-                matchingChannel = channel.Chan;
-            }
-
-            return true;
         }
 
 

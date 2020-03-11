@@ -1,4 +1,5 @@
 ﻿using RP_Notify.API.ResponseModel;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -28,7 +29,34 @@ namespace RP_Notify.RP_Tracking
 
         public bool IsValidPlayerId()
         {
-            return Enabled && !string.IsNullOrEmpty(ActivePlayerId) && Players.Any(p => p.PlayerId == ActivePlayerId);
+            return Enabled
+                && !string.IsNullOrEmpty(ActivePlayerId)
+                && Players.Any(p => p.PlayerId == ActivePlayerId);
+        }
+
+        public bool TryGetTrackedChannel(out int chan)
+        {
+            chan = -1;
+
+            var trackingIsActive = Enabled
+                && !string.IsNullOrEmpty(ActivePlayerId)
+                && Players.Any(p => p.PlayerId == ActivePlayerId);
+
+            if (!trackingIsActive)
+            {
+                return false;
+            }
+            else
+            {
+                chan = Int32.Parse(
+                    Players
+                    .Where(p => p.PlayerId == ActivePlayerId)
+                    .First()
+                    .Chan
+                    );
+
+                return true;
+            }
         }
 
         public IList<Player> FormatSource(IList<Player> input)

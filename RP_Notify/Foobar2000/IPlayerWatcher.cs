@@ -9,6 +9,7 @@ namespace RP_Notify.Foobar2000Watcher
         event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
         CancellationTokenSource PlayerWatcherCancellationTokenSource { get; }
         bool PlayerIsActive { get; }
-        void StartChannelWatch();
+        void Start();
+        void Stop();
     }
 }

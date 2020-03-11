@@ -78,6 +78,7 @@
     <Compile Include="Config\IConfig.cs" />
     <Compile Include="API\RpApiResponseModel.cs" />
     <Compile Include="Config\IniConfig.cs" />
+    <Compile Include="Config\State.cs" />
     <Compile Include="ErrorHandler\ILog.cs" />
     <Compile Include="ErrorHandler\Log.cs" />
     <Compile Include="ErrorHandler\Retry.cs" />

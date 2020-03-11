@@ -5,7 +5,6 @@ using RP_Notify.ErrorHandler;
 using Serilog;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -58,9 +57,7 @@ namespace RP_Notify.API
 
         public void UpdateSongInfo()
         {
-            string player_id = _config.RpTrackingConfig.Enabled
-                    && _config.RpTrackingConfig.Players
-                        .Any(p => p.PlayerId == _config.RpTrackingConfig.ActivePlayerId)
+            string player_id = _config.RpTrackingConfig.IsValidPlayerId()
                 ? _config.RpTrackingConfig.ActivePlayerId
                 : null;
 
@@ -71,7 +68,7 @@ namespace RP_Notify.API
             var nowPlayingList = GetNowplayingList(_config.Channel.ToString(), player_id);
             nowPlayingList.Song.TryGetValue("0", out var nowPlayingSong);
 
-            _log.Information("UpdateSongInfo - RP API call returned successfully - SongId: {@sonId}", nowPlayingSong.SongId);
+            _log.Information("UpdateSongInfo - RP API call returned successfully - SongId: {@songId}", nowPlayingSong.SongId);
 
             // Update class attributes
             if (string.IsNullOrEmpty(SongInfo.SongId) || nowPlayingSong.SongId != SongInfo.SongId)
