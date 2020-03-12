@@ -4,6 +4,7 @@ using RP_Notify.RP_Tracking;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
@@ -182,8 +183,6 @@ namespace RP_Notify.Config
         {
             var iniFile = _iniHelper.ReadIniFile();
 
-            // foreach(var sections in iniFile.Sections)
-
             iniFile.Sections["AppSettings"].Keys["LeaveShorcutInStartMenu"].TryParseValue(out leaveShorcutInStartMenu);
             iniFile.Sections["AppSettings"].Keys["EnablePlayerWatcher"].TryParseValue(out enablePlayerWatcher);
             iniFile.Sections["AppSettings"].Keys["EnableLoggingToFile"].TryParseValue(out enableLoggingToFile);
@@ -192,11 +191,6 @@ namespace RP_Notify.Config
             iniFile.Sections["Toast"].Keys["LargeAlbumArt"].TryParseValue(out largeAlbumArt);
             iniFile.Sections["Toast"].Keys["ShowSongRating"].TryParseValue(out showSongRating);
             iniFile.Sections["Channel"].Keys["Channel"].TryParseValue(out channel);
-        }
-
-        private void CheckIniIntegrity()
-        {
-
         }
 
         void SetIniValue<T>(string section, string key, T value)
@@ -235,9 +229,13 @@ namespace RP_Notify.Config
                     Environment.GetFolderPath(
                         Environment.SpecialFolder.ApplicationData), @"RP_Notify\config.ini");
             _iniFolder = Path.GetDirectoryName(_iniPath);
-            if (!File.Exists(_iniPath) || (File.Exists(_iniPath) && string.IsNullOrEmpty(File.ReadAllText(_iniPath))))
+            if (!File.Exists(_iniPath))
             {
                 InitIni(_iniPath);
+            }
+            else
+            {
+                CheckIniIntegrity();
             }
         }
 
@@ -247,6 +245,36 @@ namespace RP_Notify.Config
             var iniContent = TryReadIniStringContent();
             iniFile.Load(new StringReader(iniContent));
             return iniFile;
+        }
+
+        private void CheckIniIntegrity()
+        {
+            var defaultIniFile = new IniFile();
+            defaultIniFile.Load(new StringReader(Properties.Resources.config));
+
+            var iniFile = ReadIniFile();
+
+            foreach (var defaultSection in defaultIniFile.Sections)
+            {
+                if (!iniFile.Sections.Where(s => s.Name == defaultSection.Name).Any())
+                {
+                    iniFile.Sections.Add(defaultSection.Name);
+                }
+
+                foreach (var defaultKey in defaultSection.Keys)
+                {
+                    if (!iniFile
+                        .Sections[defaultSection.Name]
+                        .Keys.Where(k => k.Name == defaultKey.Name)
+                        .Any()
+                        )
+                    {
+                        iniFile.Sections[defaultSection.Name].Keys.Add(defaultKey.Name, defaultKey.Value);
+                    }
+                }
+            }
+
+            iniFile.Save(_iniPath);
         }
 
         private void InitIni(string pIniPath)
@@ -260,25 +288,21 @@ namespace RP_Notify.Config
 
         private string CheckForCustomIniPath()
         {
-            foreach (string arg in Environment.GetCommandLineArgs())
+            foreach (string arg in Environment.GetCommandLineArgs().Where(arg => arg.EndsWith(".ini")))
             {
-                if (arg.EndsWith(".ini"))
+                if (File.Exists(arg) && !string.IsNullOrEmpty(File.ReadAllText(arg)))
                 {
-                    if (File.Exists(arg) && !string.IsNullOrEmpty(File.ReadAllText(_iniPath)))
-                    {
-                        return arg;
-                    }
-                    else
-                    {
-                        try
-                        {   // Should run once
-                            InitIni(arg);
-                        }
-                        catch (Exception)
-                        {
-                            return null;
-                        }
-                    }
+                    return arg;
+                }
+
+                try
+                {   // Should run once
+                    InitIni(arg);
+                    return arg;
+                }
+                catch (Exception)
+                {
+                    continue;
                 }
             }
 
@@ -291,10 +315,7 @@ namespace RP_Notify.Config
             {
                 string iniContent = null;
                 iniContent = File.ReadAllText(_iniPath, Encoding.Default);
-                if (string.IsNullOrEmpty(iniContent))
-                {
-                    throw new InvalidDataException("Ini file read error");
-                }
+
                 return iniContent;
             });
         }
