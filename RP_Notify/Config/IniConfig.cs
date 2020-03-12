@@ -25,6 +25,7 @@ namespace RP_Notify.Config
         private bool enablePlayerWatcher;
         private bool enableLoggingToFile;
         private int channel;
+        private bool deleteAllDataOnStartup;
 
         public bool ShowOnNewSong
         {
@@ -96,6 +97,15 @@ namespace RP_Notify.Config
             {
                 channel = value;
                 SetIniValue("Channel", "Channel", value);
+            }
+        }
+        public bool DeleteAllDataOnStartup
+        {
+            get => deleteAllDataOnStartup;
+            set
+            {
+                deleteAllDataOnStartup = value;
+                SetIniValue("OnStartupSettings", "DeleteAllDataOnStartup", value);
             }
         }
 
@@ -191,6 +201,7 @@ namespace RP_Notify.Config
             iniFile.Sections["Toast"].Keys["LargeAlbumArt"].TryParseValue(out largeAlbumArt);
             iniFile.Sections["Toast"].Keys["ShowSongRating"].TryParseValue(out showSongRating);
             iniFile.Sections["Channel"].Keys["Channel"].TryParseValue(out channel);
+            iniFile.Sections["OnStartupSettings"].Keys["DeleteAllDataOnStartup"].TryParseValue(out deleteAllDataOnStartup);
         }
 
         void SetIniValue<T>(string section, string key, T value)

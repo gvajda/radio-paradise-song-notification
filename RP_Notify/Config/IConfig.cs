@@ -29,6 +29,7 @@ namespace RP_Notify.Config
         bool PromptForRating { get; set; }
         bool LeaveShorcutInStartMenu { get; set; }
         int Channel { get; set; }
+        bool DeleteAllDataOnStartup { get; set; }
 
         void DeletePersistentData();
     }

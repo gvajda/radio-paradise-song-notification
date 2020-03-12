@@ -63,6 +63,9 @@ namespace RP_Notify
             Application.ApplicationExit += this.ApplicationExitHandler;
             SystemEvents.PowerModeChanged += WakeUpHandler;
 
+            // Check queued application data delet request
+            CheckQueuedDataDeleteRequest();
+
             // Start background tasks
             _log.Information("Start background tasks");
             if (config.EnablePlayerWatcher)
@@ -451,17 +454,30 @@ namespace RP_Notify
             if (_config.EnableLoggingToFile)
             {
                 _config.EnableLoggingToFile = false;
-                _log.Information("ResetHandler - Can't delete log when file logging is enabled. Logging is disabled now. Please restart and try again");
-                TrayIcon.BalloonTipTitle = @"Data delete ERROR";
-                TrayIcon.BalloonTipText = @"Can't delete log when file logging is enabled. Logging is disabled now. Please restart and try again";
-                TrayIcon.ShowBalloonTip(10);
+                _config.DeleteAllDataOnStartup = true;
+                Application.Restart();
             }
             else
             {
                 resetFlag = true;
+                Application.Exit();
             }
-            ExitThread();
         }
 
+        private void CheckQueuedDataDeleteRequest()
+        {
+            if (_config.DeleteAllDataOnStartup)
+            {
+                resetFlag = true;
+                _config.ShowOnNewSong = false;
+                _config.EnablePlayerWatcher = false;
+
+                Task.Run(async () =>
+                {
+                    await Task.Delay(3000);
+                    Application.Exit();
+                });
+            }
+        }
     }
 }
