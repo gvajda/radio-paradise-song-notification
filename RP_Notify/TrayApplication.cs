@@ -3,7 +3,7 @@ using RP_Notify.API;
 using RP_Notify.API.ResponseModel;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
-using RP_Notify.Foobar2000Watcher;
+using RP_Notify.Foobar2000;
 using RP_Notify.Properties;
 using RP_Notify.SongInfoUpdater;
 using RP_Notify.StartMenuShortcut;
@@ -25,7 +25,7 @@ namespace RP_Notify
         private readonly IConfig _config;
         private readonly IToastHandler _toastHandler;
         private readonly ShortcutHelper _shortcutHelper;
-        private readonly IPlayerWatcher _playerWatcher;
+        private readonly Foobar2000Watcher _foobar2000Watcher;
         private readonly ISongInfoListener _songInfoListener;
         private readonly ILogger _log;
 
@@ -34,7 +34,7 @@ namespace RP_Notify
         protected ContextMenu ContextMenu { get; set; }
         protected NotifyIcon TrayIcon { get; set; }
 
-        public TrayApplication(IConfig config, IRpApiHandler apiHandler, IToastHandler toastHandler, IPlayerWatcher playerWatcher, ISongInfoListener songInfoListener, ILog log)
+        public TrayApplication(IConfig config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, ISongInfoListener songInfoListener, ILog log)
         {
             _log = log.Logger;
             _log.Information("RP_Notify started ********************************************************************");
@@ -44,7 +44,7 @@ namespace RP_Notify
             _config = config;
             _toastHandler = toastHandler;
             _songInfoListener = songInfoListener;
-            _playerWatcher = playerWatcher;
+            _foobar2000Watcher = foobar2000Watcher;
 
             resetFlag = false;
             if (_config.Channel == 99)      // Reset channel if Favourites were tracked at exit
@@ -70,13 +70,13 @@ namespace RP_Notify
             _log.Information("Start background tasks");
             if (config.EnablePlayerWatcher)
             {
-                _playerWatcher.Start();
+                _foobar2000Watcher.Start();
                 Task.Run(() => Task.Delay(1500)).Wait();
             }
             _songInfoListener.Run();
 
             // Run only after song updater
-            _playerWatcher.ConfigChangedEventHandler += ConfigChangeHandler;
+            _foobar2000Watcher.ConfigChangedEventHandler += ConfigChangeHandler;
 
             // Add context menu
             _log.Information("Create tray icon");
@@ -131,8 +131,8 @@ namespace RP_Notify
             MenuItem showOnNewSong = new MenuItem("Show on new song")
             {
                 Checked = _config.ShowOnNewSong
-                    || (_config.EnablePlayerWatcher && _playerWatcher.PlayerIsActive),
-                Enabled = !(_config.EnablePlayerWatcher && _playerWatcher.PlayerIsActive)
+                    || (_config.EnablePlayerWatcher && _foobar2000Watcher.PlayerIsActive),
+                Enabled = !(_config.EnablePlayerWatcher && _foobar2000Watcher.PlayerIsActive)
             };
 
             showOnNewSong.Click += (sender, e) =>
@@ -235,12 +235,12 @@ namespace RP_Notify
                 {
                     _config.RpTrackingConfig = new RP_Tracking.RpTrackingConfig();
                     _config.RpTrackingConfig.ActivePlayerId = "Foobar2000";
-                    _playerWatcher.Start();
+                    _foobar2000Watcher.Start();
                 }
                 else
                 {
                     _config.RpTrackingConfig.ActivePlayerId = null;
-                    _playerWatcher.Stop();
+                    _foobar2000Watcher.Stop();
                 }
                 BuildContextMenu();
             };
@@ -293,7 +293,7 @@ namespace RP_Notify
                     {
                         _config.RpTrackingConfig.ActivePlayerId = player.PlayerId;
                         _config.Channel = Int32.Parse(player.Chan);
-                        _songInfoListener.nextSongWaiterCancellationTokenSource.Cancel();
+                        _songInfoListener.CheckSong();
                         _config.EnablePlayerWatcher = false;
                         BuildContextMenu();
                     };
@@ -319,8 +319,8 @@ namespace RP_Notify
                     Checked = _config.Channel.Equals(Int32.Parse(loopChannel.Chan)),
                     Tag = loopChannel,
                     Enabled = loopChannel.Chan != "99"
-                        && (!((_config.EnablePlayerWatcher && _playerWatcher.PlayerIsActive)
-                        || _config.RpTrackingConfig.IsValidPlayerId()))
+                        && (!((_config.EnablePlayerWatcher && _foobar2000Watcher.PlayerIsActive)
+                        || _config.RpTrackingConfig.ValidateActivePlayerId()))
                 };
 
                 channelMenuItem.Click += (sender, e) =>
@@ -336,7 +336,7 @@ namespace RP_Notify
                     }
                     //does not send ConfigExternallyChangedEvent
                     _config.Channel = Int32.Parse(loopChannel.Chan);
-                    _songInfoListener.nextSongWaiterCancellationTokenSource.Cancel();
+                    _songInfoListener.CheckSong();
                 };
 
                 Channels.Add(channelMenuItem);
@@ -377,21 +377,21 @@ namespace RP_Notify
             BuildContextMenu();
             if (e.ChannelChanged)
             {
-                _songInfoListener.nextSongWaiterCancellationTokenSource.Cancel();
+                _songInfoListener.CheckSong();
             }
             else if ((e.ShowOnNewSongChanged && _config.ShowOnNewSong)   // ShowOnChanged turned on
-                || (e.PlayerStateChanged && _playerWatcher.PlayerIsActive))     // Playback just started
+                || (e.PlayerStateChanged && _foobar2000Watcher.PlayerIsActive))     // Playback just started
             {
                 _toastHandler.ShowSongStartToast();
             }
 
             if (_config.EnablePlayerWatcher)
             {
-                _playerWatcher.Start();
+                _foobar2000Watcher.Start();
             }
             else
             {
-                _playerWatcher.Stop();
+                _foobar2000Watcher.Stop();
             }
         }
 
@@ -434,7 +434,7 @@ namespace RP_Notify
             if (resetFlag)
             {
                 _shortcutHelper.DeleteShortcut();
-                _config.DeletePersistentData();
+                _config.DeleteConfigRootFolder();
             }
             else
             {

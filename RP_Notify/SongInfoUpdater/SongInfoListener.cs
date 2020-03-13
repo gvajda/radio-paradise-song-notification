@@ -20,10 +20,11 @@ namespace RP_Notify.SongInfoUpdater
         private readonly IToastHandler _toastHandler;
         private readonly CancellationTokenSource listenerCancellationTokenSource;
         private readonly ILogger _log;
+
         public event EventHandler<TooltipChangeEventArgs> TooltipUpdateChangedEventHandler;
         public event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
 
-        public CancellationTokenSource nextSongWaiterCancellationTokenSource { get; set; }
+        private CancellationTokenSource NextSongWaiterCancellationTokenSource { get; set; }
 
         public SongInfoListener(IRpApiHandler apiHandler, IConfig config, IToastHandler toastHandler, ILog log)
         {
@@ -32,10 +33,15 @@ namespace RP_Notify.SongInfoUpdater
             _toastHandler = toastHandler;
             _log = log.Logger;
 
-            nextSongWaiterCancellationTokenSource = new CancellationTokenSource();
+            NextSongWaiterCancellationTokenSource = new CancellationTokenSource();
             listenerCancellationTokenSource = new CancellationTokenSource();
 
             Application.ApplicationExit += (sender, e) => listenerCancellationTokenSource.Cancel();
+        }
+
+        public void CheckSong()
+        {
+            NextSongWaiterCancellationTokenSource.Cancel();
         }
 
         public void Run()
@@ -49,23 +55,23 @@ namespace RP_Notify.SongInfoUpdater
             Task.Run(async () =>
             {
                 string lastLoopSongId = "-1";
-                bool configChanged = false;
+                bool canceled = false;
                 while (!listenerCancellationTokenSource.Token.IsCancellationRequested)     // keep getting new song info
                 {
                     try
                     {
 
-                        nextSongWaiterCancellationTokenSource = new CancellationTokenSource();
-                        var cancellationToken = nextSongWaiterCancellationTokenSource.Token;
+                        NextSongWaiterCancellationTokenSource = new CancellationTokenSource();
+                        var cancellationToken = NextSongWaiterCancellationTokenSource.Token;
 
                         CheckTrackedPlayerStatus();
                         _apiHandler.UpdateSongInfo();
 
                         if ((_config.ShowOnNewSong && lastLoopSongId != _apiHandler.SongInfo.SongId)
-                            || configChanged)
+                            || canceled)
                         {
                             _toastHandler.ShowSongStartToast();
-                            configChanged = false;
+                            canceled = false;
                         }
 
                         lastLoopSongId = _apiHandler.SongInfo.SongId;
@@ -73,7 +79,7 @@ namespace RP_Notify.SongInfoUpdater
                         var timeLeftFromSongMilliseconds = (int)(_apiHandler.SongInfoExpiration - DateTime.Now).TotalMilliseconds;
                         try
                         {
-                            var loopWaitMilliseconds = _config.RpTrackingConfig.IsValidPlayerId()
+                            var loopWaitMilliseconds = _config.RpTrackingConfig.ValidateActivePlayerId()
                                 ? Math.Min(7000, timeLeftFromSongMilliseconds)
                                 : timeLeftFromSongMilliseconds;
                             var waitForNextSong = Task.Delay(loopWaitMilliseconds, cancellationToken);
@@ -89,9 +95,9 @@ namespace RP_Notify.SongInfoUpdater
                         }
                         catch (TaskCanceledException)
                         {
-                            configChanged = true;
+                            canceled = true;
                             PromptRatingAtEndOfSongOrIfCanceled(true);
-                            _log.Information("SongInfoListener - External configuration change");
+                            _log.Information("SongInfoListener - Canceled");
                         }
                     }
                     catch (Exception e)

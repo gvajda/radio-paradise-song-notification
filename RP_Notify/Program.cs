@@ -4,7 +4,6 @@ using RestSharp;
 using RP_Notify.API;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
-using RP_Notify.Foobar2000Watcher;
 using RP_Notify.SongInfoUpdater;
 using RP_Notify.Toast;
 using System;
@@ -28,7 +27,7 @@ namespace RP_Notify
                 .AddSingleton<PlayerApi>()
                 .AddSingleton<IRpApiHandler, RpApiHandler>()
                 .AddScoped<IToastHandler, ToastHandler>()
-                .AddSingleton<IPlayerWatcher, Foobar2000Watcher.Foobar2000Watcher>()
+                .AddSingleton<Foobar2000.Foobar2000Watcher>()
                 .AddSingleton<ISongInfoListener, SongInfoListener>()
                 .AddSingleton<TrayApplication>()
                 .BuildServiceProvider();

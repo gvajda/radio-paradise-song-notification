@@ -82,7 +82,6 @@
     <Compile Include="ErrorHandler\ILog.cs" />
     <Compile Include="ErrorHandler\Log.cs" />
     <Compile Include="ErrorHandler\Retry.cs" />
-    <Compile Include="Foobar2000\IPlayerWatcher.cs" />
     <Compile Include="Foobar2000\Foobar2000Watcher.cs" />
     <Compile Include="Foobar2000\Api\ArtworkApi.cs" />
     <Compile Include="Foobar2000\Api\BrowserApi.cs" />

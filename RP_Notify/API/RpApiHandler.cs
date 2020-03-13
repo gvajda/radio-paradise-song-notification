@@ -5,8 +5,10 @@ using RP_Notify.ErrorHandler;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace RP_Notify.API
 {
@@ -50,7 +52,11 @@ namespace RP_Notify.API
             if (IsUserAuthenticated)
             {
                 _log.Information("-- RpApiHandler - Refresh cookies");
-                GetAuth();
+                if (GetAuth().Status == "fail")
+                {
+                    Retry.Do(() => File.Delete(_config.CookieCachePath));
+                    Application.Restart();
+                }
             }
             _log.Information("-- RpApiHandler - Get channel list");
             ChannelList = GetChannelList();
@@ -59,7 +65,7 @@ namespace RP_Notify.API
 
         public void UpdateSongInfo()
         {
-            string player_id = _config.RpTrackingConfig.IsValidPlayerId()
+            string player_id = _config.RpTrackingConfig.ValidateActivePlayerId()
                 ? _config.RpTrackingConfig.ActivePlayerId
                 : null;
 

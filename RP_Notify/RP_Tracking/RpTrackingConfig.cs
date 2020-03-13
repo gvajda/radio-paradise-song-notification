@@ -14,6 +14,7 @@ namespace RP_Notify.RP_Tracking
         public string ActivePlayerId { get; set; }
 
         private IList<Player> players;
+
         public IList<Player> Players
         {
             get => players;
@@ -27,7 +28,7 @@ namespace RP_Notify.RP_Tracking
             Players = new List<Player>();
         }
 
-        public bool IsValidPlayerId()
+        public bool ValidateActivePlayerId()
         {
             return Enabled
                 && !string.IsNullOrEmpty(ActivePlayerId)
@@ -36,14 +37,9 @@ namespace RP_Notify.RP_Tracking
 
         public bool TryGetTrackedChannel(out int chan)
         {
-            chan = -1;
-
-            var trackingIsActive = Enabled
-                && !string.IsNullOrEmpty(ActivePlayerId)
-                && Players.Any(p => p.PlayerId == ActivePlayerId);
-
-            if (!trackingIsActive)
+            if (!ValidateActivePlayerId())
             {
+                chan = -1;
                 return false;
             }
             else
@@ -59,7 +55,7 @@ namespace RP_Notify.RP_Tracking
             }
         }
 
-        public IList<Player> FormatSource(IList<Player> input)
+        private IList<Player> FormatSource(IList<Player> input)
         {
             foreach (Player player in input)
             {

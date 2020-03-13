@@ -10,9 +10,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RP_Notify.Foobar2000Watcher
+namespace RP_Notify.Foobar2000
 {
-    class Foobar2000Watcher : IPlayerWatcher
+    class Foobar2000Watcher
     {
         private readonly IConfig _config;
         private readonly IRpApiHandler _apiHandler;

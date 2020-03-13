@@ -155,7 +155,7 @@ namespace RP_Notify.Config
             Application.ApplicationExit += (s, e) => _iniFileChangeWatcher.Dispose();
         }
 
-        public void DeletePersistentData()
+        public void DeleteConfigRootFolder()
         {
             Retry.Do(() => Directory.Delete(_iniHelper._iniFolder, true));
         }
