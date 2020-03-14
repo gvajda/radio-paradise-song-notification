@@ -14,11 +14,11 @@ namespace RP_Notify.ErrorHandler
 
         private ILogger GetLogger(IConfig config)
         {
-            if (config.EnableLoggingToFile)
+            if (config.ExternalConfig.EnableLoggingToFile)
             {
                 return new LoggerConfiguration()
                 .WriteTo.File(
-                    config.LogFilePath,
+                    config.InternalConfig.LogFilePath,
                     fileSizeLimitBytes: 1048576,
                     rollOnFileSizeLimit: true,
                     shared: true

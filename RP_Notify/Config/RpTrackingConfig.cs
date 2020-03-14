@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 
-namespace RP_Notify.RP_Tracking
+namespace RP_Notify.Config
 {
     public class RpTrackingConfig
     {

@@ -53,26 +53,26 @@ namespace RP_Notify.Toast
 
         public void ShowSongStartToast()
         {
-            string title = SecurityElement.Escape($"{_apiHandler.SongInfo.Artist}\n{_apiHandler.SongInfo.Title} ({TimeSpanToMinutes(Int32.Parse(_apiHandler.SongInfo.Duration))})");
-            string content = SecurityElement.Escape($"{_apiHandler.SongInfo.Album} ({_apiHandler.SongInfo.Year})");
-            string image = _config.AlbumArtImagePath;
+            string title = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Artist}\n{_config.State.Playback.SongInfo.Title} ({TimeSpanToMinutes(Int32.Parse(_config.State.Playback.SongInfo.Duration))})");
+            string content = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Album} ({_config.State.Playback.SongInfo.Year})");
+            string image = _config.InternalConfig.AlbumArtImagePath;
 
-            string chanTitle = _apiHandler.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.Channel).First().Title;
+            string chanTitle = _config.State.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.ExternalConfig.Channel).First().Title;
             string trimmedTitle = chanTitle.Contains("RP ")
                 ? chanTitle.Split(new[] { "RP " }, StringSplitOptions.None)[1]
                 : chanTitle;
 
-            bool userRated = !string.IsNullOrEmpty(_apiHandler.SongInfo.UserRating);
+            bool userRated = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating);
             var userRatingText = userRated
-                    ? $" - User rating: {_apiHandler.SongInfo.UserRating}"
+                    ? $" - User rating: {_config.State.Playback.SongInfo.UserRating}"
                     : " - Not rated";
-            string ratingText = $@"★ {_apiHandler.SongInfo.Rating}{(_apiHandler.IsUserAuthenticated ? userRatingText : null)}";
+            string ratingText = $@"★ {_config.State.Playback.SongInfo.Rating}{(_config.State.IsUserAuthenticated ? userRatingText : null)}";
             string toastVisual =
             $@"<visual>
               <binding template='ToastGeneric'>
                 <text>{title}</text>
                 <text>{content}</text>
-                {(_config.ShowSongRating || userRated ? $"<text>{ratingText}</text>" : null)}
+                {(_config.ExternalConfig.ShowSongRating || userRated ? $"<text>{ratingText}</text>" : null)}
                 <text placement='attribution'>{trimmedTitle}{TrackedPlayerAsSuffix()}</text>
                 <image src='{image}' placement='appLogoOverride'/>
               </binding>
@@ -99,27 +99,27 @@ namespace RP_Notify.Toast
 
         public void ShowSongRatingToast()
         {
-            string title = SecurityElement.Escape($"{_apiHandler.SongInfo.Artist}\n{_apiHandler.SongInfo.Title} ({TimeSpanToMinutes(Int32.Parse(_apiHandler.SongInfo.Duration))})");
-            string content = SecurityElement.Escape($"{_apiHandler.SongInfo.Album} ({_apiHandler.SongInfo.Year})");
-            string image = _config.AlbumArtImagePath;
+            string title = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Artist}\n{_config.State.Playback.SongInfo.Title} ({TimeSpanToMinutes(Int32.Parse(_config.State.Playback.SongInfo.Duration))})");
+            string content = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Album} ({_config.State.Playback.SongInfo.Year})");
+            string image = _config.InternalConfig.AlbumArtImagePath;
 
-            string chanTitle = _apiHandler.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.Channel).First().Title;
+            string chanTitle = _config.State.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.ExternalConfig.Channel).First().Title;
 
             string trimmedTitle = chanTitle.Contains("RP ")
                 ? chanTitle.Split(new[] { "RP " }, StringSplitOptions.None)[1]
                 : chanTitle;
 
-            bool userRated = !string.IsNullOrEmpty(_apiHandler.SongInfo.UserRating);
+            bool userRated = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating);
             var userRatingText = userRated
-                    ? $" - User rating: {_apiHandler.SongInfo.UserRating}"
+                    ? $" - User rating: {_config.State.Playback.SongInfo.UserRating}"
                     : " - Not rated";
-            string ratingText = $@"★ {_apiHandler.SongInfo.Rating}{(_apiHandler.IsUserAuthenticated ? userRatingText : null)}";
+            string ratingText = $@"★ {_config.State.Playback.SongInfo.Rating}{(_config.State.IsUserAuthenticated ? userRatingText : null)}";
             string toastVisual =
             $@"<visual>
               <binding template='ToastGeneric'>
                 <text>{title}</text>
                 <text>{content}</text>
-                {(_config.ShowSongRating || userRated ? $"<text>{ratingText}</text>" : null)}
+                {(_config.ExternalConfig.ShowSongRating || userRated ? $"<text>{ratingText}</text>" : null)}
                 <text placement='attribution'>{trimmedTitle}{TrackedPlayerAsSuffix()}</text>
                 <image src='{image}' placement='appLogoOverride'/>
               </binding>
@@ -129,19 +129,19 @@ namespace RP_Notify.Toast
             string toastAudio = "<audio silent='true' />";
 
             // Construct the actions of the toast
-            string defaultItem = !string.IsNullOrEmpty(_apiHandler.SongInfo.UserRating) ? _apiHandler.SongInfo.UserRating : "NotRated";
+            string defaultItem = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? _config.State.Playback.SongInfo.UserRating : "NotRated";
 
-            string songWebUrl = $@"https://radioparadise.com/player/info/{_apiHandler.SongInfo.SongId}";
+            string songWebUrl = $@"https://radioparadise.com/player/info/{_config.State.Playback.SongInfo.SongId}";
 
-            var ratingHintText = !string.IsNullOrEmpty(_apiHandler.SongInfo.UserRating)
-                    ? $"Current rating: {_apiHandler.SongInfo.UserRating}"
+            var ratingHintText = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
+                    ? $"Current rating: {_config.State.Playback.SongInfo.UserRating}"
                     : "Type your rating (1-10)";
             var loggedInAction = $@"
              <input id='UserRate' type='text' placeHolderContent='{ratingHintText}'/>
 
              <action
-                  content='{(string.IsNullOrEmpty(_apiHandler.SongInfo.UserRating) ? "Send" : "Update")} rating'
-                  arguments ='action=RateSubmitted&amp;SongId={_apiHandler.SongInfo.SongId}&amp;toastType=ShowSongRatingToast'/>";
+                  content='{(string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? "Send" : "Update")} rating'
+                  arguments ='action=RateSubmitted&amp;SongId={_config.State.Playback.SongInfo.SongId}&amp;toastType=ShowSongRatingToast'/>";
             var loggedOutAction = $@"
              <action
                   content='Log in to rate'
@@ -149,7 +149,7 @@ namespace RP_Notify.Toast
 
             string toastActions =
             $@"<actions>
-              {(_apiHandler.IsUserAuthenticated ? loggedInAction : loggedOutAction)}
+              {(_config.State.IsUserAuthenticated ? loggedInAction : loggedOutAction)}
               <action
                   content='Open in browser'
                   arguments='{songWebUrl}'
@@ -178,28 +178,28 @@ namespace RP_Notify.Toast
         public void ShowSongDetailToast()
         {
 
-            string title = SecurityElement.Escape($"{_apiHandler.SongInfo.Artist}\n{_apiHandler.SongInfo.Title}");
-            string content = SecurityElement.Escape($"{_apiHandler.SongInfo.Album} ({_apiHandler.SongInfo.Year})");
-            string image = _config.AlbumArtImagePath;
-            string logo = _config.IconPath;
+            string title = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Artist}\n{_config.State.Playback.SongInfo.Title}");
+            string content = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Album} ({_config.State.Playback.SongInfo.Year})");
+            string image = _config.InternalConfig.AlbumArtImagePath;
+            string logo = _config.InternalConfig.IconPath;
 
             // Construct the visuals of the toast
-            int songDuration = Int32.Parse(_apiHandler.SongInfo.Duration);      // value is in milliseconds
-            var mSecsLeftFromSong = (int)(_apiHandler.SongInfoExpiration - DateTime.Now).TotalMilliseconds;
+            int songDuration = Int32.Parse(_config.State.Playback.SongInfo.Duration);      // value is in milliseconds
+            var mSecsLeftFromSong = (int)(_config.State.Playback.SongInfoExpiration - DateTime.Now).TotalMilliseconds;
             var elapsedMillisecs = Math.Min((songDuration - mSecsLeftFromSong + 500), songDuration);    // Corrigate rounding issues 
             double progressValue = (double)(songDuration - mSecsLeftFromSong) / songDuration;
 
-            string chanTitle = _apiHandler.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.Channel).First().Title;
+            string chanTitle = _config.State.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.ExternalConfig.Channel).First().Title;
 
             string trimmedTitle = chanTitle.Contains("RP ")
                 ? chanTitle.Split(new[] { "RP " }, StringSplitOptions.None)[1]
                 : chanTitle;
 
-            bool userRated = !string.IsNullOrEmpty(_apiHandler.SongInfo.UserRating);
+            bool userRated = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating);
             var userRatingText = userRated
-                    ? $" - User rating: {_apiHandler.SongInfo.UserRating}"
+                    ? $" - User rating: {_config.State.Playback.SongInfo.UserRating}"
                     : " - Not rated";
-            string ratingText = $@"★ {_apiHandler.SongInfo.Rating}{(_apiHandler.IsUserAuthenticated ? userRatingText : null)}";
+            string ratingText = $@"★ {_config.State.Playback.SongInfo.Rating}{(_config.State.IsUserAuthenticated ? userRatingText : null)}";
 
             string largeAlbumart = $@"
                 <image src='{image}'/>
@@ -212,10 +212,10 @@ namespace RP_Notify.Toast
               <binding template='ToastGeneric'>
                 <text>{title}</text>
                 <text>{content}</text>
-                {(_config.ShowSongRating || userRated ? $"<text>{ratingText}</text>" : null)}
+                {(_config.ExternalConfig.ShowSongRating || userRated ? $"<text>{ratingText}</text>" : null)}
                 <text placement='attribution'>{trimmedTitle}{TrackedPlayerAsSuffix()}</text>
                 <progress value='{progressValue}' title='{TimeSpanToMinutes(songDuration)}' status='{TimeSpanToMinutes(elapsedMillisecs)}' valueStringOverride='-{TimeSpanToMinutes(mSecsLeftFromSong)}' />
-                {(_config.LargeAlbumArt ? largeAlbumart : smallAlbumArt)}
+                {(_config.ExternalConfig.LargeAlbumArt ? largeAlbumart : smallAlbumArt)}
               </binding>
             </visual>";
 
@@ -223,19 +223,19 @@ namespace RP_Notify.Toast
             string toastAudio = "<audio silent='true' />";
 
             // Construct the actions of the toast
-            string defaultItem = !string.IsNullOrEmpty(_apiHandler.SongInfo.UserRating) ? _apiHandler.SongInfo.UserRating : "NotRated";
+            string defaultItem = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? _config.State.Playback.SongInfo.UserRating : "NotRated";
 
-            string songWebUrl = $@"https://radioparadise.com/player/info/{_apiHandler.SongInfo.SongId}";
+            string songWebUrl = $@"https://radioparadise.com/player/info/{_config.State.Playback.SongInfo.SongId}";
 
-            var ratingHintText = !string.IsNullOrEmpty(_apiHandler.SongInfo.UserRating)
-                    ? $"Current rating: {_apiHandler.SongInfo.UserRating}"
+            var ratingHintText = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
+                    ? $"Current rating: {_config.State.Playback.SongInfo.UserRating}"
                     : "Type your rating (1-10)";
             var loggedInAction = $@"
              <input id='UserRate' type='text' placeHolderContent='{ratingHintText}'/>
 
              <action
-                  content='{(string.IsNullOrEmpty(_apiHandler.SongInfo.UserRating) ? "Send" : "Update")} rating'
-                  arguments ='action=RateSubmitted&amp;SongId={_apiHandler.SongInfo.SongId}&amp;toastType=ShowSongDetailToast'/>";
+                  content='{(string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? "Send" : "Update")} rating'
+                  arguments ='action=RateSubmitted&amp;SongId={_config.State.Playback.SongInfo.SongId}&amp;toastType=ShowSongDetailToast'/>";
             var loggedOutAction = $@"
              <action
                   content='Log in to rate'
@@ -243,7 +243,7 @@ namespace RP_Notify.Toast
 
             string toastActions =
             $@"<actions>
-              {(_apiHandler.IsUserAuthenticated ? loggedInAction : loggedOutAction)}
+              {(_config.State.IsUserAuthenticated ? loggedInAction : loggedOutAction)}
               <action
                   content='Open in browser'
                   arguments='{songWebUrl}'
@@ -264,7 +264,7 @@ namespace RP_Notify.Toast
 
         public void LoginToast()
         {
-            string logo = _config.IconPath;
+            string logo = _config.InternalConfig.IconPath;
 
             // Create toast xml text
             string toastXmlString =
@@ -333,7 +333,7 @@ namespace RP_Notify.Toast
                         var ratingResponse = _apiHandler.GetRating(songId.ToString(), userRate);
                         if (ratingResponse.Status == "success")
                         {
-                            _apiHandler.UpdateSongInfo();
+                            // _apiHandler.UpdateSongInfo();
                             if (args["toastType"] == "ShowSongDetailToast")
                             {
                                 ShowSongStartToast();
@@ -350,7 +350,7 @@ namespace RP_Notify.Toast
 
         public void LoginResponseToast(Auth authResp)
         {
-            string logo = _config.IconPath;
+            string logo = _config.InternalConfig.IconPath;
             string authMessage = $@"{(authResp.Status == "success"
                             ? $"Welcome {authResp.Username}!"
                             : "Please try again")}";
@@ -373,7 +373,7 @@ namespace RP_Notify.Toast
 
         public void SongInfoListenerError()
         {
-            string logo = _config.IconPath;
+            string logo = _config.InternalConfig.IconPath;
 
             // Create toast xml text
             string toastXmlString =
@@ -424,15 +424,18 @@ namespace RP_Notify.Toast
 
         private string TrackedPlayerAsSuffix()
         {
-            if (!string.IsNullOrEmpty(_config.RpTrackingConfig.ActivePlayerId))
+            if (_config.State.Foobar2000IsPlayingRP)
             {
-                var activePlayerId = _config.RpTrackingConfig.ActivePlayerId;
-                var activePlayer = _config.RpTrackingConfig.Players
-                    .Where(p => p.PlayerId == activePlayerId).ToList();
-                var suffix = activePlayer.Count > 0
-                    ? activePlayer.First().Source
-                    : activePlayerId;
-                return $" • {suffix}";
+                return " • Foobar2000";
+            }
+
+            if (_config.State.RpTrackingConfig.ValidateActivePlayerId())
+            {
+                var activePlayerId = _config.State.RpTrackingConfig.ActivePlayerId;
+                var activePlayer = _config.State.RpTrackingConfig.Players
+                    .Where(p => p.PlayerId == activePlayerId).First().Source;
+
+                return $" • {activePlayer}";
             }
 
             return null;
@@ -440,7 +443,7 @@ namespace RP_Notify.Toast
 
         private void WriteIconToDisk()
         {
-            if (!File.Exists(_config.IconPath))
+            if (!File.Exists(_config.InternalConfig.IconPath))
             {
                 byte[] iconBytes;
                 using (MemoryStream ms = new MemoryStream())
@@ -448,15 +451,15 @@ namespace RP_Notify.Toast
                     Properties.Resources.RPIcon.Save(ms);
                     iconBytes = ms.ToArray();
                 }
-                File.WriteAllBytes(_config.IconPath, iconBytes);
+                File.WriteAllBytes(_config.InternalConfig.IconPath, iconBytes);
             }
 
 
             Application.ApplicationExit += (sender, e) =>
             {
-                if (File.Exists(_config.IconPath))
+                if (File.Exists(_config.InternalConfig.IconPath))
                 {
-                    File.Delete(_config.IconPath);
+                    File.Delete(_config.InternalConfig.IconPath);
                 }
             };
         }

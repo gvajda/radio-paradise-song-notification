@@ -47,9 +47,9 @@ namespace RP_Notify
             _foobar2000Watcher = foobar2000Watcher;
 
             resetFlag = false;
-            if (_config.Channel == 99)      // Reset channel if Favourites were tracked at exit
+            if (_config.ExternalConfig.Channel == 99)      // Reset channel if Favourites were tracked at exit
             {
-                _config.Channel = 0;
+                _config.ExternalConfig.Channel = 0;
             }
 
             // Init fields
@@ -58,7 +58,7 @@ namespace RP_Notify
 
             // Set up event handlers
             _log.Information("Create event listeners");
-            _config.ConfigChangedEventHandler += ConfigChangeHandler;
+            _config.ExternalConfig.ConfigChangedEventHandler += ConfigChangeHandler;
             _songInfoListener.TooltipUpdateChangedEventHandler += (sender, e) => TrayIcon.Text = e.ToolTipText;
             Application.ApplicationExit += this.ApplicationExitHandler;
             SystemEvents.PowerModeChanged += WakeUpHandler;
@@ -68,7 +68,7 @@ namespace RP_Notify
 
             // Start background tasks
             _log.Information("Start background tasks");
-            if (config.EnablePlayerWatcher)
+            if (config.ExternalConfig.EnablePlayerWatcher)
             {
                 _foobar2000Watcher.Start();
                 Task.Run(() => Task.Delay(1500)).Wait();
@@ -128,18 +128,19 @@ namespace RP_Notify
 
         private MenuItem CreateMenuEntryShowOnNewSong()
         {
-            MenuItem showOnNewSong = new MenuItem("Show on new song")
-            {
-                Checked = _config.ShowOnNewSong
-                    || (_config.EnablePlayerWatcher && _foobar2000Watcher.PlayerIsActive),
-                Enabled = !(_config.EnablePlayerWatcher && _foobar2000Watcher.PlayerIsActive)
-            };
+            MenuItem showOnNewSong = new MenuItem("Show on new song");
+            showOnNewSong.Checked = _config.ExternalConfig.ShowOnNewSong
+                    || _config.State.Foobar2000IsPlayingRP
+                    || _config.State.RpTrackingConfig.ValidateActivePlayerId();
+            showOnNewSong.Enabled = !_config.State.Foobar2000IsPlayingRP
+                    || !_config.State.RpTrackingConfig.ValidateActivePlayerId();
 
             showOnNewSong.Click += (sender, e) =>
             {
-                showOnNewSong.Checked = !showOnNewSong.Checked;
-                _config.ShowOnNewSong = showOnNewSong.Checked;
-                if (_config.ShowOnNewSong)
+                _config.ExternalConfig.ShowOnNewSong = !_config.ExternalConfig.ShowOnNewSong;
+                showOnNewSong.Checked = _config.ExternalConfig.ShowOnNewSong;
+
+                if (_config.ExternalConfig.ShowOnNewSong)
                 {
                     _toastHandler.ShowSongStartToast();
                 }
@@ -152,13 +153,13 @@ namespace RP_Notify
         {
             MenuItem largeAlbumArt = new MenuItem("Large album art")
             {
-                Checked = _config.LargeAlbumArt
+                Checked = _config.ExternalConfig.LargeAlbumArt
             };
 
             largeAlbumArt.Click += (sender, e) =>
             {
                 largeAlbumArt.Checked = !largeAlbumArt.Checked;
-                _config.LargeAlbumArt = largeAlbumArt.Checked;
+                _config.ExternalConfig.LargeAlbumArt = largeAlbumArt.Checked;
             };
 
             return largeAlbumArt;
@@ -168,13 +169,13 @@ namespace RP_Notify
         {
             MenuItem showSongRating = new MenuItem("Show song rating")
             {
-                Checked = _config.ShowSongRating
+                Checked = _config.ExternalConfig.ShowSongRating
             };
 
             showSongRating.Click += (sender, e) =>
             {
                 showSongRating.Checked = !showSongRating.Checked;
-                _config.ShowSongRating = showSongRating.Checked;
+                _config.ExternalConfig.ShowSongRating = showSongRating.Checked;
             };
 
             return showSongRating;
@@ -184,14 +185,14 @@ namespace RP_Notify
         {
             MenuItem promptForRating = new MenuItem("Prompt for Rating")
             {
-                Checked = _config.PromptForRating,
-                Enabled = _config.LoggedIn
+                Checked = _config.ExternalConfig.PromptForRating,
+                Enabled = _config.State.IsUserAuthenticated
             };
 
             promptForRating.Click += (sender, e) =>
             {
                 promptForRating.Checked = !promptForRating.Checked;
-                _config.PromptForRating = promptForRating.Checked;
+                _config.ExternalConfig.PromptForRating = promptForRating.Checked;
             };
 
             return promptForRating;
@@ -201,12 +202,12 @@ namespace RP_Notify
         {
             MenuItem leaveShorcutInStartMenu = new MenuItem("Leave shortcut in Start menu")
             {
-                Checked = _config.LeaveShorcutInStartMenu
+                Checked = _config.ExternalConfig.LeaveShorcutInStartMenu
             };
             leaveShorcutInStartMenu.Click += (sender, e) =>
             {
                 leaveShorcutInStartMenu.Checked = !leaveShorcutInStartMenu.Checked;
-                _config.LeaveShorcutInStartMenu = leaveShorcutInStartMenu.Checked;
+                _config.ExternalConfig.LeaveShorcutInStartMenu = leaveShorcutInStartMenu.Checked;
             };
 
             return leaveShorcutInStartMenu;
@@ -225,21 +226,21 @@ namespace RP_Notify
         {
             MenuItem enablePlayerWatcher = new MenuItem("Track Foobar2000")
             {
-                Checked = _config.EnablePlayerWatcher
+                Checked = _config.ExternalConfig.EnablePlayerWatcher
             };
 
             enablePlayerWatcher.Click += (sender, e) =>
             {
-                _config.EnablePlayerWatcher = !enablePlayerWatcher.Checked;
-                if (_config.EnablePlayerWatcher)
+                _config.ExternalConfig.EnablePlayerWatcher = !enablePlayerWatcher.Checked;
+                if (_config.ExternalConfig.EnablePlayerWatcher)
                 {
-                    _config.RpTrackingConfig = new RP_Tracking.RpTrackingConfig();
-                    _config.RpTrackingConfig.ActivePlayerId = "Foobar2000";
+                    _config.State.RpTrackingConfig = new RpTrackingConfig();
+                    _config.State.RpTrackingConfig.ActivePlayerId = "Foobar2000";
                     _foobar2000Watcher.Start();
                 }
                 else
                 {
-                    _config.RpTrackingConfig.ActivePlayerId = null;
+                    _config.State.RpTrackingConfig.ActivePlayerId = null;
                     _foobar2000Watcher.Stop();
                 }
                 BuildContextMenu();
@@ -252,20 +253,20 @@ namespace RP_Notify
         {
             MenuItem rpTracking = new MenuItem("RP Tracking")
             {
-                Checked = _config.RpTrackingConfig.Enabled
+                Checked = _config.State.RpTrackingConfig.Enabled
             };
 
             rpTracking.Click += (sender, e) =>
             {
-                _config.RpTrackingConfig.Enabled = !_config.RpTrackingConfig.Enabled;
-                if (_config.RpTrackingConfig.Enabled)
+                _config.State.RpTrackingConfig.Enabled = !_config.State.RpTrackingConfig.Enabled;
+                if (_config.State.RpTrackingConfig.Enabled)
                 {
-                    _config.RpTrackingConfig.Players = _apihandler.GetSync_v2().Players;
+                    _config.State.RpTrackingConfig.Players = _apihandler.GetSync_v2().Players;
                 }
                 else
                 {
-                    _config.RpTrackingConfig = new RP_Tracking.RpTrackingConfig();
-                    _config.Channel = 0;
+                    _config.State.RpTrackingConfig = new RpTrackingConfig();
+                    _config.ExternalConfig.Channel = 0;
                 }
                 BuildContextMenu();
             };
@@ -277,24 +278,24 @@ namespace RP_Notify
         {
             List<MenuItem> TrackablePlayers = new List<MenuItem>();
 
-            if (_config.RpTrackingConfig.Players.Any())
+            if (_config.State.RpTrackingConfig.Players.Any())
             {
                 TrackablePlayers.Add(new MenuItem("-"));
 
-                foreach (var player in _config.RpTrackingConfig.Players)
+                foreach (var player in _config.State.RpTrackingConfig.Players)
                 {
                     MenuItem trackedPlayer = new MenuItem(player.Source)
                     {
                         RadioCheck = true,
-                        Checked = _config.RpTrackingConfig.ActivePlayerId == player.PlayerId,
+                        Checked = _config.State.RpTrackingConfig.ActivePlayerId == player.PlayerId,
                     };
 
                     trackedPlayer.Click += (sender, e) =>
                     {
-                        _config.RpTrackingConfig.ActivePlayerId = player.PlayerId;
-                        _config.Channel = Int32.Parse(player.Chan);
+                        _config.State.RpTrackingConfig.ActivePlayerId = player.PlayerId;
+                        _config.ExternalConfig.Channel = Int32.Parse(player.Chan);
                         _songInfoListener.CheckSong();
-                        _config.EnablePlayerWatcher = false;
+                        _config.ExternalConfig.EnablePlayerWatcher = false;
                         BuildContextMenu();
                     };
 
@@ -309,18 +310,18 @@ namespace RP_Notify
         {
             List<MenuItem> Channels = new List<MenuItem>();
 
-            foreach (Channel loopChannel in _apihandler.ChannelList)
+            foreach (Channel loopChannel in _config.State.ChannelList)
             {
                 TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
 
                 MenuItem channelMenuItem = new MenuItem(textInfo.ToTitleCase(loopChannel.StreamName))
                 {
                     RadioCheck = true,
-                    Checked = _config.Channel.Equals(Int32.Parse(loopChannel.Chan)),
+                    Checked = _config.ExternalConfig.Channel.Equals(Int32.Parse(loopChannel.Chan)),
                     Tag = loopChannel,
                     Enabled = loopChannel.Chan != "99"
-                        && (!((_config.EnablePlayerWatcher && _foobar2000Watcher.PlayerIsActive)
-                        || _config.RpTrackingConfig.ValidateActivePlayerId()))
+                        && (!((_config.ExternalConfig.EnablePlayerWatcher && _config.State.Foobar2000IsPlayingRP)
+                        || _config.State.RpTrackingConfig.ValidateActivePlayerId()))
                 };
 
                 channelMenuItem.Click += (sender, e) =>
@@ -335,7 +336,7 @@ namespace RP_Notify
                         menu.Checked = ((Channel)menu.Tag).Chan == loopChannel.Chan;
                     }
                     //does not send ConfigExternallyChangedEvent
-                    _config.Channel = Int32.Parse(loopChannel.Chan);
+                    _config.ExternalConfig.Channel = Int32.Parse(loopChannel.Chan);
                     _songInfoListener.CheckSong();
                 };
 
@@ -379,13 +380,13 @@ namespace RP_Notify
             {
                 _songInfoListener.CheckSong();
             }
-            else if ((e.ShowOnNewSongChanged && _config.ShowOnNewSong)   // ShowOnChanged turned on
-                || (e.PlayerStateChanged && _foobar2000Watcher.PlayerIsActive))     // Playback just started
+            else if ((e.ShowOnNewSongChanged && _config.ExternalConfig.ShowOnNewSong)   // ShowOnChanged turned on
+                || (e.PlayerStateChanged && _config.State.Foobar2000IsPlayingRP))     // Playback just started
             {
                 _toastHandler.ShowSongStartToast();
             }
 
-            if (_config.EnablePlayerWatcher)
+            if (_config.ExternalConfig.EnablePlayerWatcher)
             {
                 _foobar2000Watcher.Start();
             }
@@ -408,13 +409,13 @@ namespace RP_Notify
         {
             _log.Information("ApplicationExitHandler - Exit process started");
 
-            if (File.Exists(_config.AlbumArtImagePath))
+            if (File.Exists(_config.InternalConfig.AlbumArtImagePath))
             {
                 _log.Debug("ApplicationExitHandler - Delete album art");
-                File.Delete(_config.AlbumArtImagePath);
+                File.Delete(_config.InternalConfig.AlbumArtImagePath);
             }
 
-            if (!_config.LeaveShorcutInStartMenu)
+            if (!_config.ExternalConfig.LeaveShorcutInStartMenu)
             {
                 _shortcutHelper.DeleteShortcut();
                 _log.Debug("ApplicationExitHandler - Shortcut removed from start menu");
@@ -434,7 +435,7 @@ namespace RP_Notify
             if (resetFlag)
             {
                 _shortcutHelper.DeleteShortcut();
-                _config.DeleteConfigRootFolder();
+                _config.ExternalConfig.DeleteConfigRootFolder();
             }
             else
             {
@@ -451,10 +452,10 @@ namespace RP_Notify
         {
             _log.Information("ResetHandler - App data delete requested");
 
-            if (_config.EnableLoggingToFile)
+            if (_config.ExternalConfig.EnableLoggingToFile)
             {
-                _config.EnableLoggingToFile = false;
-                _config.DeleteAllDataOnStartup = true;
+                _config.ExternalConfig.EnableLoggingToFile = false;
+                _config.ExternalConfig.DeleteAllDataOnStartup = true;
                 Application.Restart();
             }
             else
@@ -466,11 +467,11 @@ namespace RP_Notify
 
         private void CheckQueuedDataDeleteRequest()
         {
-            if (_config.DeleteAllDataOnStartup)
+            if (_config.ExternalConfig.DeleteAllDataOnStartup)
             {
                 resetFlag = true;
-                _config.ShowOnNewSong = false;
-                _config.EnablePlayerWatcher = false;
+                _config.ExternalConfig.ShowOnNewSong = false;
+                _config.ExternalConfig.EnablePlayerWatcher = false;
 
                 Task.Run(async () =>
                 {

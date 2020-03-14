@@ -1,5 +1,4 @@
 ﻿using RP_Notify.API.ResponseModel;
-using RP_Notify.RP_Tracking;
 using System;
 using System.Collections.Generic;
 
@@ -16,6 +15,31 @@ namespace RP_Notify.Config
         public bool IsUserAuthenticated { get; set; }
 
         public bool Foobar2000IsPlayingRP { get; set; }
+
+        public State()
+        {
+            RpTrackingConfig = new RpTrackingConfig();
+            Playback = null;
+            ChannelList = null;
+            IsUserAuthenticated = false;
+            Foobar2000IsPlayingRP = false;
+        }
+
+        public bool TryUpdatePlayback(Playback newPlayback)
+        {
+            if (Playback == null
+                || string.IsNullOrEmpty(Playback.SongInfo.SongId)
+                || Playback.SongInfo.SongId != newPlayback.SongInfo.SongId
+                || Playback.SongInfo.Event != newPlayback.SongInfo.Event)
+            {
+                Playback = newPlayback;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
     public class Playback

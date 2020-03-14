@@ -75,6 +75,7 @@
   <ItemGroup>
     <Compile Include="API\CookieHelper.cs" />
     <Compile Include="API\IRpApiHandler.cs" />
+    <Compile Include="Config\ConfigChangeEventArgs.cs" />
     <Compile Include="Config\IConfig.cs" />
     <Compile Include="API\RpApiResponseModel.cs" />
     <Compile Include="Config\IniConfig.cs" />
@@ -116,7 +117,7 @@
     <Compile Include="Foobar2000\Model\PlaylistItemsResult.cs" />
     <Compile Include="Foobar2000\Model\PlaylistsResult.cs" />
     <Compile Include="Foobar2000\Model\VolumeType.cs" />
-    <Compile Include="RP_Tracking\RpTrackingConfig.cs" />
+    <Compile Include="Config\RpTrackingConfig.cs" />
     <Compile Include="SongInfoUpdater\ISongInfoListener.cs" />
     <Compile Include="SongInfoUpdater\SongInfoListener.cs" />
     <Compile Include="StartMenuShortcut\ShortcutHelper.cs" />

@@ -6,6 +6,7 @@ using RP_Notify.Toast;
 using Serilog;
 using System;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -46,7 +47,7 @@ namespace RP_Notify.SongInfoUpdater
 
         public void Run()
         {
-            if (_config.EnablePlayerWatcher)
+            if (_config.ExternalConfig.EnablePlayerWatcher)
             {
                 Thread.Sleep(200);      // Allow time the playerwatcher to find played channel
             }
@@ -55,7 +56,7 @@ namespace RP_Notify.SongInfoUpdater
             Task.Run(async () =>
             {
                 string lastLoopSongId = "-1";
-                bool canceled = false;
+                bool isPreviousLoopCanceled = false;
                 while (!listenerCancellationTokenSource.Token.IsCancellationRequested)     // keep getting new song info
                 {
                     try
@@ -65,21 +66,25 @@ namespace RP_Notify.SongInfoUpdater
                         var cancellationToken = NextSongWaiterCancellationTokenSource.Token;
 
                         CheckTrackedPlayerStatus();
-                        _apiHandler.UpdateSongInfo();
+                        UpdateSongInfo();
 
-                        if ((_config.ShowOnNewSong && lastLoopSongId != _apiHandler.SongInfo.SongId)
-                            || canceled)
+                        var extendedShowOnNewSong = _config.ExternalConfig.ShowOnNewSong
+                            || _config.State.Foobar2000IsPlayingRP
+                            || !_config.State.RpTrackingConfig.ValidateActivePlayerId();
+
+                        if ((extendedShowOnNewSong && lastLoopSongId != _config.State.Playback.SongInfo.SongId)
+                            || isPreviousLoopCanceled)
                         {
                             _toastHandler.ShowSongStartToast();
-                            canceled = false;
+                            isPreviousLoopCanceled = false;
                         }
 
-                        lastLoopSongId = _apiHandler.SongInfo.SongId;
+                        lastLoopSongId = _config.State.Playback.SongInfo.SongId;
 
-                        var timeLeftFromSongMilliseconds = (int)(_apiHandler.SongInfoExpiration - DateTime.Now).TotalMilliseconds;
+                        var timeLeftFromSongMilliseconds = (int)(_config.State.Playback.SongInfoExpiration - DateTime.Now).TotalMilliseconds;
                         try
                         {
-                            var loopWaitMilliseconds = _config.RpTrackingConfig.ValidateActivePlayerId()
+                            var loopWaitMilliseconds = _config.State.RpTrackingConfig.ValidateActivePlayerId()
                                 ? Math.Min(7000, timeLeftFromSongMilliseconds)
                                 : timeLeftFromSongMilliseconds;
                             var waitForNextSong = Task.Delay(loopWaitMilliseconds, cancellationToken);
@@ -90,12 +95,10 @@ namespace RP_Notify.SongInfoUpdater
                                 PromptRatingAtEndOfSongOrIfCanceled();
                                 await Task.Delay(1000, cancellationToken);
                             }
-
-
                         }
                         catch (TaskCanceledException)
                         {
-                            canceled = true;
+                            isPreviousLoopCanceled = true;
                             PromptRatingAtEndOfSongOrIfCanceled(true);
                             _log.Information("SongInfoListener - Canceled");
                         }
@@ -115,18 +118,18 @@ namespace RP_Notify.SongInfoUpdater
 
         private void PromptRatingAtEndOfSongOrIfCanceled(bool isCancellationRequested = false)
         {
-            if (_config.ShowOnNewSong)
+            if (_config.ExternalConfig.ShowOnNewSong)
             {
                 var triggerSecondsBeforeSongEnds = 20;
-                var secondsLeft = Math.Abs((DateTime.Now - _apiHandler.SongInfoExpiration).TotalSeconds);
+                var secondsLeft = Math.Abs((DateTime.Now - _config.State.Playback.SongInfoExpiration).TotalSeconds);
 
-                bool alreadyRated = Int32.TryParse(_apiHandler.SongInfo.UserRating, out int userRating)
+                bool alreadyRated = Int32.TryParse(_config.State.Playback.SongInfo.UserRating, out int userRating)
                     && userRating > 0;
                 bool closeToEndOfSong = triggerSecondsBeforeSongEnds > secondsLeft
                     && secondsLeft > (triggerSecondsBeforeSongEnds - 1);
                 bool canceledBeforePrompting = isCancellationRequested && secondsLeft > triggerSecondsBeforeSongEnds;
 
-                if ((!_config.PromptForRating || alreadyRated)
+                if ((!_config.ExternalConfig.PromptForRating || alreadyRated)
                     && (closeToEndOfSong || canceledBeforePrompting))
                 {
                     _toastHandler.ShowSongRatingToast();
@@ -137,9 +140,9 @@ namespace RP_Notify.SongInfoUpdater
         private void SendUpdateTooltipEvent()
         {
             //Update tooltip
-            var timeLeft = (DateTime.Now - _apiHandler.SongInfoExpiration).ToString(@"m\:ss");
-            string chanTitle = _apiHandler.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.Channel).First().Title;
-            var trayIconText = $"{_apiHandler.SongInfo.Artist}\n{_apiHandler.SongInfo.Title}\n-{timeLeft}\n{chanTitle}";
+            var timeLeft = (DateTime.Now - _config.State.Playback.SongInfoExpiration).ToString(@"m\:ss");
+            string chanTitle = _config.State.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.ExternalConfig.Channel).First().Title;
+            var trayIconText = $"{_config.State.Playback.SongInfo.Artist}\n{_config.State.Playback.SongInfo.Title}\n-{timeLeft}\n{chanTitle}";
             trayIconText = trayIconText.Length <= 64
                 ? trayIconText
                 : trayIconText.Substring(0, 63);
@@ -149,16 +152,16 @@ namespace RP_Notify.SongInfoUpdater
 
         private void CheckTrackedPlayerStatus()
         {
-            if (_config.RpTrackingConfig.Enabled)
+            if (_config.State.RpTrackingConfig.Enabled)
             {
                 _log.Information("-- SongInfoListener - CheckTrackedPlayerStatus: Enabled");
-                _config.RpTrackingConfig.Players = _apiHandler.GetSync_v2().Players;
+                _config.State.RpTrackingConfig.Players = _apiHandler.GetSync_v2().Players;
 
-                if (_config.RpTrackingConfig.TryGetTrackedChannel(out int currentChannel) && _config.Channel != currentChannel)
+                if (_config.State.RpTrackingConfig.TryGetTrackedChannel(out int currentChannel) && _config.ExternalConfig.Channel != currentChannel)
                 {
                     _log.Information($"-- SongInfoListener - CheckTrackedPlayerStatus: Tracking is active - Tracked channel: {currentChannel}");
 
-                    _config.Channel = currentChannel;
+                    _config.ExternalConfig.Channel = currentChannel;
                     ConfigChangedEventHandler?
                         .Invoke(this,
                             new ConfigChangeEventArgs()
@@ -167,6 +170,42 @@ namespace RP_Notify.SongInfoUpdater
                             });
                 }
             }
+        }
+
+        public void UpdateSongInfo()
+        {
+            string player_id = _config.State.RpTrackingConfig.ValidateActivePlayerId()
+                ? _config.State.RpTrackingConfig.ActivePlayerId
+                : null;
+
+            var logMessageDetail = !string.IsNullOrEmpty(player_id)
+                ? $"Channel: {_config.ExternalConfig.Channel.ToString()}"
+                : $"Player_ID: {player_id}";
+
+            _log.Information($"UpdateSongInfo - Invoked - {logMessageDetail}");
+
+            var playback = new Playback(_apiHandler.GetNowplayingList(_config.ExternalConfig.Channel.ToString(), player_id));
+
+            _log.Information("UpdateSongInfo - RP API call returned successfully - SongId: {@songId}", playback.SongInfo.SongId);
+
+            // Update class attributes
+            if (_config.State.TryUpdatePlayback(playback))
+            {
+                _log.Information("UpdateSongInfo - New song - Start downloading album art - Song info: {@Songdata}", playback.SongInfo);
+
+                // Download album art
+                using (WebClient client = new WebClient())
+                {
+                    client.DownloadFile(new Uri($"{_config.InternalConfig.RpImageBaseUrl}/{playback.SongInfo.Cover}"), _config.InternalConfig.AlbumArtImagePath);
+                }
+                _log.Information("UpdateSongInfo - Albumart downloaded - Song expires: {@RefreshTimestamp} ({ExpirySeconds} seconds)", playback.SongInfoExpiration.ToString(), playback.NowplayingList.Refresh);
+            }
+            else
+            {
+                _log.Information("UpdateSongInfo - Same song: albumart and expiration is not updated");
+            }
+
+            _log.Information("UpdateSongInfo - Finished");
         }
     }
 

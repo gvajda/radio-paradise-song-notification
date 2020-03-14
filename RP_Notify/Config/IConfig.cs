@@ -1,66 +1,44 @@
-﻿using RP_Notify.RP_Tracking;
-using System;
+﻿using System;
 
 namespace RP_Notify.Config
 {
     public interface IConfig
     {
-        event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
+        IInternalConfig InternalConfig { get; set; }
 
-        // Internal values 
-        string LogFilePath { get; }
-        string RpApiBaseUrl { get; }
-        string RpImageBaseUrl { get; }
-        string ToastAppID { get; }
-        string ToastActivatorCLSID { get; }
-        string CookieCachePath { get; }
-        string AlbumArtImagePath { get; }
-        string IconPath { get; }
-        string ConfigBaseFolder { get; }
-        bool LoggedIn { get; }
-        RpTrackingConfig RpTrackingConfig { get; set; }
+        IExternalConfig ExternalConfig { get; set; }
 
-        // INI Values
-        bool ShowOnNewSong { get; set; }
-        bool EnablePlayerWatcher { get; set; }
-        bool EnableLoggingToFile { get; set; }
-        bool LargeAlbumArt { get; set; }
-        bool ShowSongRating { get; set; }
-        bool PromptForRating { get; set; }
-        bool LeaveShorcutInStartMenu { get; set; }
-        int Channel { get; set; }
-        bool DeleteAllDataOnStartup { get; set; }
-
-        void DeleteConfigRootFolder();
+        State State { get; set; }
     }
 
     public interface IInternalConfig
     {
         // Internal values 
+        string AlbumArtImagePath { get; }
+        string ConfigBaseFolder { get; }
+        string CookieCachePath { get; }
+        string IconPath { get; }
         string LogFilePath { get; }
         string RpApiBaseUrl { get; }
         string RpImageBaseUrl { get; }
-        string ToastAppID { get; }
         string ToastActivatorCLSID { get; }
-        string CookieCachePath { get; }
-        string AlbumArtImagePath { get; }
-        string IconPath { get; }
-        string ConfigBaseFolder { get; }
-        bool LoggedIn { get; }
+        string ToastAppID { get; }
     }
 
     public interface IExternalConfig
     {
-        bool ShowOnNewSong { get; set; }
-        bool EnablePlayerWatcher { get; set; }
-        bool EnableLoggingToFile { get; set; }
-        bool LargeAlbumArt { get; set; }
-        bool ShowSongRating { get; set; }
-        bool PromptForRating { get; set; }
-        bool LeaveShorcutInStartMenu { get; set; }
+        event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
+
         int Channel { get; set; }
         bool DeleteAllDataOnStartup { get; set; }
+        bool EnableLoggingToFile { get; set; }
+        bool EnablePlayerWatcher { get; set; }
+        bool LargeAlbumArt { get; set; }
+        bool LeaveShorcutInStartMenu { get; set; }
+        bool PromptForRating { get; set; }
+        bool ShowOnNewSong { get; set; }
+        bool ShowSongRating { get; set; }
+
+        void DeleteConfigRootFolder();
     }
-
-
 }

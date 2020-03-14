@@ -1,6 +1,5 @@
 ﻿using MadMilkman.Ini;
 using RP_Notify.ErrorHandler;
-using RP_Notify.RP_Tracking;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,20 +11,66 @@ namespace RP_Notify.Config
 {
     public class IniConfig : IConfig
     {
-        public event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
+        public IInternalConfig InternalConfig { get; set; }
+        public IExternalConfig ExternalConfig { get; set; }
+        public State State { get; set; }
+
+        public IniConfig()
+        {
+            InternalConfig = new InternalConfig();
+            ExternalConfig = new ExternalConfig();
+            State = new State
+            {
+                IsUserAuthenticated = File.Exists(InternalConfig.CookieCachePath)
+            };
+        }
+    }
+
+    public class InternalConfig : IInternalConfig
+    {
+        public string AlbumArtImagePath { get; }
+        public string ConfigBaseFolder { get; }
+        public string CookieCachePath { get; }
+        public string IconPath { get; }
+        public string LogFilePath { get; }
+        public string RpApiBaseUrl { get; }
+        public string RpImageBaseUrl { get; }
+        public string ToastActivatorCLSID { get; }
+        public string ToastAppID { get; }
+
+        private readonly IniHelper _iniHelper;
+
+        public InternalConfig()
+        {
+            _iniHelper = new IniHelper();
+
+            AlbumArtImagePath = Path.Combine(_iniHelper._iniFolder, "albumart.jpg");
+            ConfigBaseFolder = _iniHelper._iniFolder;
+            CookieCachePath = Path.Combine(_iniHelper._iniFolder, "_cookieCache");
+            IconPath = Path.Combine(_iniHelper._iniFolder, "rp.ico");
+            LogFilePath = Path.Combine(_iniHelper._iniFolder, "log.txt");
+            RpApiBaseUrl = "https://api.radioparadise.com";
+            RpImageBaseUrl = "https://img.radioparadise.com";
+            ToastActivatorCLSID = "8a8d7d8c-b191-4b17-b527-82c795243a12";
+            ToastAppID = "GergelyVajda.RP_Notify";
+        }
+    }
+
+    public class ExternalConfig : IExternalConfig
+    {
         private readonly IniHelper _iniHelper;
         private readonly FileSystemWatcher _iniFileChangeWatcher;
 
-        // INI config values
-        private bool showOnNewSong;
-        private bool largeAlbumArt;
-        private bool showSongRating;
-        private bool promptForRating;
-        private bool leaveShorcutInStartMenu;
-        private bool enablePlayerWatcher;
-        private bool enableLoggingToFile;
+        public event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
         private int channel;
         private bool deleteAllDataOnStartup;
+        private bool enableLoggingToFile;
+        private bool enablePlayerWatcher;
+        private bool largeAlbumArt;
+        private bool leaveShorcutInStartMenu;
+        private bool promptForRating;
+        private bool showOnNewSong;
+        private bool showSongRating;
 
         public bool ShowOnNewSong
         {
@@ -109,44 +154,13 @@ namespace RP_Notify.Config
             }
         }
 
-
-        // Internal config values
-        public string LogFilePath { get; }
-        public string CookieCachePath { get; }
-        public string AlbumArtImagePath { get; }
-        public string IconPath { get; }
-        public string ConfigBaseFolder { get; }
-        public bool LoggedIn { get; }
-        public string RpApiBaseUrl { get; }
-        public string RpImageBaseUrl { get; }
-        public string ToastAppID { get; }
-        public string ToastActivatorCLSID { get; }
-        public RpTrackingConfig RpTrackingConfig { get; set; }
-
-        public IniConfig()
+        public ExternalConfig()
         {
-            // Set objects
             _iniHelper = new IniHelper();
             _iniFileChangeWatcher = new FileSystemWatcher(_iniHelper._iniFolder, "config.ini");
 
-            // Constants
-            LogFilePath = Path.Combine(_iniHelper._iniFolder, "log.txt");
-            CookieCachePath = Path.Combine(_iniHelper._iniFolder, "_cookieCache");
-            AlbumArtImagePath = Path.Combine(_iniHelper._iniFolder, "albumart.jpg");
-            IconPath = Path.Combine(_iniHelper._iniFolder, "rp.ico");
-            ConfigBaseFolder = _iniHelper._iniFolder;
-            LoggedIn = File.Exists(CookieCachePath);
-
-            ToastAppID = "GergelyVajda.RP_Notify";
-            ToastActivatorCLSID = "8a8d7d8c-b191-4b17-b527-82c795243a12";
-            RpApiBaseUrl = "https://api.radioparadise.com";
-            RpImageBaseUrl = "https://img.radioparadise.com";
-
-            RpTrackingConfig = new RpTrackingConfig();
-
-            // Parse config from Ini
             SyncMemoryConfig();
-            PromptForRating = LoggedIn
+            PromptForRating = File.Exists(Path.Combine(_iniHelper._iniFolder, "_cookieCache"))
                 ? promptForRating
                 : false;
 
@@ -160,6 +174,19 @@ namespace RP_Notify.Config
             Retry.Do(() => Directory.Delete(_iniHelper._iniFolder, true));
         }
 
+        private void SetIniValue<T>(string section, string key, T value)
+        {
+            _iniFileChangeWatcher.EnableRaisingEvents = false;
+            var iniFile = _iniHelper.ReadIniFile();
+            iniFile.Sections[section].Keys[key].TryParseValue(out T sValue);
+            if (!EqualityComparer<T>.Default.Equals(value, sValue))
+            {
+                iniFile.Sections[section].Keys[key].Value = value.ToString();
+                iniFile.Save(_iniHelper._iniPath);
+            }
+            _iniFileChangeWatcher.EnableRaisingEvents = true;
+        }
+
         private void StartConfigWatcher()
         {
             _iniFileChangeWatcher.NotifyFilter = NotifyFilters.LastWrite;
@@ -169,7 +196,6 @@ namespace RP_Notify.Config
 
         private void HandleExternalConfigChange(object source, EventArgs e)
         {
-            // var isChannelChanged = IsChannelChnaged();
             var isChannelChanged = IniPropertyChnaged(channel, "Channel", "Channel");
             var isShowOnNewSongChanged = IniPropertyChnaged(showOnNewSong, "Toast", "ShowOnNewSong");
             SyncMemoryConfig();
@@ -202,29 +228,6 @@ namespace RP_Notify.Config
             iniFile.Sections["Toast"].Keys["ShowSongRating"].TryParseValue(out showSongRating);
             iniFile.Sections["Channel"].Keys["Channel"].TryParseValue(out channel);
             iniFile.Sections["OnStartupSettings"].Keys["DeleteAllDataOnStartup"].TryParseValue(out deleteAllDataOnStartup);
-        }
-
-        void SetIniValue<T>(string section, string key, T value)
-        {
-            _iniFileChangeWatcher.EnableRaisingEvents = false;
-            var iniFile = _iniHelper.ReadIniFile();
-            iniFile.Sections[section].Keys[key].TryParseValue(out T sValue);
-            if (!EqualityComparer<T>.Default.Equals(value, sValue))
-            {
-                iniFile.Sections[section].Keys[key].Value = value.ToString();
-                iniFile.Save(_iniHelper._iniPath);
-            }
-            _iniFileChangeWatcher.EnableRaisingEvents = true;
-        }
-
-        private T GetIniValue<T>(string section, string key)
-        {
-            _iniFileChangeWatcher.EnableRaisingEvents = false;
-            var iniFile = _iniHelper.ReadIniFile();
-            iniFile.Sections[section].Keys[key].TryParseValue(out T gValue);
-            _iniFileChangeWatcher.EnableRaisingEvents = true;
-            return gValue;
-
         }
     }
 
@@ -330,15 +333,5 @@ namespace RP_Notify.Config
                 return iniContent;
             });
         }
-    }
-
-    public class ConfigChangeEventArgs : EventArgs
-    {
-        public ConfigChangeEventArgs()
-        {
-        }
-        public bool ChannelChanged { get; set; }
-        public bool ShowOnNewSongChanged { get; set; }
-        public bool PlayerStateChanged { get; set; }
     }
 }
