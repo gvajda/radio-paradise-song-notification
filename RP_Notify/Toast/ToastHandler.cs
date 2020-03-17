@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Windows.Data.Xml.Dom;
 using Windows.Foundation;
@@ -25,6 +26,7 @@ namespace RP_Notify.Toast
         private readonly IConfig _config;
         private readonly IRpApiHandler _apiHandler;
         private readonly ILogger _log;
+
         private const string appId = "GergelyVajda.RP_Notify";
         internal const string guid = "8a8d7d8c-b191-4b17-b527-82c795243a12";
 
@@ -50,87 +52,56 @@ namespace RP_Notify.Toast
 
             // force invocation or something is tracked
             if (!(
-                force
-                || _config.State.Playback.ShowedOnNewSong
-                || _config.State.Foobar2000IsPlayingRP
-                || _config.State.RpTrackingConfig.ValidateActivePlayerId()
+                    (!_config.State.Playback.ShowedOnNewSong || force)
+                && (
+                    _config.ExternalConfig.ShowOnNewSong
+                    || _config.State.Foobar2000IsPlayingRP
+                    || _config.State.RpTrackingConfig.ValidateActivePlayerId()
+                    )
                 ))
             {
                 return;
             }
 
-            //Task.Run(() =>
-            //{
-            string title = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Artist}\n{_config.State.Playback.SongInfo.Title} ({TimeSpanToMinutes(Int32.Parse(_config.State.Playback.SongInfo.Duration))})");
-            string content = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Album} ({_config.State.Playback.SongInfo.Year})");
-            string image = _config.StaticConfig.AlbumArtImagePath;
-
-            string chanTitle = _config.State.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.ExternalConfig.Channel).First().Title;
-            string trimmedTitle = chanTitle.Contains("RP ")
-                ? chanTitle.Split(new[] { "RP " }, StringSplitOptions.None)[1]
-                : chanTitle;
-
-
-
-            string toastVisual =
-            $@"<visual>
+            Task.Run(() =>
+            {
+                string toastVisual =
+                $@"<visual>
               <binding template='ToastGeneric'>
-                <text>{title}</text>
-                <text>{content}</text>
+                {ToastHelper.CreateTitleText(_config, true)}
+                {ToastHelper.CreateContentText(_config)}
                 {ToastHelper.CreateRatingText(_config)}
-                <text placement='attribution'>{trimmedTitle}{TrackedPlayerAsSuffix()}</text>
-                <image src='{image}' placement='appLogoOverride'/>
+                {ToastHelper.CreateToastFooter(_config)}
+                {ToastHelper.CreateImage(_config, false)}
               </binding>
             </visual>";
 
-            // Construct the audio of the toast
-            string toastAudio = "<audio silent='true' />";
-
-            // Create toast xml text
-            string toastXmlString =
-            $@"<toast launch='RpNotifySongDetails'>
+                // Create toast xml text
+                string toastXmlString =
+                $@"<toast launch='RpNotifySongDetails'>
                 {toastVisual}
-                {toastAudio}
+                {ToastHelper.toastAudio}
             </toast>";
 
-            Retry.Do(() =>
-                {
-                    if (!File.Exists(image))
-                    {
-                        throw new IOException("Cover is not downloaded");
-                    }
-                }, 1000, 5);
-            DisplayToast(toastXmlString);
-            //});
+                DisplayToast(toastXmlString);
+            });
 
             _config.State.Playback.ShowedOnNewSong = true;
         }
 
         public void ShowSongRatingToast()
         {
-            string title = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Artist}\n{_config.State.Playback.SongInfo.Title} ({TimeSpanToMinutes(Int32.Parse(_config.State.Playback.SongInfo.Duration))})");
-            string content = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Album} ({_config.State.Playback.SongInfo.Year})");
-            string image = _config.StaticConfig.AlbumArtImagePath;
-
-            string chanTitle = _config.State.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.ExternalConfig.Channel).First().Title;
-
-            string trimmedTitle = chanTitle.Contains("RP ")
-                ? chanTitle.Split(new[] { "RP " }, StringSplitOptions.None)[1]
-                : chanTitle;
-
             string toastVisual =
             $@"<visual>
               <binding template='ToastGeneric'>
-                <text>{title}</text>
-                <text>{content}</text>
+                {ToastHelper.CreateTitleText(_config, true)}
+                {ToastHelper.CreateContentText(_config)}
+                {ToastHelper.CreateContentText(_config)}
                 {ToastHelper.CreateRatingText(_config)}
-                <text placement='attribution'>{trimmedTitle}{TrackedPlayerAsSuffix()}</text>
-                <image src='{image}' placement='appLogoOverride'/>
+                {ToastHelper.CreateToastFooter(_config)}
+                {ToastHelper.CreateImage(_config, false)}
               </binding>
             </visual>";
-
-            // Construct the audio of the toast
-            string toastAudio = "<audio silent='true' />";
 
             // Construct the actions of the toast
             string defaultItem = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? _config.State.Playback.SongInfo.UserRating : "NotRated";
@@ -165,61 +136,26 @@ namespace RP_Notify.Toast
             string toastXmlString =
             $@"<toast launch='RpNotifySongDetails'>
                 {toastVisual}
-                {toastAudio}
+                {ToastHelper.toastAudio}
                 {toastActions}
             </toast>";
-
-            Retry.Do(() =>
-            {
-                if (!File.Exists(image))
-                {
-                    throw new IOException("Cover is not downloaded");
-                }
-            }, 1000, 3);
 
             DisplayToast(toastXmlString, HandleToastActivatedEvent);
         }
 
         public void ShowSongDetailToast()
         {
-
-            string title = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Artist}\n{_config.State.Playback.SongInfo.Title}");
-            string content = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Album} ({_config.State.Playback.SongInfo.Year})");
-            string image = _config.StaticConfig.AlbumArtImagePath;
-            string logo = _config.StaticConfig.IconPath;
-
-            // Construct the visuals of the toast
-            int songDuration = Int32.Parse(_config.State.Playback.SongInfo.Duration);      // value is in milliseconds
-            var mSecsLeftFromSong = (int)(_config.State.Playback.SongInfoExpiration - DateTime.Now).TotalMilliseconds;
-            var elapsedMillisecs = Math.Min((songDuration - mSecsLeftFromSong + 500), songDuration);    // Corrigate rounding issues 
-            double progressValue = (double)(songDuration - mSecsLeftFromSong) / songDuration;
-
-            string chanTitle = _config.State.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.ExternalConfig.Channel).First().Title;
-
-            string trimmedTitle = chanTitle.Contains("RP ")
-                ? chanTitle.Split(new[] { "RP " }, StringSplitOptions.None)[1]
-                : chanTitle;
-
-            string largeAlbumart = $@"
-                <image src='{image}'/>
-                <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
-            ";
-            string smallAlbumArt = $"<image src='{image}' placement='appLogoOverride'/>";
-
             string toastVisual =
             $@"<visual>
               <binding template='ToastGeneric'>
-                <text>{title}</text>
-                <text>{content}</text>
+                {ToastHelper.CreateTitleText(_config, false)}
+                {ToastHelper.CreateContentText(_config)}
                 {ToastHelper.CreateRatingText(_config)}
-                <text placement='attribution'>{trimmedTitle}{TrackedPlayerAsSuffix()}</text>
-                <progress value='{progressValue}' title='{TimeSpanToMinutes(songDuration)}' status='{TimeSpanToMinutes(elapsedMillisecs)}' valueStringOverride='-{TimeSpanToMinutes(mSecsLeftFromSong)}' />
-                {(_config.ExternalConfig.LargeAlbumArt ? largeAlbumart : smallAlbumArt)}
+                {ToastHelper.CreateToastFooter(_config)}
+                {ToastHelper.CreateProgressBar(_config)}
+                {ToastHelper.CreateImage(_config, true)}
               </binding>
             </visual>";
-
-            // Construct the audio of the toast
-            string toastAudio = "<audio silent='true' />";
 
             // Construct the actions of the toast
             string defaultItem = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? _config.State.Playback.SongInfo.UserRating : "NotRated";
@@ -254,7 +190,7 @@ namespace RP_Notify.Toast
             string toastXmlString =
             $@"<toast launch='RpNotifySongDetails'>
                 {toastVisual}
-                {toastAudio}
+                {ToastHelper.toastAudio}
                 {toastActions}
             </toast>";
 
@@ -275,7 +211,7 @@ namespace RP_Notify.Toast
                         <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
                     </binding>
                 </visual>
-                <audio silent='true' />
+                {ToastHelper.toastAudio}
                 <actions>
                     <input id='Username' type='text' placeHolderContent='Username'/>
                     <input id='Password' type='text' placeHolderContent='Password'/>
@@ -409,33 +345,6 @@ namespace RP_Notify.Toast
             _log.Information("-- Display Toast Notification - Displayed successfully");
         }
 
-        private string TimeSpanToMinutes(int timeLength)
-        {
-            TimeSpan time = (timeLength < 5000)
-                ? TimeSpan.FromSeconds(timeLength)
-                : TimeSpan.FromMilliseconds(timeLength);
-            return time.ToString(@"m\:ss");
-        }
-
-        private string TrackedPlayerAsSuffix()
-        {
-            if (_config.State.Foobar2000IsPlayingRP)
-            {
-                return " • Foobar2000";
-            }
-
-            if (_config.State.RpTrackingConfig.ValidateActivePlayerId())
-            {
-                var activePlayerId = _config.State.RpTrackingConfig.ActivePlayerId;
-                var activePlayer = _config.State.RpTrackingConfig.Players
-                    .Where(p => p.PlayerId == activePlayerId).First().Source;
-
-                return $" • {activePlayer}";
-            }
-
-            return null;
-        }
-
         private void WriteIconToDisk()
         {
             if (!File.Exists(_config.StaticConfig.IconPath))
@@ -462,6 +371,23 @@ namespace RP_Notify.Toast
 
     internal static class ToastHelper
     {
+        internal static string toastAudio = "<audio silent='true' />";
+
+        internal static string CreateTitleText(IConfig _config, bool withDuration)
+        {
+            string duration = $"({TimeSpanToMinutes(Int32.Parse(_config.State.Playback.SongInfo.Duration))})";
+            string title = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Artist}\n{_config.State.Playback.SongInfo.Title}{(withDuration ? duration : null)}");
+
+            return $"<text>{title}</text>";
+        }
+
+        internal static string CreateContentText(IConfig _config)
+        {
+            string content = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Album} ({_config.State.Playback.SongInfo.Year})");
+
+            return $"<text>{content}</text>";
+        }
+
         internal static string CreateRatingText(IConfig _config)
         {
             bool userRated = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating);
@@ -472,6 +398,79 @@ namespace RP_Notify.Toast
             return _config.ExternalConfig.ShowSongRating || userRated
                 ? $"<text>{ratingText}</text>"
                 : null;
+        }
+
+        internal static string CreateProgressBar(IConfig _config)
+        {
+            // Construct the visuals of the toast
+            int songDuration = Int32.Parse(_config.State.Playback.SongInfo.Duration);      // value is in milliseconds
+            var mSecsLeftFromSong = (int)(_config.State.Playback.SongInfoExpiration - DateTime.Now).TotalMilliseconds;
+            var elapsedMillisecs = Math.Min((songDuration - mSecsLeftFromSong + 500), songDuration);    // Corrigate rounding issues 
+            double progressValue = (double)(songDuration - mSecsLeftFromSong) / songDuration;
+
+            return $"<progress value = '{progressValue}' title = '{TimeSpanToMinutes(songDuration)}' status = '{TimeSpanToMinutes(elapsedMillisecs)}' valueStringOverride = '-{TimeSpanToMinutes(mSecsLeftFromSong)}'/> ";
+        }
+
+        internal static string CreateImage(IConfig _config, bool optionalLargeAlbumart)
+        {
+            string image = _config.StaticConfig.AlbumArtImagePath;
+            string logo = _config.StaticConfig.IconPath;
+
+            string largeAlbumart = $@"
+                <image src='{image}'/>
+                <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
+            ";
+            string smallAlbumArt = $"<image src='{image}' placement='appLogoOverride'/>";
+
+            Retry.Do(() =>
+            {
+                if (!File.Exists(image))
+                {
+                    throw new IOException("Cover is not yet downloaded");
+                }
+            }, 1000, 5);
+
+            return optionalLargeAlbumart && _config.ExternalConfig.LargeAlbumArt
+                ? largeAlbumart
+                : smallAlbumArt;
+        }
+
+        internal static string CreateToastFooter(IConfig _config)
+        {
+            string chanTitle = _config.State.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.ExternalConfig.Channel).First().Title;
+
+            string trimmedTitle = chanTitle.Contains("RP ")
+                ? chanTitle.Split(new[] { "RP " }, StringSplitOptions.None)[1]
+                : chanTitle;
+
+            return $"<text placement='attribution'>{trimmedTitle}{TrackedPlayerAsSuffix(_config)}</text>";
+        }
+
+        private static string TrackedPlayerAsSuffix(IConfig _config)
+        {
+            if (_config.State.Foobar2000IsPlayingRP)
+            {
+                return " • Foobar2000";
+            }
+
+            if (_config.State.RpTrackingConfig.ValidateActivePlayerId())
+            {
+                var activePlayerId = _config.State.RpTrackingConfig.ActivePlayerId;
+                var activePlayer = _config.State.RpTrackingConfig.Players
+                    .Where(p => p.PlayerId == activePlayerId).First().Source;
+
+                return $" • {activePlayer}";
+            }
+
+            return null;
+        }
+
+        internal static string TimeSpanToMinutes(int timeLength)
+        {
+            TimeSpan time = (timeLength < 5000)
+                ? TimeSpan.FromSeconds(timeLength)
+                : TimeSpan.FromMilliseconds(timeLength);
+            return time.ToString(@"m\:ss");
         }
 
 
