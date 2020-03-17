@@ -59,13 +59,13 @@ namespace RP_Notify.StartMenuShortcut
             // Open the shortcut property store, set the AppUserModelId property
             IPropertyStore newShortcutProperties = (IPropertyStore)newShortcut;
 
-            using (PropVariant appId = new PropVariant(_config.InternalConfig.ToastAppID))
+            using (PropVariant appId = new PropVariant(_config.StaticConfig.ToastAppID))
             {
                 ErrorHelper.VerifySucceeded(newShortcutProperties.SetValue(SystemProperties.System.AppUserModel.ID, appId));
                 ErrorHelper.VerifySucceeded(newShortcutProperties.Commit());
             }
 
-            using (PropVariant guid = new PropVariant(_config.InternalConfig.ToastActivatorCLSID))
+            using (PropVariant guid = new PropVariant(_config.StaticConfig.ToastActivatorCLSID))
             {
                 ErrorHelper.VerifySucceeded(newShortcutProperties.SetValue(SystemProperties.System.AppUserModel.ToastActivatorCLSID, guid));
                 ErrorHelper.VerifySucceeded(newShortcutProperties.Commit());

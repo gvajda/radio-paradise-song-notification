@@ -9,16 +9,49 @@ namespace RP_Notify.Config
 {
     public class RpTrackingConfig
     {
-        public bool Enabled { get; set; }
+        public event EventHandler<RpEvent> RpTrackingConfigChangeHandler = delegate { };
 
-        public string ActivePlayerId { get; set; }
-
+        private bool enabled;
+        private string activePlayerId;
         private IList<Player> players;
+
+        public bool Enabled
+        {
+            get => enabled;
+            set
+            {
+                if (enabled != value)
+                {
+                    enabled = value;
+                    RaiseFieldChangeEvent(nameof(Enabled), value);
+                }
+            }
+        }
+
+        public string ActivePlayerId
+        {
+            get => activePlayerId;
+            set
+            {
+                if (activePlayerId != value)
+                {
+                    activePlayerId = value;
+                    RaiseFieldChangeEvent(nameof(ActivePlayerId));
+                }
+            }
+        }
 
         public IList<Player> Players
         {
-            get => players;
-            set => players = FormatSource(value);
+            get => FormatSource(players);
+            set
+            {
+                if (value != null && ComparePlayerList(players, value))
+                {
+                    players = value;
+                    RaiseFieldChangeEvent(nameof(Players));
+                }
+            }
         }
 
         public RpTrackingConfig()
@@ -27,12 +60,23 @@ namespace RP_Notify.Config
             Enabled = false;
             Players = new List<Player>();
         }
-
         public bool ValidateActivePlayerId()
         {
-            return Enabled
+            if (ActivePlayerId == null)
+            {
+                return false;
+            }
+
+            bool isActivePlayerIdValid = Enabled
                 && !string.IsNullOrEmpty(ActivePlayerId)
                 && Players.Any(p => p.PlayerId == ActivePlayerId);
+
+            if (!isActivePlayerIdValid)
+            {
+                ActivePlayerId = null;
+            }
+
+            return isActivePlayerIdValid;
         }
 
         public bool TryGetTrackedChannel(out int chan)
@@ -55,8 +99,36 @@ namespace RP_Notify.Config
             }
         }
 
+        private void RaiseFieldChangeEvent(string fieldName, bool? value = null)
+        {
+            RpTrackingConfigChangeHandler.Invoke(this, new RpEvent(RpEvent.EventType.RpTrackingConfigChange, fieldName, value));
+        }
+
+        private bool ComparePlayerList(IList<Player> oldPlayerList, IList<Player> newPlayerList)
+        {
+            if (newPlayerList == null || !newPlayerList.Any())
+            {
+                return false;
+            }
+
+            if (oldPlayerList == null || !oldPlayerList.Any())
+            {
+                return true;
+            }
+
+            var pl1ex2 = oldPlayerList.Select(p => p.PlayerId).Except(newPlayerList.Select(p => p.PlayerId)).Any();
+            var pl2ex1 = newPlayerList.Select(p => p.PlayerId).Except(oldPlayerList.Select(p => p.PlayerId)).Any();
+
+            return pl1ex2 || pl1ex2;
+        }
+
         private IList<Player> FormatSource(IList<Player> input)
         {
+            if (input == null)
+            {
+                return new List<Player>();
+            }
+
             foreach (Player player in input)
             {
                 player.Source = CustomFormat(player.Source);

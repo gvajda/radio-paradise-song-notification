@@ -5,7 +5,7 @@ namespace RP_Notify.API
 {
     public interface IRpApiHandler
     {
-        NowplayingList GetNowplayingList(string channel = "0", string player_id = null, int list_num = 1);
+        NowplayingList GetNowplayingList(int list_num = 1);
         NowPlaying GetNowPlaying(string channel = "0");
         GetBlock GetGetBlock(string channel = "0", string info = "true", string bitrate = "4");
         Info GetInfo(string songId = null);

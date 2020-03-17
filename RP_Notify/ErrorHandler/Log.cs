@@ -18,7 +18,7 @@ namespace RP_Notify.ErrorHandler
             {
                 return new LoggerConfiguration()
                 .WriteTo.File(
-                    config.InternalConfig.LogFilePath,
+                    config.StaticConfig.LogFilePath,
                     fileSizeLimitBytes: 1048576,
                     rollOnFileSizeLimit: true,
                     shared: true

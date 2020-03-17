@@ -30,7 +30,7 @@ namespace RP_Notify.API
         {
             _log.Information("-- RpApiHandler - Initialization started - Checking for cookie cache and fetch RP channel list");
 
-            _restClient.BaseUrl = new Uri(_config.InternalConfig.RpApiBaseUrl);
+            _restClient.BaseUrl = new Uri(_config.StaticConfig.RpApiBaseUrl);
 
             ReadAndValidateCookieFromCache();
 
@@ -39,18 +39,17 @@ namespace RP_Notify.API
             _log.Information("-- RpApiHandler - Initialization finished - Channel list: {@ChannelList}", _config.State.ChannelList);
         }
 
-        public NowplayingList GetNowplayingList(string channel = null, string player_id = null, int list_num = 1)
+        public NowplayingList GetNowplayingList(int list_num = 1)
         {
             var request = new RestRequest("api/nowplaying_list", Method.GET);
-            if (!string.IsNullOrEmpty(player_id))
-            {
-                request.AddParameter("player_id", player_id);
-            }
-            if (!string.IsNullOrEmpty(channel) && channel != "99")      // Exclude empty and Favourites
-            {
-                request.AddParameter("chan", channel);
-            }
+
+            request.AddParameter("chan", _config.ExternalConfig.Channel);
             request.AddParameter("list_num", list_num);
+
+            if (!string.IsNullOrEmpty(_config.State.RpTrackingConfig.ActivePlayerId))
+            {
+                request.AddParameter("player_id", _config.State.RpTrackingConfig.ActivePlayerId);
+            }
 
             var response = Task.Run(async () => await RestApiCallAsync<NowplayingList>(request)).Result;
             return response;
@@ -164,7 +163,7 @@ namespace RP_Notify.API
                 _restClient.CookieContainer = cookieJar;
                 _config.State.IsUserAuthenticated = true;
 
-                if (CookieHelper.TryWriteCookieToDisk(_config.InternalConfig.CookieCachePath, cookieJar))
+                if (CookieHelper.TryWriteCookieToDisk(_config.StaticConfig.CookieCachePath, cookieJar))
                 {
                     _log.Information($"--RefreshCookieCache - Cookie saved to cache");
                 }
@@ -177,7 +176,7 @@ namespace RP_Notify.API
 
         private void ReadAndValidateCookieFromCache()
         {
-            if (CookieHelper.TryGetCookieFromCache(_config.InternalConfig.CookieCachePath, out var cookieCache))
+            if (CookieHelper.TryGetCookieFromCache(_config.StaticConfig.CookieCachePath, out var cookieCache))
             {
                 _restClient.CookieContainer = cookieCache;
                 _config.State.IsUserAuthenticated = true;
@@ -189,7 +188,7 @@ namespace RP_Notify.API
                 else
                 {
                     _config.State.IsUserAuthenticated = false;
-                    Retry.Do(() => File.Delete(_config.InternalConfig.CookieCachePath));
+                    Retry.Do(() => File.Delete(_config.StaticConfig.CookieCachePath));
                     _log.Warning($"--ReadAndValidateCookieFromCache - Invalid cookie found - DELETED");
                 }
             }

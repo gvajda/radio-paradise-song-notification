@@ -75,7 +75,7 @@
   <ItemGroup>
     <Compile Include="API\CookieHelper.cs" />
     <Compile Include="API\IRpApiHandler.cs" />
-    <Compile Include="Config\ConfigChangeEventArgs.cs" />
+    <Compile Include="Config\RpEvent.cs" />
     <Compile Include="Config\IConfig.cs" />
     <Compile Include="API\RpApiResponseModel.cs" />
     <Compile Include="Config\IniConfig.cs" />
@@ -125,10 +125,11 @@
     <Compile Include="StartMenuShortcut\ShellHelpers.cs" />
     <Compile Include="Toast\IToastHandler.cs" />
     <Compile Include="Toast\ToastHandler.cs" />
-    <Compile Include="TrayApplication.cs" />
+    <Compile Include="RpApplicationCore.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="API\RpApiHandler.cs" />
+    <Compile Include="TrayIcon\RpTrayIcon.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

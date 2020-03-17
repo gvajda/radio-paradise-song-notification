@@ -1,5 +1,4 @@
 ﻿using Foobar2000.RESTClient.Api;
-using RP_Notify.API;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using Serilog;
@@ -15,62 +14,76 @@ namespace RP_Notify.Foobar2000
     class Foobar2000Watcher
     {
         private readonly IConfig _config;
-        private readonly IRpApiHandler _apiHandler;
         private readonly ILogger _log;
         private readonly PlayerApi _playerApi;
 
         private int CheckDelayMillisecs { get; set; }
         private Task Foobar2000WatcherTask { get; set; }
+        private CancellationTokenSource Foobar2000WatcherTaskCancellationTokenSource { get; set; }
 
-        public event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
-        public CancellationTokenSource PlayerWatcherCancellationTokenSource { get; set; }
-
-
-        public Foobar2000Watcher(IConfig config, IRpApiHandler apiHandler, ILog log, PlayerApi playerApi)
+        public Foobar2000Watcher(IConfig config, ILog log, PlayerApi playerApi)
         {
             _config = config;
-            _apiHandler = apiHandler;
             _log = log.Logger;
             _playerApi = playerApi;
 
+            Init();
+        }
+
+        private void Init()
+        {
             CheckDelayMillisecs = 5000;
-            PlayerWatcherCancellationTokenSource = new CancellationTokenSource();
-            Application.ApplicationExit += (sender, e) => Stop();
+            Foobar2000WatcherTaskCancellationTokenSource = new CancellationTokenSource();
+            Application.ApplicationExit += (sender, e) => Foobar2000WatcherTaskCancellationTokenSource.Cancel();
+
+            if (_config.ExternalConfig.EnablePlayerWatcher)
+            {
+                Start();
+            }
+        }
+
+        public void Stop()
+        {
+            if (IsFoobar2000WatcherTaskRunning())
+            {
+                _log.Information("Foobar2000Watcher - Shutdown initiated");
+                Foobar2000WatcherTaskCancellationTokenSource.Cancel();
+            }
         }
 
         public void Start()
         {
-            if (Foobar2000WatcherTask == null
-                || Foobar2000WatcherTask.Status == TaskStatus.Running
-                || Foobar2000WatcherTask.Status == TaskStatus.WaitingToRun)
+            if (IsFoobar2000WatcherTaskRunning())
             {
                 return;
             }
 
             _log.Information("Foobar2000Watcher - Started");
 
-            PlayerWatcherCancellationTokenSource = new CancellationTokenSource();
+            Foobar2000WatcherTaskCancellationTokenSource = new CancellationTokenSource();
 
             Foobar2000WatcherTask = Task.Run(async () =>
             {
-                string matchingChannel = null;
+                int matchingChannel = -1;
 
-                while (!PlayerWatcherCancellationTokenSource.Token.IsCancellationRequested)
+                while (!Foobar2000WatcherTaskCancellationTokenSource.IsCancellationRequested)
                 {
                     try
                     {
-                        if (RpChannelIsPlaying(out matchingChannel))
+                        if (RpChannelIsPlaying(out matchingChannel)
+                            && !_config.State.RpTrackingConfig.ValidateActivePlayerId())
                         {
                             CheckDelayMillisecs = 1000;
-                            HandleChannelMatch(matchingChannel);
+                            _config.ExternalConfig.Channel = matchingChannel;
+                            _config.State.Foobar2000IsPlayingRP = true;
                         }
                         else
                         {
                             CheckDelayMillisecs = 5000;
-                            HandleInactivePlayer();
+                            _config.State.Foobar2000IsPlayingRP = false;
                         }
 
-                        await Task.Delay(CheckDelayMillisecs, PlayerWatcherCancellationTokenSource.Token);
+                        await Task.Delay(CheckDelayMillisecs);
                     }
                     catch (TaskCanceledException)
                     {
@@ -86,18 +99,38 @@ namespace RP_Notify.Foobar2000
 
                 _log.Information("Foobar2000Watcher - Stopped");
 
-            }, PlayerWatcherCancellationTokenSource.Token);
+            }, Foobar2000WatcherTaskCancellationTokenSource.Token);
             _log.Information("Foobar2000Watcher - Running in background");
         }
 
-        public void Stop()
+        private bool IsFoobar2000WatcherTaskRunning()
         {
-            if (Foobar2000WatcherTask == null
-                || Foobar2000WatcherTask.Status == TaskStatus.Running
-                || Foobar2000WatcherTask.Status == TaskStatus.WaitingToRun)
+            return Foobar2000WatcherTask != null
+                && (
+                    Foobar2000WatcherTask.Status == TaskStatus.Running
+                    || Foobar2000WatcherTask.Status == TaskStatus.WaitingToRun
+                    || Foobar2000WatcherTask.Status == TaskStatus.WaitingForActivation
+                    );
+        }
+        public bool RpChannelIsPlaying(out int matchingChannel)
+        {
+            if (TryGetPlayedFilePath(out string playedFilePath)
+                && playedFilePath.Contains("radioparadise"))
             {
-                _log.Information("Foobar2000Watcher - Initiate shutdown");
-                PlayerWatcherCancellationTokenSource.Cancel();
+                matchingChannel = Int32.Parse(
+                    _config.State.ChannelList
+                        .Where(channel => playedFilePath.Contains(channel.StreamName))
+                        .DefaultIfEmpty(_config.State.ChannelList.First())
+                        .FirstOrDefault()
+                        .Chan
+                );
+
+                return true;
+            }
+            else
+            {
+                matchingChannel = -1;
+                return false;
             }
         }
 
@@ -120,78 +153,5 @@ namespace RP_Notify.Foobar2000
 
         }
 
-        private bool RpChannelIsPlaying(out string matchingChannel)
-        {
-            if (TryGetPlayedFilePath(out string playedFilePath)
-                && playedFilePath.Contains("radioparadise"))
-            {
-                matchingChannel = _config.State.ChannelList
-                    .Where(channel => playedFilePath.Contains(channel.StreamName))
-                    .DefaultIfEmpty(_config.State.ChannelList.First())
-                    .FirstOrDefault()
-                    .Chan;
-
-                return true;
-            }
-            else
-            {
-                matchingChannel = "-1";
-                return false;
-            }
-        }
-
-
-        private void HandleChannelMatch(string matchingChannel)
-        {
-            bool sendChannelChangeEvent = false;
-            bool playerStateChanged = false;
-
-            if (_config.ExternalConfig.Channel != Int32.Parse(matchingChannel))
-            {
-                _config.ExternalConfig.Channel = Int32.Parse(matchingChannel);
-                sendChannelChangeEvent = true;
-            }
-
-            if (!_config.State.Foobar2000IsPlayingRP)
-            {
-                _config.State.Foobar2000IsPlayingRP = true;
-                playerStateChanged = true;
-
-            }
-            if (sendChannelChangeEvent || playerStateChanged)
-            {
-                ConfigChangedEventHandler?
-                    .Invoke(this,
-                        new ConfigChangeEventArgs()
-                        {
-                            ChannelChanged = sendChannelChangeEvent,
-                            PlayerStateChanged = playerStateChanged
-                        });
-            }
-        }
-
-        private void HandleInactivePlayer()
-        {
-
-            _config.State.RpTrackingConfig.ActivePlayerId = null;
-            bool playerStateChanged = false;
-
-            if (_config.State.Foobar2000IsPlayingRP)
-            {
-                _config.State.Foobar2000IsPlayingRP = false;
-                playerStateChanged = true;
-
-            }
-
-            if (playerStateChanged)
-            {
-                ConfigChangedEventHandler?
-                    .Invoke(this,
-                        new ConfigChangeEventArgs()
-                        {
-                            PlayerStateChanged = playerStateChanged
-                        });
-            }
-        }
     }
 }

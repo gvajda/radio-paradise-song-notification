@@ -11,22 +11,22 @@ namespace RP_Notify.Config
 {
     public class IniConfig : IConfig
     {
-        public IInternalConfig InternalConfig { get; set; }
+        public IStaticConfig StaticConfig { get; set; }
         public IExternalConfig ExternalConfig { get; set; }
         public State State { get; set; }
 
         public IniConfig()
         {
-            InternalConfig = new InternalConfig();
+            StaticConfig = new StaticConfig();
             ExternalConfig = new ExternalConfig();
             State = new State
             {
-                IsUserAuthenticated = File.Exists(InternalConfig.CookieCachePath)
+                IsUserAuthenticated = File.Exists(StaticConfig.CookieCachePath)
             };
         }
     }
 
-    public class InternalConfig : IInternalConfig
+    public class StaticConfig : IStaticConfig
     {
         public string AlbumArtImagePath { get; }
         public string ConfigBaseFolder { get; }
@@ -40,7 +40,7 @@ namespace RP_Notify.Config
 
         private readonly IniHelper _iniHelper;
 
-        public InternalConfig()
+        public StaticConfig()
         {
             _iniHelper = new IniHelper();
 
@@ -58,10 +58,11 @@ namespace RP_Notify.Config
 
     public class ExternalConfig : IExternalConfig
     {
+        public event EventHandler<RpEvent> ExternalConfigChangeHandler = delegate { };
+
         private readonly IniHelper _iniHelper;
         private readonly FileSystemWatcher _iniFileChangeWatcher;
 
-        public event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
         private int channel;
         private bool deleteAllDataOnStartup;
         private bool enableLoggingToFile;
@@ -72,13 +73,22 @@ namespace RP_Notify.Config
         private bool showOnNewSong;
         private bool showSongRating;
 
+        private const string ToastIniSectionName = "Toast";
+        private const string AppSettingsIniSectionName = "AppSettings";
+        private const string ChannelIniSectionName = "Channel";
+        private const string OnStartupSettingsIniSectionName = "OnStartupSettings";
+
         public bool ShowOnNewSong
         {
             get => showOnNewSong;
             set
             {
-                showOnNewSong = value;
-                SetIniValue("Toast", "ShowOnNewSong", value);
+                if (showOnNewSong != value)
+                {
+                    showOnNewSong = value;
+                    RaiseFieldChangeEvent(nameof(ShowOnNewSong), value);
+                    SetIniValue(ToastIniSectionName, nameof(ShowOnNewSong), value);
+                }
             }
         }
         public bool LargeAlbumArt
@@ -86,8 +96,12 @@ namespace RP_Notify.Config
             get => largeAlbumArt;
             set
             {
-                largeAlbumArt = value;
-                SetIniValue("Toast", "LargeAlbumArt", value);
+                if (largeAlbumArt != value)
+                {
+                    largeAlbumArt = value;
+                    RaiseFieldChangeEvent(nameof(LargeAlbumArt), value);
+                    SetIniValue(ToastIniSectionName, nameof(LargeAlbumArt), value);
+                }
             }
         }
         public bool ShowSongRating
@@ -95,8 +109,12 @@ namespace RP_Notify.Config
             get => showSongRating;
             set
             {
-                showSongRating = value;
-                SetIniValue("Toast", "ShowSongRating", value);
+                if (showSongRating != value)
+                {
+                    showSongRating = value;
+                    RaiseFieldChangeEvent(nameof(ShowSongRating), value);
+                    SetIniValue(ToastIniSectionName, nameof(ShowSongRating), value);
+                }
             }
         }
         public bool PromptForRating
@@ -104,8 +122,12 @@ namespace RP_Notify.Config
             get => promptForRating;
             set
             {
-                promptForRating = value;
-                SetIniValue("AppSettings", "PromptForRating", value);
+                if (promptForRating != value)
+                {
+                    promptForRating = value;
+                    RaiseFieldChangeEvent(nameof(PromptForRating), value);
+                    SetIniValue(AppSettingsIniSectionName, nameof(PromptForRating), value);
+                }
             }
         }
         public bool LeaveShorcutInStartMenu
@@ -113,8 +135,12 @@ namespace RP_Notify.Config
             get => leaveShorcutInStartMenu;
             set
             {
-                leaveShorcutInStartMenu = value;
-                SetIniValue("AppSettings", "LeaveShorcutInStartMenu", value);
+                if (leaveShorcutInStartMenu != value)
+                {
+                    leaveShorcutInStartMenu = value;
+                    RaiseFieldChangeEvent(nameof(LeaveShorcutInStartMenu), value);
+                    SetIniValue(AppSettingsIniSectionName, nameof(LeaveShorcutInStartMenu), value);
+                }
             }
         }
         public bool EnablePlayerWatcher
@@ -122,8 +148,12 @@ namespace RP_Notify.Config
             get => enablePlayerWatcher;
             set
             {
-                enablePlayerWatcher = value;
-                SetIniValue("AppSettings", "EnablePlayerWatcher", value);
+                if (enablePlayerWatcher != value)
+                {
+                    enablePlayerWatcher = value;
+                    RaiseFieldChangeEvent(nameof(EnablePlayerWatcher), value);
+                    SetIniValue(AppSettingsIniSectionName, nameof(EnablePlayerWatcher), value);
+                }
             }
         }
         public bool EnableLoggingToFile
@@ -131,8 +161,12 @@ namespace RP_Notify.Config
             get => enableLoggingToFile;
             set
             {
-                enableLoggingToFile = value;
-                SetIniValue("AppSettings", "EnableLoggingToFile", value);
+                if (enableLoggingToFile != value)
+                {
+                    enableLoggingToFile = value;
+                    RaiseFieldChangeEvent(nameof(EnableLoggingToFile), value);
+                    SetIniValue(AppSettingsIniSectionName, nameof(EnableLoggingToFile), value);
+                }
             }
         }
         public int Channel
@@ -140,8 +174,12 @@ namespace RP_Notify.Config
             get => channel;
             set
             {
-                channel = value;
-                SetIniValue("Channel", "Channel", value);
+                if (channel != value)
+                {
+                    channel = value;
+                    RaiseFieldChangeEvent(nameof(Channel));
+                    SetIniValue(ChannelIniSectionName, nameof(Channel), value);
+                }
             }
         }
         public bool DeleteAllDataOnStartup
@@ -149,8 +187,12 @@ namespace RP_Notify.Config
             get => deleteAllDataOnStartup;
             set
             {
-                deleteAllDataOnStartup = value;
-                SetIniValue("OnStartupSettings", "DeleteAllDataOnStartup", value);
+                if (deleteAllDataOnStartup != value)
+                {
+                    deleteAllDataOnStartup = value;
+                    RaiseFieldChangeEvent(nameof(DeleteAllDataOnStartup), value);
+                    SetIniValue(OnStartupSettingsIniSectionName, nameof(DeleteAllDataOnStartup), value);
+                }
             }
         }
 
@@ -172,6 +214,11 @@ namespace RP_Notify.Config
         public void DeleteConfigRootFolder()
         {
             Retry.Do(() => Directory.Delete(_iniHelper._iniFolder, true));
+        }
+
+        private void RaiseFieldChangeEvent(string fieldName, bool? value = null)
+        {
+            ExternalConfigChangeHandler.Invoke(this, new RpEvent(RpEvent.EventType.ConfigChange, fieldName, value));
         }
 
         private void SetIniValue<T>(string section, string key, T value)
@@ -196,38 +243,86 @@ namespace RP_Notify.Config
 
         private void HandleExternalConfigChange(object source, EventArgs e)
         {
-            var isChannelChanged = IniPropertyChnaged(channel, "Channel", "Channel");
-            var isShowOnNewSongChanged = IniPropertyChnaged(showOnNewSong, "Toast", "ShowOnNewSong");
             SyncMemoryConfig();
-            ConfigChangedEventHandler?.
-                Invoke(this,
-                    new ConfigChangeEventArgs()
-                    {
-                        ChannelChanged = isChannelChanged,
-                        ShowOnNewSongChanged = isShowOnNewSongChanged
-                    });
-        }
-
-        private bool IniPropertyChnaged<T>(T property, string sectionName, string keyName)
-        {
-            var iniFile = _iniHelper.ReadIniFile();
-            iniFile.Sections[sectionName].Keys[keyName].TryParseValue(out T iniValue);
-            return !iniValue.Equals(property);
         }
 
         private void SyncMemoryConfig()
         {
+            _iniHelper.CheckIniIntegrity();
             var iniFile = _iniHelper.ReadIniFile();
 
-            iniFile.Sections["AppSettings"].Keys["LeaveShorcutInStartMenu"].TryParseValue(out leaveShorcutInStartMenu);
-            iniFile.Sections["AppSettings"].Keys["EnablePlayerWatcher"].TryParseValue(out enablePlayerWatcher);
-            iniFile.Sections["AppSettings"].Keys["EnableLoggingToFile"].TryParseValue(out enableLoggingToFile);
-            iniFile.Sections["AppSettings"].Keys["PromptForRating"].TryParseValue(out promptForRating);
-            iniFile.Sections["Toast"].Keys["ShowOnNewSong"].TryParseValue(out showOnNewSong);
-            iniFile.Sections["Toast"].Keys["LargeAlbumArt"].TryParseValue(out largeAlbumArt);
-            iniFile.Sections["Toast"].Keys["ShowSongRating"].TryParseValue(out showSongRating);
-            iniFile.Sections["Channel"].Keys["Channel"].TryParseValue(out channel);
-            iniFile.Sections["OnStartupSettings"].Keys["DeleteAllDataOnStartup"].TryParseValue(out deleteAllDataOnStartup);
+
+            var _LeaveShorcutInStartMenu = LeaveShorcutInStartMenu;
+            LeaveShorcutInStartMenu = iniFile
+                .Sections[AppSettingsIniSectionName]
+                .Keys[nameof(LeaveShorcutInStartMenu)]
+                .TryParseValue(out _LeaveShorcutInStartMenu)
+                ? _LeaveShorcutInStartMenu
+                : LeaveShorcutInStartMenu;
+
+            var _EnablePlayerWatcher = EnablePlayerWatcher;
+            EnablePlayerWatcher = iniFile
+                .Sections[AppSettingsIniSectionName]
+                .Keys[nameof(EnablePlayerWatcher)]
+                .TryParseValue(out _EnablePlayerWatcher)
+                ? _EnablePlayerWatcher
+                : EnablePlayerWatcher;
+
+            var _EnableLoggingToFile = EnableLoggingToFile;
+            EnableLoggingToFile = iniFile
+                .Sections[AppSettingsIniSectionName]
+                .Keys[nameof(EnableLoggingToFile)]
+                .TryParseValue(out _EnableLoggingToFile)
+                ? _EnableLoggingToFile
+                : EnableLoggingToFile;
+
+            var _PromptForRating = PromptForRating;
+            PromptForRating = iniFile
+                .Sections[AppSettingsIniSectionName]
+                .Keys[nameof(PromptForRating)]
+                .TryParseValue(out _PromptForRating)
+                ? _PromptForRating
+                : PromptForRating;
+
+            var _ShowOnNewSong = ShowOnNewSong;
+            ShowOnNewSong = iniFile
+                .Sections[ToastIniSectionName]
+                .Keys[nameof(ShowOnNewSong)]
+                .TryParseValue(out _ShowOnNewSong)
+                ? _ShowOnNewSong
+                : ShowOnNewSong;
+
+            var _LargeAlbumArt = LargeAlbumArt;
+            LargeAlbumArt = iniFile
+                .Sections[ToastIniSectionName]
+                .Keys[nameof(LargeAlbumArt)]
+                .TryParseValue(out _LargeAlbumArt)
+                ? _LargeAlbumArt
+                : LargeAlbumArt;
+
+            var _ShowSongRating = ShowSongRating;
+            ShowSongRating = iniFile
+                .Sections[ToastIniSectionName]
+                .Keys[nameof(ShowSongRating)]
+                .TryParseValue(out _ShowSongRating)
+                ? _ShowSongRating
+                : ShowSongRating;
+
+            var _Channel = Channel;
+            Channel = iniFile
+                .Sections[ChannelIniSectionName]
+                .Keys[nameof(Channel)]
+                .TryParseValue(out _Channel)
+                ? _Channel
+                : Channel;
+
+            var _DeleteAllDataOnStartup = DeleteAllDataOnStartup;
+            DeleteAllDataOnStartup = iniFile
+                .Sections[OnStartupSettingsIniSectionName]
+                .Keys[nameof(DeleteAllDataOnStartup)]
+                .TryParseValue(out _DeleteAllDataOnStartup)
+                ? _DeleteAllDataOnStartup
+                : DeleteAllDataOnStartup;
         }
     }
 
@@ -261,7 +356,7 @@ namespace RP_Notify.Config
             return iniFile;
         }
 
-        private void CheckIniIntegrity()
+        internal void CheckIniIntegrity()
         {
             var defaultIniFile = new IniFile();
             defaultIniFile.Load(new StringReader(Properties.Resources.config));

@@ -4,14 +4,14 @@ namespace RP_Notify.Config
 {
     public interface IConfig
     {
-        IInternalConfig InternalConfig { get; set; }
+        IStaticConfig StaticConfig { get; set; }
 
         IExternalConfig ExternalConfig { get; set; }
 
         State State { get; set; }
     }
 
-    public interface IInternalConfig
+    public interface IStaticConfig
     {
         // Internal values 
         string AlbumArtImagePath { get; }
@@ -27,7 +27,7 @@ namespace RP_Notify.Config
 
     public interface IExternalConfig
     {
-        event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
+        event EventHandler<RpEvent> ExternalConfigChangeHandler;
 
         int Channel { get; set; }
         bool DeleteAllDataOnStartup { get; set; }
