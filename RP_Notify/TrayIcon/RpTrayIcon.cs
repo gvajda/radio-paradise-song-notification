@@ -6,6 +6,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -46,7 +47,7 @@ namespace RP_Notify.TrayIcon
 
         public void Dispose()
         {
-            _log.Debug($"RpTrayIcon - Dispose initiated");
+            _log.Debug($"{LogHelper.GetMethodName(this)} - Started");
 
             if (contextMenu != null)
             {
@@ -58,10 +59,12 @@ namespace RP_Notify.TrayIcon
                 NotifyIcon.Visible = false;
                 NotifyIcon.Dispose();
             }
+
+            _log.Debug($"{LogHelper.GetMethodName(this)} - Finished");
         }
         public void BuildContextMenu()
         {
-            _log.Information($"-- {nameof(this.BuildContextMenu)} - Started");
+            _log.Debug($"{LogHelper.GetMethodName(this)} - Started");
 
             var menuEntryShowOnNewSong = CreateMenuEntryShowOnNewSong();
             var menuEntryLargeAlbumArt = CreateMenuEntryLargeAlbumArt();
@@ -101,7 +104,7 @@ namespace RP_Notify.TrayIcon
             contextMenu.MenuItems.Add(menuEntryAbout);
             contextMenu.MenuItems.Add(menuEntryExit);
 
-            _log.Information($"-- {nameof(this.BuildContextMenu)} - Finished");
+            _log.Debug($"{LogHelper.GetMethodName(this)} - Finished");
         }
 
         private MenuItem CreateMenuEntryShowOnNewSong()
@@ -235,7 +238,11 @@ namespace RP_Notify.TrayIcon
 
             foreach (var player in _config.State.RpTrackingConfig.Players)
             {
-                MenuItem trackedPlayer = new MenuItem(player.Source)
+                var playedChannel = _config.State.ChannelList.Where(c => c.Chan == player.Chan).FirstOrDefault();
+                TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
+                var channelName = textInfo.ToTitleCase(playedChannel.StreamName);
+
+                MenuItem trackedPlayer = new MenuItem($"{player.Source} ({channelName})")
                 {
                     RadioCheck = true,
                     Checked = _config.State.RpTrackingConfig.ActivePlayerId == player.PlayerId,
@@ -243,7 +250,14 @@ namespace RP_Notify.TrayIcon
 
                 trackedPlayer.Click += (sender, e) =>
                 {
-                    _config.State.RpTrackingConfig.ActivePlayerId = player.PlayerId;
+                    if (_config.State.RpTrackingConfig.ActivePlayerId != player.PlayerId)
+                    {
+                        _config.State.RpTrackingConfig.ActivePlayerId = player.PlayerId;
+                    }
+                    else
+                    {
+                        _config.State.RpTrackingConfig.ActivePlayerId = null;
+                    }
                 };
 
                 TrackablePlayers.Add(trackedPlayer);
@@ -281,7 +295,7 @@ namespace RP_Notify.TrayIcon
 
                         menu.Checked = ((Channel)menu.Tag).Chan == loopChannel.Chan;
                     }
-                    //does not send ConfigExternallyChangedEvent
+
                     _config.ExternalConfig.Channel = Int32.Parse(loopChannel.Chan);
                 };
 

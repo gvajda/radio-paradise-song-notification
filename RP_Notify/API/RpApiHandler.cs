@@ -28,15 +28,15 @@ namespace RP_Notify.API
 
         private void Init()
         {
-            _log.Information("-- RpApiHandler - Initialization started - Checking for cookie cache and fetch RP channel list");
+            _log.Information($"{LogHelper.GetMethodName(this)} - Initialization started - Checking for cookie cache and fetch RP channel list");
 
             _restClient.BaseUrl = new Uri(_config.StaticConfig.RpApiBaseUrl);
 
             ReadAndValidateCookieFromCache();
 
-            _log.Information("-- RpApiHandler - Get channel list");
+            _log.Information($"-- {LogHelper.GetMethodName(this)} - Get channel list");
             _config.State.ChannelList = GetChannelList();
-            _log.Information("-- RpApiHandler - Initialization finished - Channel list: {@ChannelList}", _config.State.ChannelList);
+            _log.Information($"{LogHelper.GetMethodName(this)} - Initialization finished - Channel list: {{@ChannelList}}", _config.State.ChannelList);
         }
 
         public NowplayingList GetNowplayingList(int list_num = 1)
@@ -128,7 +128,7 @@ namespace RP_Notify.API
         {
             try
             {
-                _log.Information("-- RestApiCallAsync invoked - URL resource path: {Resource} - Authenticated: {IsUserAuthenticated}", request.Resource, _config.State.IsUserAuthenticated);
+                _log.Information($"{LogHelper.GetMethodName(this)} - Invoked - URL resource path: {{Resource}} - Authenticated: {{IsUserAuthenticated}}", request.Resource, _config.State.IsUserAuthenticated);
 
                 var taskCompletionSource = new TaskCompletionSource<T>();
 
@@ -138,13 +138,13 @@ namespace RP_Notify.API
                     taskCompletionSource.SetResult(response.Data);
                 });
 
-                _log.Information("-- RestApiCallAsync returned - Result type: {ResultType}", taskCompletionSource.Task.Result.GetType());
+                _log.Information($"{LogHelper.GetMethodName(this)} - Returned - Result type: {{ResultType}}", taskCompletionSource.Task.Result.GetType());
 
                 return taskCompletionSource.Task;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                _log.Error($"-- RestApiCallAsync - {e.Message}");
+                _log.Error($"{LogHelper.GetMethodName(this)} - ERROR - {ex.Message}\n{ex.StackTrace}");
                 return null;
             }
         }
@@ -165,11 +165,11 @@ namespace RP_Notify.API
 
                 if (CookieHelper.TryWriteCookieToDisk(_config.StaticConfig.CookieCachePath, cookieJar))
                 {
-                    _log.Information($"--RefreshCookieCache - Cookie saved to cache");
+                    _log.Information($"{LogHelper.GetMethodName(this)} - Cookie saved to cache");
                 }
                 else
                 {
-                    _log.Error($"--RefreshCookieCache - Can't save cookie");
+                    _log.Error($"{LogHelper.GetMethodName(this)} - Can't save cookie");
                 }
             }
         }
@@ -183,19 +183,19 @@ namespace RP_Notify.API
 
                 if (GetAuth().Status == "success")
                 {
-                    _log.Information($"--ReadAndValidateCookieFromCache - Cookie validation Success");
+                    _log.Information($"{LogHelper.GetMethodName(this)} - Cookie validation Success");
                 }
                 else
                 {
                     _config.State.IsUserAuthenticated = false;
                     Retry.Do(() => File.Delete(_config.StaticConfig.CookieCachePath));
-                    _log.Warning($"--ReadAndValidateCookieFromCache - Invalid cookie found - DELETED");
+                    _log.Warning($"{LogHelper.GetMethodName(this)} - Invalid cookie found - DELETED");
                 }
             }
             else
             {
                 _config.State.IsUserAuthenticated = false;
-                _log.Information($"--ReadAndValidateCookieFromCache - No cached cookie found");
+                _log.Information($"{LogHelper.GetMethodName(this)} - No cached cookie found");
             }
         }
     }

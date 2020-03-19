@@ -106,20 +106,28 @@ namespace RP_Notify.Config
 
         private bool ComparePlayerList(IList<Player> oldPlayerList, IList<Player> newPlayerList)
         {
-            if (newPlayerList == null || !newPlayerList.Any())
+            bool newIsEmpty = newPlayerList == null || !newPlayerList.Any();
+            bool oldIsEmpty = oldPlayerList == null || !oldPlayerList.Any();
+
+            if (newIsEmpty && oldIsEmpty)
             {
                 return false;
             }
 
-            if (oldPlayerList == null || !oldPlayerList.Any())
+            if ((newIsEmpty && !oldIsEmpty)
+                || (!newIsEmpty && oldIsEmpty))
             {
                 return true;
             }
 
-            var pl1ex2 = oldPlayerList.Select(p => p.PlayerId).Except(newPlayerList.Select(p => p.PlayerId)).Any();
-            var pl2ex1 = newPlayerList.Select(p => p.PlayerId).Except(oldPlayerList.Select(p => p.PlayerId)).Any();
+            var pl1ex2 = oldPlayerList.Select(p => String.Concat(p.PlayerId, p.Chan))
+                .Except(newPlayerList.Select(p => String.Concat(p.PlayerId, p.Chan)))
+                .Any();
+            var pl2ex1 = newPlayerList.Select(p => String.Concat(p.PlayerId, p.Chan))
+                .Except(oldPlayerList.Select(p => String.Concat(p.PlayerId, p.Chan)))
+                .Any();
 
-            return pl1ex2 || pl1ex2;
+            return pl1ex2 || pl2ex1;
         }
 
         private IList<Player> FormatSource(IList<Player> input)

@@ -38,6 +38,7 @@ namespace RP_Notify.Foobar2000
 
             if (_config.ExternalConfig.EnablePlayerWatcher)
             {
+                CheckFoobar2000Status(out bool notUsedHere);
                 Start();
             }
         }
@@ -46,8 +47,34 @@ namespace RP_Notify.Foobar2000
         {
             if (IsFoobar2000WatcherTaskRunning())
             {
-                _log.Information("Foobar2000Watcher - Shutdown initiated");
+                _log.Information($"{LogHelper.GetMethodName(this)} - Shutdown initiated");
                 Foobar2000WatcherTaskCancellationTokenSource.Cancel();
+            }
+        }
+
+        public bool CheckFoobar2000Status(out bool channelChange)
+        {
+            channelChange = false;
+
+            if (RpChannelIsPlaying(out int matchingChannel))
+            {
+                _config.State.Foobar2000IsPlayingRP = true;
+
+                CheckDelayMillisecs = 1000;
+
+                if (matchingChannel != _config.ExternalConfig.Channel
+                    && !_config.State.RpTrackingConfig.ValidateActivePlayerId())
+                {
+                    channelChange = true;
+                    _config.ExternalConfig.Channel = matchingChannel;
+                }
+                return true;
+            }
+            else
+            {
+                CheckDelayMillisecs = 5000;
+                _config.State.Foobar2000IsPlayingRP = false;
+                return false;
             }
         }
 
@@ -58,49 +85,36 @@ namespace RP_Notify.Foobar2000
                 return;
             }
 
-            _log.Information("Foobar2000Watcher - Started");
+            _log.Information($"{LogHelper.GetMethodName(this)} - Started");
 
             Foobar2000WatcherTaskCancellationTokenSource = new CancellationTokenSource();
 
             Foobar2000WatcherTask = Task.Run(async () =>
             {
-                int matchingChannel = -1;
-
                 while (!Foobar2000WatcherTaskCancellationTokenSource.IsCancellationRequested)
                 {
                     try
                     {
-                        if (RpChannelIsPlaying(out matchingChannel)
-                            && !_config.State.RpTrackingConfig.ValidateActivePlayerId())
-                        {
-                            CheckDelayMillisecs = 1000;
-                            _config.ExternalConfig.Channel = matchingChannel;
-                            _config.State.Foobar2000IsPlayingRP = true;
-                        }
-                        else
-                        {
-                            CheckDelayMillisecs = 5000;
-                            _config.State.Foobar2000IsPlayingRP = false;
-                        }
+                        CheckFoobar2000Status(out bool notUsedHere);
 
                         await Task.Delay(CheckDelayMillisecs);
                     }
                     catch (TaskCanceledException)
                     {
-                        continue;       // Don't log error for stopping
+                        // Don't log error for stopping
                     }
                     catch (Exception ex)
                     {
-                        _log.Error($"Foobar2000Watcher - ERROR - {ex.Message}");
+                        _log.Error($"{LogHelper.GetMethodName(this)} - ERROR - {ex.Message}\n{ex.StackTrace}");
                     }
                 }
 
                 _config.State.Foobar2000IsPlayingRP = false;
 
-                _log.Information("Foobar2000Watcher - Stopped");
+                _log.Information($"{LogHelper.GetMethodName(this)} - Stopped");
 
             }, Foobar2000WatcherTaskCancellationTokenSource.Token);
-            _log.Information("Foobar2000Watcher - Running in background");
+            _log.Information($"{LogHelper.GetMethodName(this)} - Running in background");
         }
 
         private bool IsFoobar2000WatcherTaskRunning()

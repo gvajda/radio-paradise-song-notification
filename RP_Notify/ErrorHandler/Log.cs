@@ -1,5 +1,7 @@
 ﻿using RP_Notify.Config;
 using Serilog;
+using System;
+using System.Runtime.CompilerServices;
 
 namespace RP_Notify.ErrorHandler
 {
@@ -32,6 +34,21 @@ namespace RP_Notify.ErrorHandler
                 .WriteTo.Console()
                 .CreateLogger();
             }
+        }
+    }
+
+    public static class LogHelper
+    {
+        public static string GetMethodName(this object type, [CallerMemberName] string caller = null, bool fullName = false)
+        {
+            if (type == null)
+            {
+                throw new ArgumentNullException(nameof(type));
+            }
+
+            var name = fullName ? type.GetType().FullName : type.GetType().Name;
+            return $"{name.PadLeft(17, '-')}.{caller}()";
+            // return $"{name.PadRight(17, '-')} | {caller}()";
         }
     }
 }

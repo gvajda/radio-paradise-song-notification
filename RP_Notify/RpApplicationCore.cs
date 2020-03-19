@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using RP_Notify.API;
+using RP_Notify.API.ResponseModel;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using RP_Notify.Foobar2000;
@@ -9,7 +10,9 @@ using RP_Notify.Toast;
 using RP_Notify.TrayIcon;
 using Serilog;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -29,7 +32,7 @@ namespace RP_Notify
         public RpApplicationCore(IConfig config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, ISongInfoListener songInfoListener, ILog log, RpTrayIcon rpTrayIcon, ShortcutHelper shortcutHelper)
         {
             _log = log.Logger;
-            _log.Information("RP_Notify started ********************************************************************");
+            _log.Information($"{LogHelper.GetMethodName(this)} - Started ********************************************************************");
 
             // From service collection
             _apihandler = apiHandler;
@@ -48,15 +51,8 @@ namespace RP_Notify
             // Init fields
             _shortcutHelper.TryCreateShortcut();    // Add shortcut to Start menu (required for Toast Notifications)
 
-            // Check if Foobar2000 tracking is enabled
-            //if (config.ExternalConfig.EnablePlayerWatcher)
-            //{
-            //    _foobar2000Watcher.Start();
-            //    Task.Run(() => Task.Delay(1500)).Wait();
-            //}
-
             // Set up event handlers
-            _log.Information("Create event listeners");
+            _log.Information($"{LogHelper.GetMethodName(this)} - Create event listeners");
             _config.ExternalConfig.ExternalConfigChangeHandler += OnExternalConfigChange;
             _config.State.StateChangeHandler += OnStateChange;
             _config.State.RpTrackingConfig.RpTrackingConfigChangeHandler += OnRpTrackingConfigChange;
@@ -66,12 +62,17 @@ namespace RP_Notify
             // Check queued application data delet request
             CheckQueuedDataDeleteRequest();
 
+            if (!_config.State.Foobar2000IsPlayingRP && _apihandler.GetSync_v2().Players.Any())
+            {
+                _config.State.RpTrackingConfig.Enabled = true;
+            }
+
             // Start background tasks
-            _log.Information("Start background tasks");
+            _log.Information($"{LogHelper.GetMethodName(this)} - Start background tasks");
             _songInfoListener.Run();
 
             // Add context menu
-            _log.Information("Create tray icon");
+            _log.Information($"{LogHelper.GetMethodName(this)} - Create tray icon");
             _rpTrayIcon.Init();
             _rpTrayIcon.NotifyIcon.MouseDoubleClick += TrayIconDoubleClickHandler;
         }
@@ -79,8 +80,8 @@ namespace RP_Notify
 
         private void TrayIconDoubleClickHandler(object sender, MouseEventArgs e)
         {
-            _log.Information("TrayIconDoubleClickHandler - Invoked - Sender: {Sender}", sender.GetType());
-            Task.Run(() => _toastHandler.ShowSongDetailToast());
+            _log.Information($"{LogHelper.GetMethodName(this)} - Invoked - Sender: {{Sender}}", sender.GetType());
+            _toastHandler.ShowSongDetailToast();
 
         }
 
@@ -89,7 +90,7 @@ namespace RP_Notify
             var valueMessageComponent = e.BoolValue.HasValue
                 ? $" - Boolean value: {e.BoolValue.Value}"
                 : $" - Value: [Object]";
-            _log.Information("OnChange - Invoked - Type: {ChangedType} - Changed field: {ChannelChanged}{ValueMessageComponent}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+            _log.Information($"{LogHelper.GetMethodName(this)} - Event received - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
 
             _rpTrayIcon.BuildContextMenu();
 
@@ -119,7 +120,7 @@ namespace RP_Notify
                     OnDeleteAllDataOnStartupChange();
                     break;
                 default:
-                    _log.Information("OnChange - Finished without action - Type: {ChangedType} - Changed field: {ChannelChanged}{ValueMessageComponent}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                    _log.Information($"{LogHelper.GetMethodName(this)} - Exit without action - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
                     break;
             }
         }
@@ -131,7 +132,7 @@ namespace RP_Notify
                 : $" - Value: [Object]";
             if (!e.ChangedFieldName.Equals(nameof(_config.State.TooltipText)))
             {
-                _log.Information("OnChange - Invoked - Type: {ChangedType} - Changed field: {ChannelChanged}{ValueMessageComponent}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                _log.Information($"{LogHelper.GetMethodName(this)} - Event received - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
             }
 
             Task.Delay(200).Wait();
@@ -151,7 +152,7 @@ namespace RP_Notify
                     OnPlaybackChange();
                     break;
                 default:
-                    _log.Information("OnChange - Finished without action - Type: {ChangedType} - Changed field: {ChannelChanged}{ValueMessageComponent}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                    _log.Information($"{LogHelper.GetMethodName(this)} - Exit without action - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
                     break;
             }
         }
@@ -161,7 +162,9 @@ namespace RP_Notify
             var valueMessageComponent = e.BoolValue.HasValue
                 ? $" - Boolean value: {e.BoolValue.Value}"
                 : $" - Value: [Object]";
-            _log.Information("OnChange - Invoked - Type: {ChangedType} - Changed field: {ChannelChanged}{ValueMessageComponent}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+            _log.Information($"{LogHelper.GetMethodName(this)} - Event received - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+
+            _rpTrayIcon.BuildContextMenu();
 
             Task.Delay(200).Wait();
 
@@ -177,14 +180,17 @@ namespace RP_Notify
                     OnPlayersChange();
                     break;
                 default:
-                    _log.Information("OnChange - Finished without action - Type: {ChangedType} - Changed field: {ChannelChanged}{ValueMessageComponent}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                    _log.Information($"{LogHelper.GetMethodName(this)} - Exit without action - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
                     break;
             }
         }
 
         private void OnShowOnNewSongChange()
         {
-            _toastHandler.ShowSongStartToast();
+            if (_config.ExternalConfig.ShowOnNewSong)
+            {
+                _toastHandler.ShowSongStartToast(true);
+            }
         }
 
         private void OnEnablePlayerWatcherChange()
@@ -229,7 +235,7 @@ namespace RP_Notify
         {
             if (_config.ExternalConfig.DeleteAllDataOnStartup)
             {
-                _log.Information("ResetHandler - App data delete requested");
+                _log.Information($"{LogHelper.GetMethodName(this)} - App data delete requested");
 
                 if (_config.ExternalConfig.EnableLoggingToFile)
                 {
@@ -249,7 +255,9 @@ namespace RP_Notify
         {
             _rpTrayIcon.BuildContextMenu();
 
-            if (_config.State.Foobar2000IsPlayingRP && _config.State.Playback != null)
+            if (_config.State.Playback != null
+                && _config.State.Foobar2000IsPlayingRP
+                && !_config.State.RpTrackingConfig.ValidateActivePlayerId())
             {
                 _toastHandler.ShowSongStartToast();
             }
@@ -277,7 +285,11 @@ namespace RP_Notify
 
         private void OnActivePlayerIdChange()
         {
-            _songInfoListener.ResetListenerLoop();
+            if (_config.State.RpTrackingConfig.ValidateActivePlayerId()
+                || !(_foobar2000Watcher.CheckFoobar2000Status(out bool channelChanged) && channelChanged))
+            {
+                _songInfoListener.ResetListenerLoop();
+            }
         }
 
         private void OnEnabledChange()
@@ -288,53 +300,50 @@ namespace RP_Notify
             }
             else
             {
-                _config.State.RpTrackingConfig = new RpTrackingConfig();
-                if (_config.ExternalConfig.Channel == 99)
+                if (_config.ExternalConfig.Channel == 99
+                    && !(_foobar2000Watcher.CheckFoobar2000Status(out bool channelChanged) && channelChanged))
                 {
-                    if (_config.ExternalConfig.EnablePlayerWatcher
-                        && _foobar2000Watcher.RpChannelIsPlaying(out int fb2kChannel))
-                    {
-                        _config.ExternalConfig.Channel = fb2kChannel;
-                    }
-                    else
-                    {
-                        _config.ExternalConfig.Channel = 0;
-                    }
+                    _config.ExternalConfig.Channel = 0;
                 }
-                _config.ExternalConfig.Channel = _config.ExternalConfig.Channel != 99
-                    ? _config.ExternalConfig.Channel
-                    : 0;
+                _config.State.RpTrackingConfig.ActivePlayerId = null;
+                _config.State.RpTrackingConfig.Players = new List<Player>();
             }
         }
 
         private void OnPlayersChange()
         {
-            _rpTrayIcon.BuildContextMenu();
+            // if foobar2000 is not tracking an RP channel then start trackin without a second click
+            if (_config.State.RpTrackingConfig.Players.Any()
+                && !_config.State.RpTrackingConfig.ValidateActivePlayerId()
+                && !_config.State.Foobar2000IsPlayingRP)
+            {
+                _config.State.RpTrackingConfig.ActivePlayerId = _config.State.RpTrackingConfig.Players.FirstOrDefault().PlayerId;
+            }
         }
 
         private void WakeUpHandler(object sender, PowerModeChangedEventArgs e)
         {
             if (e.Mode == PowerModes.Resume)
             {
-                _log.Information("WakeUpHandler - PC woke up - RESTART");
+                _log.Information($"{LogHelper.GetMethodName(this)} - PC woke up - RESTART");
                 Application.Restart();
             }
         }
 
         private void ApplicationExitHandler(object sender, EventArgs e)
         {
-            _log.Information("ApplicationExitHandler - Exit process started");
+            _log.Information($"{LogHelper.GetMethodName(this)} - Exit process started");
 
             if (File.Exists(_config.StaticConfig.AlbumArtImagePath))
             {
-                _log.Debug("ApplicationExitHandler - Delete album art");
+                _log.Debug($"{LogHelper.GetMethodName(this)} - Delete album art");
                 File.Delete(_config.StaticConfig.AlbumArtImagePath);
             }
 
             if (!_config.ExternalConfig.LeaveShorcutInStartMenu)
             {
                 _shortcutHelper.DeleteShortcut();
-                _log.Debug("ApplicationExitHandler - Shortcut removed from start menu");
+                _log.Debug($"{LogHelper.GetMethodName(this)} - Shortcut removed from start menu");
             }
 
             _rpTrayIcon.Dispose();
@@ -346,7 +355,7 @@ namespace RP_Notify
             }
             else
             {
-                _log.Information(@"ApplicationExitHandler - Finished
+                _log.Information($@"{LogHelper.GetMethodName(this)} - Finished
 ********************************************************************
 ********************************************************************
 ********************************************************************

@@ -52,12 +52,10 @@ namespace RP_Notify.Toast
 
             // force invocation or something is tracked
             if (!(
-                    (!_config.State.Playback.ShowedOnNewSong || force)
-                && (
-                    _config.ExternalConfig.ShowOnNewSong
+                force
+                || (_config.ExternalConfig.ShowOnNewSong && !_config.State.Playback.ShowedOnNewSong)
                     || _config.State.Foobar2000IsPlayingRP
                     || _config.State.RpTrackingConfig.ValidateActivePlayerId()
-                    )
                 ))
             {
                 return;
@@ -91,141 +89,145 @@ namespace RP_Notify.Toast
 
         public void ShowSongRatingToast()
         {
-            string toastVisual =
-            $@"<visual>
-              <binding template='ToastGeneric'>
-                {ToastHelper.CreateTitleText(_config, true)}
-                {ToastHelper.CreateContentText(_config)}
-                {ToastHelper.CreateContentText(_config)}
-                {ToastHelper.CreateRatingText(_config)}
-                {ToastHelper.CreateToastFooter(_config)}
-                {ToastHelper.CreateImage(_config, false)}
-              </binding>
-            </visual>";
+            Task.Run(() =>
+            {
+                string toastVisual =
+                $@"<visual>
+                  <binding template='ToastGeneric'>
+                    {ToastHelper.CreateTitleText(_config, true)}
+                    {ToastHelper.CreateContentText(_config)}
+                    {ToastHelper.CreateRatingText(_config)}
+                    {ToastHelper.CreateToastFooter(_config)}
+                    {ToastHelper.CreateImage(_config, false)}
+                  </binding>
+                </visual>";
 
-            // Construct the actions of the toast
-            string defaultItem = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? _config.State.Playback.SongInfo.UserRating : "NotRated";
+                // Construct the actions of the toast
+                string defaultItem = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? _config.State.Playback.SongInfo.UserRating : "NotRated";
 
-            string songWebUrl = $@"https://radioparadise.com/player/info/{_config.State.Playback.SongInfo.SongId}";
+                string songWebUrl = $@"https://radioparadise.com/player/info/{_config.State.Playback.SongInfo.SongId}";
 
-            var ratingHintText = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
-                    ? $"Current rating: {_config.State.Playback.SongInfo.UserRating}"
-                    : "Type your rating (1-10)";
-            var loggedInAction = $@"
-             <input id='UserRate' type='text' placeHolderContent='{ratingHintText}'/>
+                var ratingHintText = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
+                        ? $"Current rating: {_config.State.Playback.SongInfo.UserRating}"
+                        : "Type your rating (1-10)";
+                var loggedInAction = $@"
+                 <input id='UserRate' type='text' placeHolderContent='{ratingHintText}'/>
 
-             <action
-                  content='{(string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? "Send" : "Update")} rating'
-                  arguments ='action=RateSubmitted&amp;SongId={_config.State.Playback.SongInfo.SongId}&amp;toastType=ShowSongRatingToast'/>";
-            var loggedOutAction = $@"
-             <action
-                  content='Log in to rate'
-                  arguments ='action=LoginRequested'/>";
+                 <action
+                      content='{(string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? "Send" : "Update")} rating'
+                      arguments ='action=RateSubmitted&amp;SongId={_config.State.Playback.SongInfo.SongId}&amp;toastType=ShowSongRatingToast'/>";
+                var loggedOutAction = $@"
+                 <action
+                      content='Log in to rate'
+                      arguments ='action=LoginRequested'/>";
 
-            string toastActions =
-            $@"<actions>
-              {(_config.State.IsUserAuthenticated ? loggedInAction : loggedOutAction)}
-              <action
-                  content='Open in browser'
-                  arguments='{songWebUrl}'
-                  activationType ='protocol'/>
- 
-            </actions>";
+                string toastActions =
+                    $@"<actions>
+                  {(_config.State.IsUserAuthenticated ? loggedInAction : loggedOutAction)}
+                  <action
+                      content='Open in browser'
+                      arguments='{songWebUrl}'
+                      activationType ='protocol'/>
+                </actions>";
 
-            // Create toast xml text
-            string toastXmlString =
-            $@"<toast launch='RpNotifySongDetails'>
-                {toastVisual}
-                {ToastHelper.toastAudio}
-                {toastActions}
-            </toast>";
+                // Create toast xml text
+                string toastXmlString =
+                $@"<toast launch='RpNotifySongDetails'>
+                    {toastVisual}
+                    {ToastHelper.toastAudio}
+                    {toastActions}
+                </toast>";
 
-            DisplayToast(toastXmlString, HandleToastActivatedEvent);
+                DisplayToast(toastXmlString, HandleToastActivatedEvent);
+            });
         }
 
         public void ShowSongDetailToast()
         {
-            string toastVisual =
-            $@"<visual>
-              <binding template='ToastGeneric'>
-                {ToastHelper.CreateTitleText(_config, false)}
-                {ToastHelper.CreateContentText(_config)}
-                {ToastHelper.CreateRatingText(_config)}
-                {ToastHelper.CreateToastFooter(_config)}
-                {ToastHelper.CreateProgressBar(_config)}
-                {ToastHelper.CreateImage(_config, true)}
-              </binding>
-            </visual>";
+            Task.Run(() =>
+            {
+                string toastVisual =
+                $@"<visual>
+                  <binding template='ToastGeneric'>
+                    {ToastHelper.CreateTitleText(_config, false)}
+                    {ToastHelper.CreateContentText(_config)}
+                    {ToastHelper.CreateRatingText(_config)}
+                    {ToastHelper.CreateToastFooter(_config)}
+                    {ToastHelper.CreateProgressBar(_config)}
+                    {ToastHelper.CreateImage(_config, true)}
+                  </binding>
+                </visual>";
 
-            // Construct the actions of the toast
-            string defaultItem = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? _config.State.Playback.SongInfo.UserRating : "NotRated";
+                // Construct the actions of the toast
+                string defaultItem = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? _config.State.Playback.SongInfo.UserRating : "NotRated";
 
-            string songWebUrl = $@"https://radioparadise.com/player/info/{_config.State.Playback.SongInfo.SongId}";
+                string songWebUrl = $@"https://radioparadise.com/player/info/{_config.State.Playback.SongInfo.SongId}";
 
-            var ratingHintText = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
-                    ? $"Current rating: {_config.State.Playback.SongInfo.UserRating}"
-                    : "Type your rating (1-10)";
-            var loggedInAction = $@"
-             <input id='UserRate' type='text' placeHolderContent='{ratingHintText}'/>
+                var ratingHintText = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
+                        ? $"Current rating: {_config.State.Playback.SongInfo.UserRating}"
+                        : "Type your rating (1-10)";
+                var loggedInAction = $@"
+                 <input id='UserRate' type='text' placeHolderContent='{ratingHintText}'/>
+                 <action
+                      content='{(string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? "Send" : "Update")} rating'
+                      arguments ='action=RateSubmitted&amp;SongId={_config.State.Playback.SongInfo.SongId}&amp;toastType=ShowSongDetailToast'/>";
+                var loggedOutAction = $@"
+                 <action
+                      content='Log in to rate'
+                      arguments ='action=LoginRequested'/>";
 
-             <action
-                  content='{(string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? "Send" : "Update")} rating'
-                  arguments ='action=RateSubmitted&amp;SongId={_config.State.Playback.SongInfo.SongId}&amp;toastType=ShowSongDetailToast'/>";
-            var loggedOutAction = $@"
-             <action
-                  content='Log in to rate'
-                  arguments ='action=LoginRequested'/>";
+                string toastActions =
+                $@"<actions>
+                  {(_config.State.IsUserAuthenticated ? loggedInAction : loggedOutAction)}
+                  <action
+                      content='Open in browser'
+                      arguments='{songWebUrl}'
+                      activationType ='protocol'/>
+                </actions>";
 
-            string toastActions =
-            $@"<actions>
-              {(_config.State.IsUserAuthenticated ? loggedInAction : loggedOutAction)}
-              <action
-                  content='Open in browser'
-                  arguments='{songWebUrl}'
-                  activationType ='protocol'/>
- 
-            </actions>";
+                // Create toast xml text
+                string toastXmlString =
+                $@"<toast launch='RpNotifySongDetails'>
+                    {toastVisual}
+                    {ToastHelper.toastAudio}
+                    {toastActions}
+                </toast>";
 
-            // Create toast xml text
-            string toastXmlString =
-            $@"<toast launch='RpNotifySongDetails'>
-                {toastVisual}
-                {ToastHelper.toastAudio}
-                {toastActions}
-            </toast>";
-
-            DisplayToast(toastXmlString, HandleToastActivatedEvent);
+                DisplayToast(toastXmlString, HandleToastActivatedEvent);
+            });
         }
 
         public void LoginToast()
         {
-            string logo = _config.StaticConfig.IconPath;
+            Task.Run(() =>
+            {
+                string logo = _config.StaticConfig.IconPath;
 
-            // Create toast xml text
-            string toastXmlString =
-            $@"<toast launch='RpNotifySongDetails'>
-                <visual>
-                    <binding template='ToastGeneric'>
-                        <text>User authentication</text>
-                        <text>Note: the applet doesn't save your password, only the same cookie as your browser</text>
-                        <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
-                    </binding>
-                </visual>
-                {ToastHelper.toastAudio}
-                <actions>
-                    <input id='Username' type='text' placeHolderContent='Username'/>
-                    <input id='Password' type='text' placeHolderContent='Password'/>
-                    <action
-                        content='Log in'
-                        arguments ='action=LoginDataSent'/>
-                    <action
-                        content='Not now'
-                        arguments='NotNow'/>
+                // Create toast xml text
+                string toastXmlString =
+                $@"<toast launch='RpNotifySongDetails'>
+                    <visual>
+                        <binding template='ToastGeneric'>
+                            <text>User authentication</text>
+                            <text>Note: the applet doesn't save your password, only the same cookie as your browser</text>
+                            <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
+                        </binding>
+                    </visual>
+                    {ToastHelper.toastAudio}
+                    <actions>
+                        <input id='Username' type='text' placeHolderContent='Username'/>
+                        <input id='Password' type='text' placeHolderContent='Password'/>
+                        <action
+                            content='Log in'
+                            arguments ='action=LoginDataSent'/>
+                        <action
+                            content='Not now'
+                            arguments='NotNow'/>
+                    </actions>
+                </toast>";
 
-                </actions>
-            </toast>";
-
-            DisplayToast(toastXmlString, HandleToastActivatedEvent);
+                DisplayToast(toastXmlString, HandleToastActivatedEvent);
+            });
         }
 
         private void HandleToastActivatedEvent(object sender, object e)
@@ -238,7 +240,7 @@ namespace RP_Notify.Toast
                     .DeserializeObject<RpToastNotificationActivatedEventArgs>(
                         JsonConvert.SerializeObject(myEvent)
                     );
-                _log.Information("Toast activated - {eventArguments}", rpEvent.Arguments);
+                _log.Information($"{ LogHelper.GetMethodName(this)} - {{ eventArguments}}", rpEvent.Arguments);
 
                 QueryString args = QueryString.Parse(rpEvent.Arguments);
                 if (args["action"] == "LoginRequested")
@@ -275,59 +277,65 @@ namespace RP_Notify.Toast
             }
             catch (Exception ex)
             {
-                _log.Error($"-- HandleToastActivatedEvent - {ex.Message}");
+                _log.Error($"{LogHelper.GetMethodName(this)} - ERROR - {ex.Message}\n{ex.StackTrace}");
             }
         }
 
         public void LoginResponseToast(Auth authResp)
         {
-            string logo = _config.StaticConfig.IconPath;
-            string authMessage = $@"{(authResp.Status == "success"
-                            ? $"Welcome {authResp.Username}!"
-                            : "Please try again")}";
-            // Create toast xml text
-            string toastXmlString =
-            $@"<toast launch='RpNotifySongDetails'>
-                <visual>
-                    <binding template='ToastGeneric'>
-                        <text>User authentication {authResp.Status}</text>
-                        <text>{authMessage}</text>
-                        <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
-                    </binding>
-                </visual>
-                <audio silent='true' />
-            </toast>";
+            Task.Run(() =>
+            {
+                string logo = _config.StaticConfig.IconPath;
+                string authMessage = $@"{(authResp.Status == "success"
+                                ? $"Welcome {authResp.Username}!"
+                                : "Please try again")}";
+                // Create toast xml text
+                string toastXmlString =
+                $@"<toast launch='RpNotifySongDetails'>
+                    <visual>
+                        <binding template='ToastGeneric'>
+                            <text>User authentication {authResp.Status}</text>
+                            <text>{authMessage}</text>
+                            <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
+                        </binding>
+                    </visual>
+                    {ToastHelper.toastAudio}
+                </toast>";
 
 
-            DisplayToast(toastXmlString);
+                DisplayToast(toastXmlString);
+            });
         }
 
         public void SongInfoListenerError()
         {
-            string logo = _config.StaticConfig.IconPath;
+            Task.Run(() =>
+            {
+                string logo = _config.StaticConfig.IconPath;
 
-            // Create toast xml text
-            string toastXmlString =
-            $@"<toast launch='RpNotifySongDetails'>
-                <visual>
-                    <binding template='ToastGeneric'>
-                        <text>Application ERROR</text>
-                        <text>Can't load song info</text>
-                        <text>Please check your network status and firewall settings</text>
-                        <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
-                    </binding>
-                </visual>
-                <audio silent='true' />
-            </toast>";
+                // Create toast xml text
+                string toastXmlString =
+                $@"<toast launch='RpNotifySongDetails'>
+                    <visual>
+                        <binding template='ToastGeneric'>
+                            <text>Application ERROR</text>
+                            <text>Can't load song info</text>
+                            <text>Please check your network status and firewall settings</text>
+                            <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
+                        </binding>
+                    </visual>
+                    {ToastHelper.toastAudio}
+                </toast>";
 
-            DisplayToast(toastXmlString);
+                DisplayToast(toastXmlString);
+            });
         }
         private void DisplayToast(string toastXmlString, TypedEventHandler<ToastNotification, Object> activationHandler = null)
         {
             var callerClassName = new StackFrame(2, true).GetMethod().DeclaringType.FullName;
             callerClassName = callerClassName.Split(new[] { "+" }, StringSplitOptions.None)[0];
             var toastType = new StackFrame(1, true).GetMethod().Name;
-            _log.Information("-- Display Toast Notification - Toast type: {ToastType} - Caller class: {CallerClass}", toastType, callerClassName);
+            _log.Information($"{LogHelper.GetMethodName(this)} - Toast type: {{ToastType}} - Caller class: {{CallerClass}}", toastType, callerClassName);
 
             // Parse to XML
             XmlDocument toastXml = new XmlDocument();
@@ -342,7 +350,7 @@ namespace RP_Notify.Toast
 
             // Display Toast
             DesktopNotificationManagerCompat.CreateToastNotifier().Show(toast);
-            _log.Information("-- Display Toast Notification - Displayed successfully");
+            _log.Information($"{LogHelper.GetMethodName(this)} - Displayed successfully");
         }
 
         private void WriteIconToDisk()
@@ -375,7 +383,7 @@ namespace RP_Notify.Toast
 
         internal static string CreateTitleText(IConfig _config, bool withDuration)
         {
-            string duration = $"({TimeSpanToMinutes(Int32.Parse(_config.State.Playback.SongInfo.Duration))})";
+            string duration = $" ({TimeSpanToMinutes(Int32.Parse(_config.State.Playback.SongInfo.Duration))})";
             string title = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Artist}\n{_config.State.Playback.SongInfo.Title}{(withDuration ? duration : null)}");
 
             return $"<text>{title}</text>";
@@ -448,11 +456,6 @@ namespace RP_Notify.Toast
 
         private static string TrackedPlayerAsSuffix(IConfig _config)
         {
-            if (_config.State.Foobar2000IsPlayingRP)
-            {
-                return " • Foobar2000";
-            }
-
             if (_config.State.RpTrackingConfig.ValidateActivePlayerId())
             {
                 var activePlayerId = _config.State.RpTrackingConfig.ActivePlayerId;
@@ -460,6 +463,11 @@ namespace RP_Notify.Toast
                     .Where(p => p.PlayerId == activePlayerId).First().Source;
 
                 return $" • {activePlayer}";
+            }
+
+            if (_config.State.Foobar2000IsPlayingRP)
+            {
+                return " • Foobar2000";
             }
 
             return null;
