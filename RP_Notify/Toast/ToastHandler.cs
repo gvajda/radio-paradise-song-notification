@@ -102,33 +102,11 @@ namespace RP_Notify.Toast
                   </binding>
                 </visual>";
 
-                // Construct the actions of the toast
-                string defaultItem = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? _config.State.Playback.SongInfo.UserRating : "NotRated";
-
-                string songWebUrl = $@"https://radioparadise.com/player/info/{_config.State.Playback.SongInfo.SongId}";
-
-                var ratingHintText = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
-                        ? $"Current rating: {_config.State.Playback.SongInfo.UserRating}"
-                        : "Type your rating (1-10)";
-                var loggedInAction = $@"
-                 <input id='UserRate' type='text' placeHolderContent='{ratingHintText}'/>
-
-                 <action
-                      content='{(string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? "Send" : "Update")} rating'
-                      arguments ='action=RateSubmitted&amp;SongId={_config.State.Playback.SongInfo.SongId}&amp;toastType=ShowSongRatingToast'/>";
-                var loggedOutAction = $@"
-                 <action
-                      content='Log in to rate'
-                      arguments ='action=LoginRequested'/>";
-
                 string toastActions =
                     $@"<actions>
-                  {(_config.State.IsUserAuthenticated ? loggedInAction : loggedOutAction)}
-                  <action
-                      content='Open in browser'
-                      arguments='{songWebUrl}'
-                      activationType ='protocol'/>
-                </actions>";
+                      {ToastHelper.RatingInputAction(_config)}
+                      {ToastHelper.OpenInBrowserAction(_config)}
+                    </actions>";
 
                 // Create toast xml text
                 string toastXmlString =
@@ -158,31 +136,10 @@ namespace RP_Notify.Toast
                   </binding>
                 </visual>";
 
-                // Construct the actions of the toast
-                string defaultItem = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? _config.State.Playback.SongInfo.UserRating : "NotRated";
-
-                string songWebUrl = $@"https://radioparadise.com/player/info/{_config.State.Playback.SongInfo.SongId}";
-
-                var ratingHintText = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
-                        ? $"Current rating: {_config.State.Playback.SongInfo.UserRating}"
-                        : "Type your rating (1-10)";
-                var loggedInAction = $@"
-                 <input id='UserRate' type='text' placeHolderContent='{ratingHintText}'/>
-                 <action
-                      content='{(string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? "Send" : "Update")} rating'
-                      arguments ='action=RateSubmitted&amp;SongId={_config.State.Playback.SongInfo.SongId}&amp;toastType=ShowSongDetailToast'/>";
-                var loggedOutAction = $@"
-                 <action
-                      content='Log in to rate'
-                      arguments ='action=LoginRequested'/>";
-
                 string toastActions =
                 $@"<actions>
-                  {(_config.State.IsUserAuthenticated ? loggedInAction : loggedOutAction)}
-                  <action
-                      content='Open in browser'
-                      arguments='{songWebUrl}'
-                      activationType ='protocol'/>
+                  {ToastHelper.RatingInputAction(_config)}
+                  {ToastHelper.OpenInBrowserAction(_config)}
                 </actions>";
 
                 // Create toast xml text
@@ -256,10 +213,11 @@ namespace RP_Notify.Toast
                     var response = _apiHandler.GetAuth(usr, pwd);
 
                     LoginResponseToast(response);
-                    //if (response.Status == "success")
-                    //{
-                    //    Application.Restart();
-                    //}
+
+                    if (response.Status == "success")
+                    {
+                        Application.Restart();
+                    }
                 }
                 else if (args["action"] == "RateSubmitted")
                 {
@@ -471,6 +429,39 @@ namespace RP_Notify.Toast
             }
 
             return null;
+        }
+
+        internal static string RatingInputAction(IConfig _config)
+        {
+            var ratingHintText = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
+                    ? $"Current rating: {_config.State.Playback.SongInfo.UserRating}"
+                    : "Type your rating (1-10)";
+            var loggedInAction = $@"
+                 <input id='UserRate' type='text' placeHolderContent='{ratingHintText}'/>
+                 <action
+                      content='{(string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating) ? "Send" : "Update")} rating'
+                      arguments ='action=RateSubmitted&amp;SongId={_config.State.Playback.SongInfo.SongId}'/>";
+            var loggedOutAction = $@"
+                 <action
+                      content='Log in to rate'
+                      arguments ='action=LoginRequested'/>";
+
+            return _config.State.IsUserAuthenticated
+                ? loggedInAction
+                : loggedOutAction;
+        }
+
+        internal static string OpenInBrowserAction(IConfig _config)
+        {
+            string songWebUrl = $"https://radioparadise.com/player/info/{_config.State.Playback.SongInfo.SongId}";
+
+            var actionElementText = $@"
+                <action
+                    content='Open in browser'
+                    arguments='{songWebUrl}'
+                    activationType ='protocol'/>";
+
+            return actionElementText;
         }
 
         internal static string TimeSpanToMinutes(int timeLength)

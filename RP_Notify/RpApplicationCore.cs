@@ -270,6 +270,7 @@ namespace RP_Notify
 
         private void OnIsUserAuthenticatedChange()
         {
+            _rpTrayIcon.BuildContextMenu();
             _songInfoListener.ResetListenerLoop();
         }
 
