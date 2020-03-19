@@ -9,6 +9,10 @@ namespace RP_Notify.Config
         IExternalConfig ExternalConfig { get; set; }
 
         State State { get; set; }
+
+        bool IsRpPlayerTrackingChannel();
+
+        bool IsRpPlayerTrackingChannel(out int channel);
     }
 
     public interface IStaticConfig
@@ -32,7 +36,8 @@ namespace RP_Notify.Config
         int Channel { get; set; }
         bool DeleteAllDataOnStartup { get; set; }
         bool EnableLoggingToFile { get; set; }
-        bool EnablePlayerWatcher { get; set; }
+        bool EnableFoobar2000Watcher { get; set; }
+        bool EnableRpOfficialTracking { get; set; }
         bool LargeAlbumArt { get; set; }
         bool LeaveShorcutInStartMenu { get; set; }
         bool PromptForRating { get; set; }

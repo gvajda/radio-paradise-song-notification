@@ -2,8 +2,10 @@
 {
     public interface ISongInfoListener
     {
-        void Run();
+        void Start();
 
         void ResetListenerLoop();
+
+        void CheckTrackedRpPlayerStatus();
     }
 }

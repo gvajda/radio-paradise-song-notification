@@ -24,6 +24,43 @@ namespace RP_Notify.Config
                 IsUserAuthenticated = File.Exists(StaticConfig.CookieCachePath)
             };
         }
+
+        public bool IsRpPlayerTrackingChannel()
+        {
+            bool isActivePlayerIdValid = ExternalConfig.EnableRpOfficialTracking
+                && !string.IsNullOrEmpty(State.RpTrackingConfig.ActivePlayerId)
+                && State.RpTrackingConfig.Players.Any(p => p.PlayerId == State.RpTrackingConfig.ActivePlayerId);
+
+            if (isActivePlayerIdValid)
+            {
+                return true;
+            }
+            else
+            {
+                State.RpTrackingConfig.ActivePlayerId = null;
+                return false;
+            }
+        }
+
+        public bool IsRpPlayerTrackingChannel(out int channel)
+        {
+            if (IsRpPlayerTrackingChannel())
+            {
+                channel = Int32.Parse(
+                    State.RpTrackingConfig.Players
+                    .Where(p => p.PlayerId == State.RpTrackingConfig.ActivePlayerId)
+                    .First()
+                    .Chan
+                    );
+
+                return true;
+            }
+            else
+            {
+                channel = -1;
+                return false;
+            }
+        }
     }
 
     public class StaticConfig : IStaticConfig
@@ -66,7 +103,8 @@ namespace RP_Notify.Config
         private int channel;
         private bool deleteAllDataOnStartup;
         private bool enableLoggingToFile;
-        private bool enablePlayerWatcher;
+        private bool enableFoobar2000Watcher;
+        private bool enableRpOfficialTracking;
         private bool largeAlbumArt;
         private bool leaveShorcutInStartMenu;
         private bool promptForRating;
@@ -143,16 +181,29 @@ namespace RP_Notify.Config
                 }
             }
         }
-        public bool EnablePlayerWatcher
+        public bool EnableFoobar2000Watcher
         {
-            get => enablePlayerWatcher;
+            get => enableFoobar2000Watcher;
             set
             {
-                if (enablePlayerWatcher != value)
+                if (enableFoobar2000Watcher != value)
                 {
-                    enablePlayerWatcher = value;
-                    RaiseFieldChangeEvent(nameof(EnablePlayerWatcher), value);
-                    SetIniValue(AppSettingsIniSectionName, nameof(EnablePlayerWatcher), value);
+                    enableFoobar2000Watcher = value;
+                    RaiseFieldChangeEvent(nameof(EnableFoobar2000Watcher), value);
+                    SetIniValue(AppSettingsIniSectionName, nameof(EnableFoobar2000Watcher), value);
+                }
+            }
+        }
+        public bool EnableRpOfficialTracking
+        {
+            get => enableRpOfficialTracking;
+            set
+            {
+                if (enableRpOfficialTracking != value)
+                {
+                    enableRpOfficialTracking = value;
+                    RaiseFieldChangeEvent(nameof(EnableRpOfficialTracking), value);
+                    SetIniValue(AppSettingsIniSectionName, nameof(EnableRpOfficialTracking), value);
                 }
             }
         }
@@ -260,13 +311,21 @@ namespace RP_Notify.Config
                 ? _LeaveShorcutInStartMenu
                 : LeaveShorcutInStartMenu;
 
-            var _EnablePlayerWatcher = EnablePlayerWatcher;
-            EnablePlayerWatcher = iniFile
+            var _EnableFoobar2000Watcher = EnableFoobar2000Watcher;
+            EnableFoobar2000Watcher = iniFile
                 .Sections[AppSettingsIniSectionName]
-                .Keys[nameof(EnablePlayerWatcher)]
-                .TryParseValue(out _EnablePlayerWatcher)
-                ? _EnablePlayerWatcher
-                : EnablePlayerWatcher;
+                .Keys[nameof(EnableFoobar2000Watcher)]
+                .TryParseValue(out _EnableFoobar2000Watcher)
+                ? _EnableFoobar2000Watcher
+                : EnableFoobar2000Watcher;
+
+            var _EnableRpOfficialTracking = EnableRpOfficialTracking;
+            EnableRpOfficialTracking = iniFile
+                .Sections[AppSettingsIniSectionName]
+                .Keys[nameof(EnableRpOfficialTracking)]
+                .TryParseValue(out _EnableRpOfficialTracking)
+                ? _EnableRpOfficialTracking
+                : EnableRpOfficialTracking;
 
             var _EnableLoggingToFile = EnableLoggingToFile;
             EnableLoggingToFile = iniFile

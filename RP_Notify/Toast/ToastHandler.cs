@@ -55,7 +55,7 @@ namespace RP_Notify.Toast
                 force
                 || (_config.ExternalConfig.ShowOnNewSong && !_config.State.Playback.ShowedOnNewSong)
                     || _config.State.Foobar2000IsPlayingRP
-                    || _config.State.RpTrackingConfig.ValidateActivePlayerId()
+                    || _config.IsRpPlayerTrackingChannel()
                 ))
             {
                 return;
@@ -414,7 +414,7 @@ namespace RP_Notify.Toast
 
         private static string TrackedPlayerAsSuffix(IConfig _config)
         {
-            if (_config.State.RpTrackingConfig.ValidateActivePlayerId())
+            if (_config.IsRpPlayerTrackingChannel())
             {
                 var activePlayerId = _config.State.RpTrackingConfig.ActivePlayerId;
                 var activePlayer = _config.State.RpTrackingConfig.Players

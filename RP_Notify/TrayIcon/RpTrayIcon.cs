@@ -110,7 +110,7 @@ namespace RP_Notify.TrayIcon
         private MenuItem CreateMenuEntryShowOnNewSong()
         {
             bool trackingActive = _config.State.Foobar2000IsPlayingRP
-                || _config.State.RpTrackingConfig.ValidateActivePlayerId();
+                || _config.IsRpPlayerTrackingChannel();
 
             MenuItem showOnNewSong = new MenuItem($"Show on new song{(!trackingActive ? " (Live stream)" : null)}")
             {
@@ -203,14 +203,14 @@ namespace RP_Notify.TrayIcon
         {
             MenuItem enablePlayerWatcher = new MenuItem("Track Foobar2000")
             {
-                Checked = _config.ExternalConfig.EnablePlayerWatcher,
+                Checked = _config.ExternalConfig.EnableFoobar2000Watcher,
                 DefaultItem = _config.State.Foobar2000IsPlayingRP
-                    && !_config.State.RpTrackingConfig.ValidateActivePlayerId()
+                    && !_config.IsRpPlayerTrackingChannel()
             };
 
             enablePlayerWatcher.Click += (sender, e) =>
             {
-                _config.ExternalConfig.EnablePlayerWatcher = !_config.ExternalConfig.EnablePlayerWatcher;
+                _config.ExternalConfig.EnableFoobar2000Watcher = !_config.ExternalConfig.EnableFoobar2000Watcher;
             };
 
             return enablePlayerWatcher;
@@ -218,15 +218,15 @@ namespace RP_Notify.TrayIcon
 
         private MenuItem CreateMenuEntryRpTracking()
         {
-            MenuItem rpTracking = new MenuItem("RP Tracking")
+            MenuItem rpTracking = new MenuItem("Track official RP players")
             {
-                Checked = _config.State.RpTrackingConfig.Enabled,
-                DefaultItem = _config.State.RpTrackingConfig.ValidateActivePlayerId()
+                Checked = _config.ExternalConfig.EnableRpOfficialTracking,
+                DefaultItem = _config.IsRpPlayerTrackingChannel()
             };
 
             rpTracking.Click += (sender, e) =>
             {
-                _config.State.RpTrackingConfig.Enabled = !_config.State.RpTrackingConfig.Enabled;
+                _config.ExternalConfig.EnableRpOfficialTracking = !_config.ExternalConfig.EnableRpOfficialTracking;
             };
 
             return rpTracking;
@@ -236,31 +236,34 @@ namespace RP_Notify.TrayIcon
         {
             List<MenuItem> TrackablePlayers = new List<MenuItem>();
 
-            foreach (var player in _config.State.RpTrackingConfig.Players)
+            if (_config.ExternalConfig.EnableRpOfficialTracking)
             {
-                var playedChannel = _config.State.ChannelList.Where(c => c.Chan == player.Chan).FirstOrDefault();
-                TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
-                var channelName = textInfo.ToTitleCase(playedChannel.StreamName);
-
-                MenuItem trackedPlayer = new MenuItem($"{player.Source} ({channelName})")
+                foreach (var player in _config.State.RpTrackingConfig.Players)
                 {
-                    RadioCheck = true,
-                    Checked = _config.State.RpTrackingConfig.ActivePlayerId == player.PlayerId,
-                };
+                    var playedChannel = _config.State.ChannelList.Where(c => c.Chan == player.Chan).FirstOrDefault();
+                    TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
+                    var channelName = textInfo.ToTitleCase(playedChannel.StreamName);
 
-                trackedPlayer.Click += (sender, e) =>
-                {
-                    if (_config.State.RpTrackingConfig.ActivePlayerId != player.PlayerId)
+                    MenuItem trackedPlayer = new MenuItem($"{player.Source} ({channelName})")
                     {
-                        _config.State.RpTrackingConfig.ActivePlayerId = player.PlayerId;
-                    }
-                    else
-                    {
-                        _config.State.RpTrackingConfig.ActivePlayerId = null;
-                    }
-                };
+                        RadioCheck = true,
+                        Checked = _config.State.RpTrackingConfig.ActivePlayerId == player.PlayerId,
+                    };
 
-                TrackablePlayers.Add(trackedPlayer);
+                    trackedPlayer.Click += (sender, e) =>
+                    {
+                        if (_config.State.RpTrackingConfig.ActivePlayerId != player.PlayerId)
+                        {
+                            _config.State.RpTrackingConfig.ActivePlayerId = player.PlayerId;
+                        }
+                        else
+                        {
+                            _config.State.RpTrackingConfig.ActivePlayerId = null;
+                        }
+                    };
+
+                    TrackablePlayers.Add(trackedPlayer);
+                }
             }
 
             return TrackablePlayers.ToArray();
@@ -280,8 +283,8 @@ namespace RP_Notify.TrayIcon
                     Checked = _config.ExternalConfig.Channel.Equals(Int32.Parse(loopChannel.Chan)),
                     Tag = loopChannel,
                     Enabled = loopChannel.Chan != "99"
-                        && (!((_config.ExternalConfig.EnablePlayerWatcher && _config.State.Foobar2000IsPlayingRP)
-                        || _config.State.RpTrackingConfig.ValidateActivePlayerId()))
+                        && (!((_config.ExternalConfig.EnableFoobar2000Watcher && _config.State.Foobar2000IsPlayingRP)
+                        || _config.IsRpPlayerTrackingChannel()))
                 };
 
                 channelMenuItem.Click += (sender, e) =>

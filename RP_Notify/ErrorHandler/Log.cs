@@ -47,7 +47,7 @@ namespace RP_Notify.ErrorHandler
             }
 
             var name = fullName ? type.GetType().FullName : type.GetType().Name;
-            return $"{name.PadLeft(17, '-')}.{caller}()";
+            return $"{name.PadLeft(17, '-')}.{(caller != ".ctor" ? caller : "CONSTRUCTOR")}()";
             // return $"{name.PadRight(17, '-')} | {caller}()";
         }
     }

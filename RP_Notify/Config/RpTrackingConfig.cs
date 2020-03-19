@@ -11,22 +11,8 @@ namespace RP_Notify.Config
     {
         public event EventHandler<RpEvent> RpTrackingConfigChangeHandler = delegate { };
 
-        private bool enabled;
         private string activePlayerId;
         private IList<Player> players;
-
-        public bool Enabled
-        {
-            get => enabled;
-            set
-            {
-                if (enabled != value)
-                {
-                    enabled = value;
-                    RaiseFieldChangeEvent(nameof(Enabled), value);
-                }
-            }
-        }
 
         public string ActivePlayerId
         {
@@ -57,46 +43,7 @@ namespace RP_Notify.Config
         public RpTrackingConfig()
         {
             ActivePlayerId = null;
-            Enabled = false;
             Players = new List<Player>();
-        }
-        public bool ValidateActivePlayerId()
-        {
-            if (ActivePlayerId == null)
-            {
-                return false;
-            }
-
-            bool isActivePlayerIdValid = Enabled
-                && !string.IsNullOrEmpty(ActivePlayerId)
-                && Players.Any(p => p.PlayerId == ActivePlayerId);
-
-            if (!isActivePlayerIdValid)
-            {
-                ActivePlayerId = null;
-            }
-
-            return isActivePlayerIdValid;
-        }
-
-        public bool TryGetTrackedChannel(out int chan)
-        {
-            if (!ValidateActivePlayerId())
-            {
-                chan = -1;
-                return false;
-            }
-            else
-            {
-                chan = Int32.Parse(
-                    Players
-                    .Where(p => p.PlayerId == ActivePlayerId)
-                    .First()
-                    .Chan
-                    );
-
-                return true;
-            }
         }
 
         private void RaiseFieldChangeEvent(string fieldName, bool? value = null)
