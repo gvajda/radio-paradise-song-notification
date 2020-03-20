@@ -5,6 +5,6 @@
         void ShowSongStartToast(bool force = false);
         void ShowSongRatingToast();
         void ShowSongDetailToast();
-        void SongInfoListenerError();
+        void SongInfoListenerErrorToast();
     }
 }

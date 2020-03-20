@@ -108,7 +108,7 @@ namespace RP_Notify.SongInfoUpdater
                     catch (Exception ex)
                     {
                         _log.Error($"{LogHelper.GetMethodName(this)} - Loop breaking inner ERROR - {ex.Message}\n{ex.StackTrace}");
-                        _toastHandler.SongInfoListenerError();
+                        _toastHandler.SongInfoListenerErrorToast();
                         await Task.Delay(10000);
                         Application.Restart();
                     }

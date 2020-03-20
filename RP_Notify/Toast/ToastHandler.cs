@@ -8,7 +8,6 @@ using RP_Notify.Toast.Helpers;
 using Serilog;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -65,21 +64,21 @@ namespace RP_Notify.Toast
             {
                 string toastVisual =
                 $@"<visual>
-              <binding template='ToastGeneric'>
-                {ToastHelper.CreateTitleText(_config, true)}
-                {ToastHelper.CreateContentText(_config)}
-                {ToastHelper.CreateRatingText(_config)}
-                {ToastHelper.CreateToastFooter(_config)}
-                {ToastHelper.CreateImage(_config, false)}
-              </binding>
-            </visual>";
+                  <binding template='ToastGeneric'>
+                    {ToastHelper.CreateTitleText(_config, true)}
+                    {ToastHelper.CreateContentText(_config)}
+                    {ToastHelper.CreateRatingText(_config)}
+                    {ToastHelper.CreateToastFooter(_config)}
+                    {ToastHelper.CreateImage(_config, false)}
+                  </binding>
+                </visual>";
 
                 // Create toast xml text
                 string toastXmlString =
-                $@"<toast launch='RpNotifySongDetails'>
-                {toastVisual}
-                {ToastHelper.toastAudio}
-            </toast>";
+                $@"<toast launch='{nameof(this.ShowSongStartToast)}'>
+                    {toastVisual}
+                    {ToastHelper.toastAudio}
+                </toast>";
 
                 DisplayToast(toastXmlString);
             });
@@ -103,14 +102,14 @@ namespace RP_Notify.Toast
                 </visual>";
 
                 string toastActions =
-                    $@"<actions>
-                      {ToastHelper.RatingInputAction(_config)}
-                      {ToastHelper.OpenInBrowserAction(_config)}
-                    </actions>";
+                $@"<actions>
+                    {ToastHelper.RatingInputAction(_config)}
+                    {ToastHelper.OpenInBrowserAction(_config)}
+                </actions>";
 
                 // Create toast xml text
                 string toastXmlString =
-                $@"<toast launch='RpNotifySongDetails'>
+                $@"<toast launch='{nameof(this.ShowSongRatingToast)}'>
                     {toastVisual}
                     {ToastHelper.toastAudio}
                     {toastActions}
@@ -144,7 +143,7 @@ namespace RP_Notify.Toast
 
                 // Create toast xml text
                 string toastXmlString =
-                $@"<toast launch='RpNotifySongDetails'>
+                $@"<toast launch='{nameof(this.ShowSongDetailToast)}'>
                     {toastVisual}
                     {ToastHelper.toastAudio}
                     {toastActions}
@@ -162,7 +161,7 @@ namespace RP_Notify.Toast
 
                 // Create toast xml text
                 string toastXmlString =
-                $@"<toast launch='RpNotifySongDetails'>
+                $@"<toast launch='{nameof(this.LoginToast)}'>
                     <visual>
                         <binding template='ToastGeneric'>
                             <text>User authentication</text>
@@ -249,12 +248,12 @@ namespace RP_Notify.Toast
                                 : "Please try again")}";
                 // Create toast xml text
                 string toastXmlString =
-                $@"<toast launch='RpNotifySongDetails'>
+                $@"<toast launch='{nameof(this.LoginResponseToast)}'>
                     <visual>
                         <binding template='ToastGeneric'>
                             <text>User authentication {authResp.Status}</text>
                             <text>{authMessage}</text>
-                            <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
+                            {ToastHelper.CreateImage(_config, true)}
                         </binding>
                     </visual>
                     {ToastHelper.toastAudio}
@@ -265,7 +264,7 @@ namespace RP_Notify.Toast
             });
         }
 
-        public void SongInfoListenerError()
+        public void SongInfoListenerErrorToast()
         {
             Task.Run(() =>
             {
@@ -273,13 +272,13 @@ namespace RP_Notify.Toast
 
                 // Create toast xml text
                 string toastXmlString =
-                $@"<toast launch='RpNotifySongDetails'>
+                $@"<toast launch='{nameof(this.SongInfoListenerErrorToast)}'>
                     <visual>
                         <binding template='ToastGeneric'>
                             <text>Application ERROR</text>
                             <text>Can't load song info</text>
                             <text>Please check your network status and firewall settings</text>
-                            <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
+                            {ToastHelper.CreateImage(_config, true)}
                         </binding>
                     </visual>
                     {ToastHelper.toastAudio}
@@ -290,25 +289,28 @@ namespace RP_Notify.Toast
         }
         private void DisplayToast(string toastXmlString, TypedEventHandler<ToastNotification, Object> activationHandler = null)
         {
-            var callerClassName = new StackFrame(2, true).GetMethod().DeclaringType.FullName;
-            callerClassName = callerClassName.Split(new[] { "+" }, StringSplitOptions.None)[0];
-            var toastType = new StackFrame(1, true).GetMethod().Name;
-            _log.Information($"{LogHelper.GetMethodName(this)} - Toast type: {{ToastType}} - Caller class: {{CallerClass}}", toastType, callerClassName);
-
-            // Parse to XML
-            XmlDocument toastXml = new XmlDocument();
-            toastXml.LoadXml(toastXmlString);
-
-            // Setup Toast
-            ToastNotification toast = new ToastNotification(toastXml);
-            if (activationHandler != null)
+            try
             {
-                toast.Activated += activationHandler;
-            }
+                // Parse to XML
+                XmlDocument toastXml = new XmlDocument();
+                toastXml.LoadXml(toastXmlString);
 
-            // Display Toast
-            DesktopNotificationManagerCompat.CreateToastNotifier().Show(toast);
-            _log.Information($"{LogHelper.GetMethodName(this)} - Displayed successfully");
+                // Setup Toast
+                ToastNotification toast = new ToastNotification(toastXml);
+                if (activationHandler != null)
+                {
+                    toast.Activated += activationHandler;
+                }
+
+                // Display Toast
+                DesktopNotificationManagerCompat.CreateToastNotifier().Show(toast);
+
+                _log.Information($"{LogHelper.GetMethodName(this)} - {toast.Content.FirstChild.Attributes[0].NodeValue.ToString()} - Displayed successfully");
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"{LogHelper.GetMethodName(this)} - ERROR - {ex.Message}\n{ex.StackTrace}");
+            }
         }
 
         private void WriteIconToDisk()
