@@ -13,6 +13,24 @@ namespace RP_Notify.ErrorHandler
             Logger = GetLogger(config);
         }
 
+        public void Information(string sender, string message, params object[] propertyValues)
+        {
+            Logger.Information($"{sender} - {message}", propertyValues);
+        }
+
+        public void Error(string sender, string message, params object[] propertyValues)
+        {
+            Logger.Error($"{sender} - ERROR - {message}", propertyValues);
+        }
+
+        public void Error(string sender, Exception ex)
+        {
+            Logger.Error($"{sender} - ERROR - {ex.Message}\n{ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Logger.Error($"{sender} - INNEREXCEPTION - {ex.InnerException.Message}\n{ex.InnerException.StackTrace}");
+            }
+        }
 
         private ILogger GetLogger(IConfig config)
         {
@@ -23,6 +41,7 @@ namespace RP_Notify.ErrorHandler
                     config.StaticConfig.LogFilePath,
                     fileSizeLimitBytes: 1048576,
                     rollOnFileSizeLimit: true,
+                    retainedFileCountLimit: 10,
                     shared: true
                     )
                 .CreateLogger();
@@ -35,6 +54,8 @@ namespace RP_Notify.ErrorHandler
                 .CreateLogger();
             }
         }
+
+
     }
 
     public static class LogHelper

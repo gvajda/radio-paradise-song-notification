@@ -8,7 +8,6 @@ using RP_Notify.SongInfoUpdater;
 using RP_Notify.StartMenuShortcut;
 using RP_Notify.Toast;
 using RP_Notify.TrayIcon;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,7 +25,7 @@ namespace RP_Notify
         private readonly ShortcutHelper _shortcutHelper;
         private readonly Foobar2000Watcher _foobar2000Watcher;
         private readonly ISongInfoListener _songInfoListener;
-        private readonly ILogger _log;
+        private readonly ILog _log;
         private readonly RpTrayIcon _rpTrayIcon;
 
         private Task OnChangeTask { get; set; }
@@ -34,7 +33,7 @@ namespace RP_Notify
 
         public RpApplicationCore(IConfig config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, ISongInfoListener songInfoListener, ILog log, RpTrayIcon rpTrayIcon, ShortcutHelper shortcutHelper)
         {
-            _log = log.Logger;
+            _log = log;
             _apihandler = apiHandler;
             _config = config;
             _toastHandler = toastHandler;
@@ -50,7 +49,7 @@ namespace RP_Notify
 
         private void Init()
         {
-            _log.Information($"{LogHelper.GetMethodName(this)} - Started ********************************************************************");
+            _log.Information(LogHelper.GetMethodName(this), "Started ********************************************************************");
 
             if (_config.ExternalConfig.Channel == 99)      // Reset channel if Favourites were tracked at exit
             {
@@ -73,7 +72,7 @@ namespace RP_Notify
             _shortcutHelper.TryCreateShortcut();    // Add shortcut to Start menu (required for Toast Notifications)
 
             // Set up event handlers
-            _log.Information($"{LogHelper.GetMethodName(this)} - Create event listeners");
+            _log.Information(LogHelper.GetMethodName(this), "Create event listeners");
             _config.ExternalConfig.ExternalConfigChangeHandler += OnChange;
             _config.State.StateChangeHandler += OnChange;
             _config.State.RpTrackingConfig.RpTrackingConfigChangeHandler += OnChange;
@@ -87,7 +86,7 @@ namespace RP_Notify
             _songInfoListener.Start();
 
             // Add context menu
-            _log.Information($"{LogHelper.GetMethodName(this)} - Create tray icon");
+            _log.Information(LogHelper.GetMethodName(this), "Create tray icon");
             _rpTrayIcon.Init();
             _rpTrayIcon.NotifyIcon.MouseDoubleClick += TrayIconDoubleClickHandler;
         }
@@ -95,7 +94,7 @@ namespace RP_Notify
 
         private void TrayIconDoubleClickHandler(object sender, MouseEventArgs e)
         {
-            _log.Information($"{LogHelper.GetMethodName(this)} - Invoked - Sender: {{Sender}}", sender.GetType());
+            _log.Information(LogHelper.GetMethodName(this), "Invoked - Sender: {Sender}", sender.GetType());
             _toastHandler.ShowSongDetailToast();
 
         }
@@ -118,14 +117,14 @@ namespace RP_Notify
             int index = 0;
             while (!(OnChangeTask == null || OnChangeTask.IsCompleted))
             {
-                _log.Information($"{LogHelper.GetMethodName(this)} - Event [{localEventCounter}] - waiting to process in queue - Task status: {OnChangeTask.Status} - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                _log.Information(LogHelper.GetMethodName(this), $"Event [{localEventCounter}] - waiting to process in queue - Task status: {OnChangeTask.Status} - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
 
                 Task.Delay(500).Wait();
                 index++;
 
                 if (index > 20)
                 {
-                    _log.Error($"{LogHelper.GetMethodName(this)} - Event [{localEventCounter}] - TASK IS BLOCKED IN EVENT HANDLER QUEUE - STATUS: {OnChangeTask.Status} - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                    _log.Error(LogHelper.GetMethodName(this), $"Event [{localEventCounter}] - TASK IS BLOCKED IN EVENT HANDLER QUEUE - STATUS: {OnChangeTask.Status} - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
 
                     Application.Exit();
                 }
@@ -134,7 +133,7 @@ namespace RP_Notify
             // OnChangeTask = Task.Run(() =>
             Task.Run(() =>
            {
-               _log.Information($"{LogHelper.GetMethodName(this)} - Event [{localEventCounter}] - Received - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+               _log.Information(LogHelper.GetMethodName(this), $"Event [{localEventCounter}] - Received - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
 
                try
                {
@@ -182,16 +181,16 @@ namespace RP_Notify
                            OnPlayersChange();
                            break;
                        default:
-                           _log.Information($"{LogHelper.GetMethodName(this)} - Event [{localEventCounter}] - Exit without action - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                           _log.Information(LogHelper.GetMethodName(this), $"Event [{localEventCounter}] - Exit without action - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
                            break;
                    }
                }
                catch (Exception ex)
                {
-                   _log.Error($"{LogHelper.GetMethodName(this)} - ERROR - {ex.Message}\n{ex.StackTrace}");
+                   _log.Error(LogHelper.GetMethodName(this), ex);
                }
 
-               _log.Information($"{LogHelper.GetMethodName(this)} - Event [{localEventCounter}] - Finished - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+               _log.Information(LogHelper.GetMethodName(this), $"Event [{localEventCounter}] - Finished - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
            }).Wait();
         }
 
@@ -259,7 +258,7 @@ namespace RP_Notify
 
             if (_config.ExternalConfig.DeleteAllDataOnStartup)
             {
-                _log.Information($"{LogHelper.GetMethodName(this)} - App data delete requested");
+                _log.Information(LogHelper.GetMethodName(this), "App data delete requested");
 
                 if (_config.ExternalConfig.EnableLoggingToFile)
                 {
@@ -307,7 +306,7 @@ namespace RP_Notify
         {
             // APP - song is updated in State
 
-            if (!_config.State.Playback.RatingUpdated)
+            if (!_config.State.Playback.SameSongOnlyInternalUpdate)
             {
                 Retry.Do(() => { File.Delete(_config.StaticConfig.AlbumArtImagePath); });
             }
@@ -367,25 +366,25 @@ namespace RP_Notify
 
             if (e.Mode == PowerModes.Resume)
             {
-                _log.Information($"{LogHelper.GetMethodName(this)} - PC woke up - RESTART");
+                _log.Information(LogHelper.GetMethodName(this), "PC woke up - RESTART");
                 Application.Restart();
             }
         }
 
         private void ApplicationExitHandler(object sender, EventArgs e)
         {
-            _log.Information($"{LogHelper.GetMethodName(this)} - Exit process started");
+            _log.Information(LogHelper.GetMethodName(this), "Exit process started");
 
             if (File.Exists(_config.StaticConfig.AlbumArtImagePath))
             {
-                _log.Debug($"{LogHelper.GetMethodName(this)} - Delete album art");
+                _log.Information(LogHelper.GetMethodName(this), $"Delete album art");
                 File.Delete(_config.StaticConfig.AlbumArtImagePath);
             }
 
             if (!_config.ExternalConfig.LeaveShorcutInStartMenu)
             {
                 _shortcutHelper.DeleteShortcut();
-                _log.Debug($"{LogHelper.GetMethodName(this)} - Shortcut removed from start menu");
+                _log.Information(LogHelper.GetMethodName(this), $"Shortcut removed from start menu");
             }
 
             _rpTrayIcon.Dispose();
@@ -397,7 +396,7 @@ namespace RP_Notify
             }
             else
             {
-                _log.Information($@"{LogHelper.GetMethodName(this)} - Finished
+                _log.Information(LogHelper.GetMethodName(this), $@"Finished
 ********************************************************************
 ********************************************************************
 ********************************************************************

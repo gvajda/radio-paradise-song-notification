@@ -10,6 +10,7 @@ namespace RP_Notify.Config
 
         private bool isUserAuthenticated;
         private List<Channel> channelList;
+        private Playback playback;
         private string tooltipText;
         private bool foobar2000IsPlayingRP;
 
@@ -39,7 +40,32 @@ namespace RP_Notify.Config
             }
         }
 
-        public Playback Playback { get; private set; }
+        public Playback Playback
+        {
+            get => playback;
+            set
+            {
+                if (playback == null
+                    || string.IsNullOrEmpty(playback.SongInfo.SongId)
+                    || playback.SongInfo.SongId != value.SongInfo.SongId
+                    || playback.SongInfo.Event != value.SongInfo.Event)
+                {
+                    playback = value;
+                    RaiseFieldChangeEvent(nameof(Playback));
+                }
+                else if (playback.SongInfo.UserRating != value.SongInfo.UserRating
+                    ||
+                        (   // if RP player was paused and restarted
+                            playback.SongInfoExpiration.AddSeconds(10) < value.SongInfoExpiration
+                            && DateTime.Now.AddSeconds(10) < value.SongInfoExpiration
+                        ))
+                {
+                    value.SameSongOnlyInternalUpdate = true;
+                    playback = value;
+                    RaiseFieldChangeEvent(nameof(Playback));
+                }
+            }
+        }
 
         public string TooltipText
         {
@@ -77,31 +103,6 @@ namespace RP_Notify.Config
             RpTrackingConfig = new RpTrackingConfig();
         }
 
-        public bool TryUpdatePlayback(Playback newPlayback)
-        {
-
-            if (Playback == null
-                || string.IsNullOrEmpty(Playback.SongInfo.SongId)
-                || Playback.SongInfo.SongId != newPlayback.SongInfo.SongId
-                || Playback.SongInfo.Event != newPlayback.SongInfo.Event)
-            {
-                Playback = newPlayback;
-                RaiseFieldChangeEvent(nameof(Playback));
-                return true;
-            }
-            else if (Playback.SongInfo.UserRating != newPlayback.SongInfo.UserRating)
-            {
-                newPlayback.RatingUpdated = true;
-                Playback = newPlayback;
-                RaiseFieldChangeEvent(nameof(Playback));
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         private void RaiseFieldChangeEvent(string fieldName, bool? value = null)
         {
             StateChangeHandler.Invoke(this, new RpEvent(RpEvent.EventType.StateChange, fieldName, value));
@@ -120,7 +121,7 @@ namespace RP_Notify.Config
                     : DateTime.Now;
             set => songInfoExpiration = value;
         }
-        public bool RatingUpdated { get; internal set; }
+        public bool SameSongOnlyInternalUpdate { get; internal set; }
         public bool ShowedOnNewSong { get; set; }
 
         public Playback(NowplayingList NowplayingList)
@@ -132,7 +133,7 @@ namespace RP_Notify.Config
                 : null;
 
             SongInfoExpiration = DateTime.Now.Add(TimeSpan.FromSeconds(NowplayingList.Refresh));
-            RatingUpdated = false;
+            SameSongOnlyInternalUpdate = false;
             ShowedOnNewSong = false;
         }
     }

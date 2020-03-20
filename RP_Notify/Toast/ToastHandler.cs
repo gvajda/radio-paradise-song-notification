@@ -5,7 +5,6 @@ using RP_Notify.API.ResponseModel;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using RP_Notify.Toast.Helpers;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +23,7 @@ namespace RP_Notify.Toast
     {
         private readonly IConfig _config;
         private readonly IRpApiHandler _apiHandler;
-        private readonly ILogger _log;
+        private readonly ILog _log;
 
         private const string appId = "GergelyVajda.RP_Notify";
         internal const string guid = "8a8d7d8c-b191-4b17-b527-82c795243a12";
@@ -33,7 +32,7 @@ namespace RP_Notify.Toast
         {
             _config = config;
             _apiHandler = apiHandler;
-            _log = log.Logger;
+            _log = log;
             // Register AUMID and COM server (for Desktop Bridge apps, this no-ops)
             DesktopNotificationManagerCompat.RegisterAumidAndComServer<ToastActivator>(appId);
             // Register COM server and activator type
@@ -62,8 +61,12 @@ namespace RP_Notify.Toast
 
             Task.Run(() =>
             {
-                string toastVisual =
-                $@"<visual>
+                string toastXmlString = null;
+                try
+                {
+
+                    string toastVisual =
+                    $@"<visual>
                   <binding template='ToastGeneric'>
                     {ToastHelper.CreateTitleText(_config, true)}
                     {ToastHelper.CreateContentText(_config)}
@@ -73,12 +76,17 @@ namespace RP_Notify.Toast
                   </binding>
                 </visual>";
 
-                // Create toast xml text
-                string toastXmlString =
-                $@"<toast launch='{nameof(this.ShowSongStartToast)}'>
+                    // Create toast xml text
+                    toastXmlString =
+                   $@"<toast launch='{nameof(this.ShowSongStartToast)}'>
                     {toastVisual}
                     {ToastHelper.toastAudio}
                 </toast>";
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(LogHelper.GetMethodName(this), ex);
+                }
 
                 DisplayToast(toastXmlString);
             });
@@ -90,30 +98,38 @@ namespace RP_Notify.Toast
         {
             Task.Run(() =>
             {
-                string toastVisual =
-                $@"<visual>
-                  <binding template='ToastGeneric'>
-                    {ToastHelper.CreateTitleText(_config, true)}
-                    {ToastHelper.CreateContentText(_config)}
-                    {ToastHelper.CreateRatingText(_config)}
-                    {ToastHelper.CreateToastFooter(_config)}
-                    {ToastHelper.CreateImage(_config, false)}
-                  </binding>
-                </visual>";
+                string toastXmlString = null;
+                try
+                {
+                    string toastVisual =
+                    $@"<visual>
+                      <binding template='ToastGeneric'>
+                        {ToastHelper.CreateTitleText(_config, true)}
+                        {ToastHelper.CreateContentText(_config)}
+                        {ToastHelper.CreateRatingText(_config)}
+                        {ToastHelper.CreateToastFooter(_config)}
+                        {ToastHelper.CreateImage(_config, false)}
+                      </binding>
+                    </visual>";
 
-                string toastActions =
-                $@"<actions>
-                    {ToastHelper.RatingInputAction(_config)}
-                    {ToastHelper.OpenInBrowserAction(_config)}
-                </actions>";
+                    string toastActions =
+                    $@"<actions>
+                        {ToastHelper.RatingInputAction(_config)}
+                        {ToastHelper.OpenInBrowserAction(_config)}
+                    </actions>";
 
-                // Create toast xml text
-                string toastXmlString =
-                $@"<toast launch='{nameof(this.ShowSongRatingToast)}'>
-                    {toastVisual}
-                    {ToastHelper.toastAudio}
-                    {toastActions}
-                </toast>";
+                    // Create toast xml text
+                    toastXmlString =
+                    $@"<toast launch='{nameof(this.ShowSongRatingToast)}'>
+                        {toastVisual}
+                        {ToastHelper.toastAudio}
+                        {toastActions}
+                    </toast>";
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(LogHelper.GetMethodName(this), ex);
+                }
 
                 DisplayToast(toastXmlString, HandleToastActivatedEvent);
             });
@@ -123,31 +139,39 @@ namespace RP_Notify.Toast
         {
             Task.Run(() =>
             {
-                string toastVisual =
-                $@"<visual>
-                  <binding template='ToastGeneric'>
-                    {ToastHelper.CreateTitleText(_config, false)}
-                    {ToastHelper.CreateContentText(_config)}
-                    {ToastHelper.CreateRatingText(_config)}
-                    {ToastHelper.CreateToastFooter(_config)}
-                    {ToastHelper.CreateProgressBar(_config)}
-                    {ToastHelper.CreateImage(_config, true)}
-                  </binding>
-                </visual>";
+                string toastXmlString = null;
+                try
+                {
+                    string toastVisual =
+                    $@"<visual>
+                      <binding template='ToastGeneric'>
+                        {ToastHelper.CreateTitleText(_config, false)}
+                        {ToastHelper.CreateContentText(_config)}
+                        {ToastHelper.CreateRatingText(_config)}
+                        {ToastHelper.CreateToastFooter(_config)}
+                        {ToastHelper.CreateProgressBar(_config)}
+                        {ToastHelper.CreateImage(_config, true)}
+                      </binding>
+                    </visual>";
 
-                string toastActions =
-                $@"<actions>
-                  {ToastHelper.RatingInputAction(_config)}
-                  {ToastHelper.OpenInBrowserAction(_config)}
-                </actions>";
+                    string toastActions =
+                    $@"<actions>
+                      {ToastHelper.RatingInputAction(_config)}
+                      {ToastHelper.OpenInBrowserAction(_config)}
+                    </actions>";
 
-                // Create toast xml text
-                string toastXmlString =
-                $@"<toast launch='{nameof(this.ShowSongDetailToast)}'>
-                    {toastVisual}
-                    {ToastHelper.toastAudio}
-                    {toastActions}
-                </toast>";
+                    // Create toast xml text
+                    toastXmlString =
+                    $@"<toast launch='{nameof(this.ShowSongDetailToast)}'>
+                        {toastVisual}
+                        {ToastHelper.toastAudio}
+                        {toastActions}
+                    </toast>";
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(LogHelper.GetMethodName(this), ex);
+                }
 
                 DisplayToast(toastXmlString, HandleToastActivatedEvent);
             });
@@ -157,30 +181,38 @@ namespace RP_Notify.Toast
         {
             Task.Run(() =>
             {
-                string logo = _config.StaticConfig.IconPath;
+                string toastXmlString = null;
+                try
+                {
+                    string logo = _config.StaticConfig.IconPath;
 
-                // Create toast xml text
-                string toastXmlString =
-                $@"<toast launch='{nameof(this.LoginToast)}'>
-                    <visual>
-                        <binding template='ToastGeneric'>
-                            <text>User authentication</text>
-                            <text>Note: the applet doesn't save your password, only the same cookie as your browser</text>
-                            <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
-                        </binding>
-                    </visual>
-                    {ToastHelper.toastAudio}
-                    <actions>
-                        <input id='Username' type='text' placeHolderContent='Username'/>
-                        <input id='Password' type='text' placeHolderContent='Password'/>
-                        <action
-                            content='Log in'
-                            arguments ='action=LoginDataSent'/>
-                        <action
-                            content='Not now'
-                            arguments='NotNow'/>
-                    </actions>
-                </toast>";
+                    // Create toast xml text
+                    toastXmlString =
+                    $@"<toast launch='{nameof(this.LoginToast)}'>
+                        <visual>
+                            <binding template='ToastGeneric'>
+                                <text>User authentication</text>
+                                <text>Note: the applet doesn't save your password, only the same cookie as your browser</text>
+                                <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
+                            </binding>
+                        </visual>
+                        {ToastHelper.toastAudio}
+                        <actions>
+                            <input id='Username' type='text' placeHolderContent='Username'/>
+                            <input id='Password' type='text' placeHolderContent='Password'/>
+                            <action
+                                content='Log in'
+                                arguments ='action=LoginDataSent'/>
+                            <action
+                                content='Not now'
+                                arguments='NotNow'/>
+                        </actions>
+                    </toast>";
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(LogHelper.GetMethodName(this), ex);
+                }
 
                 DisplayToast(toastXmlString, HandleToastActivatedEvent);
             });
@@ -196,7 +228,8 @@ namespace RP_Notify.Toast
                     .DeserializeObject<RpToastNotificationActivatedEventArgs>(
                         JsonConvert.SerializeObject(myEvent)
                     );
-                _log.Information($"{ LogHelper.GetMethodName(this)} - {{ eventArguments}}", rpEvent.Arguments);
+					
+                _log.Information(LogHelper.GetMethodName(this), "{ eventArguments}", rpEvent.Arguments);
 
                 QueryString args = QueryString.Parse(rpEvent.Arguments);
                 if (args["action"] == "LoginRequested")
@@ -227,14 +260,14 @@ namespace RP_Notify.Toast
                         var ratingResponse = _apiHandler.GetRating(songId.ToString(), userRate);
                         if (ratingResponse.Status == "success")
                         {
-                            _config.State.TryUpdatePlayback(new Playback(_apiHandler.GetNowplayingList()));
+                            _config.State.Playback = new Playback(_apiHandler.GetNowplayingList());
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                _log.Error($"{LogHelper.GetMethodName(this)} - ERROR - {ex.Message}\n{ex.StackTrace}");
+                _log.Error(LogHelper.GetMethodName(this), ex);
             }
         }
 
@@ -242,23 +275,30 @@ namespace RP_Notify.Toast
         {
             Task.Run(() =>
             {
-                string logo = _config.StaticConfig.IconPath;
-                string authMessage = $@"{(authResp.Status == "success"
-                                ? $"Welcome {authResp.Username}!"
-                                : "Please try again")}";
-                // Create toast xml text
-                string toastXmlString =
-                $@"<toast launch='{nameof(this.LoginResponseToast)}'>
-                    <visual>
-                        <binding template='ToastGeneric'>
-                            <text>User authentication {authResp.Status}</text>
-                            <text>{authMessage}</text>
-                            {ToastHelper.CreateImage(_config, true)}
-                        </binding>
-                    </visual>
-                    {ToastHelper.toastAudio}
-                </toast>";
-
+                string toastXmlString = null;
+                try
+                {
+                    string logo = _config.StaticConfig.IconPath;
+                    string authMessage = $@"{(authResp.Status == "success"
+                        ? $"Welcome {authResp.Username}!"
+                        : "Please try again")}";
+                    // Create toast xml text
+                    toastXmlString =
+                    $@"<toast launch='{nameof(this.LoginResponseToast)}'>
+                        <visual>
+                            <binding template='ToastGeneric'>
+                                <text>User authentication {authResp.Status}</text>
+                                <text>{authMessage}</text>
+                                {ToastHelper.CreateImage(_config, true)}
+                            </binding>
+                        </visual>
+                        {ToastHelper.toastAudio}
+                    </toast>";
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(LogHelper.GetMethodName(this), ex);
+                }
 
                 DisplayToast(toastXmlString);
             });
@@ -268,21 +308,27 @@ namespace RP_Notify.Toast
         {
             Task.Run(() =>
             {
-                string logo = _config.StaticConfig.IconPath;
-
-                // Create toast xml text
-                string toastXmlString =
-                $@"<toast launch='{nameof(this.SongInfoListenerErrorToast)}'>
-                    <visual>
-                        <binding template='ToastGeneric'>
-                            <text>Application ERROR</text>
-                            <text>Can't load song info</text>
-                            <text>Please check your network status and firewall settings</text>
-                            {ToastHelper.CreateImage(_config, true)}
-                        </binding>
-                    </visual>
-                    {ToastHelper.toastAudio}
-                </toast>";
+                string toastXmlString = null;
+                try
+                {
+                    // Create toast xml text
+                    toastXmlString =
+                        $@"<toast launch='{nameof(this.SongInfoListenerErrorToast)}'>
+                        <visual>
+                            <binding template='ToastGeneric'>
+                                <text>Application ERROR</text>
+                                <text>Can't load song info</text>
+                                <text>Please check your network status and firewall settings</text>
+                                {ToastHelper.CreateImage(_config, true)}
+                            </binding>
+                        </visual>
+                        {ToastHelper.toastAudio}
+                    </toast>";
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(LogHelper.GetMethodName(this), ex);
+                }
 
                 DisplayToast(toastXmlString);
             });
@@ -305,11 +351,11 @@ namespace RP_Notify.Toast
                 // Display Toast
                 DesktopNotificationManagerCompat.CreateToastNotifier().Show(toast);
 
-                _log.Information($"{LogHelper.GetMethodName(this)} - {toast.Content.FirstChild.Attributes[0].NodeValue.ToString()} - Displayed successfully");
+                _log.Information(LogHelper.GetMethodName(this), $"{toast.Content.FirstChild.Attributes[0].NodeValue.ToString()} - Displayed successfully");
             }
             catch (Exception ex)
             {
-                _log.Error($"{LogHelper.GetMethodName(this)} - ERROR - {ex.Message}\n{ex.StackTrace}");
+                _log.Error(LogHelper.GetMethodName(this), ex);
             }
         }
 

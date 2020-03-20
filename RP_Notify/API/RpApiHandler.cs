@@ -2,7 +2,6 @@
 using RP_Notify.API.ResponseModel;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,28 +14,28 @@ namespace RP_Notify.API
     {
         private readonly RestClient _restClient;
         private readonly IConfig _config;
-        private readonly ILogger _log;
+        private readonly ILog _log;
 
         public RpApiHandler(IConfig config, ILog log, RestClient restClient)
         {
             _config = config;
             _restClient = restClient;
-            _log = log.Logger;
+            _log = log;
 
             Init();
         }
 
         private void Init()
         {
-            _log.Information($"{LogHelper.GetMethodName(this)} - Initialization started - Checking for cookie cache and fetch RP channel list");
+            _log.Information(LogHelper.GetMethodName(this), $"Initialization started - Checking for cookie cache and fetch RP channel list");
 
             _restClient.BaseUrl = new Uri(_config.StaticConfig.RpApiBaseUrl);
 
             ReadAndValidateCookieFromCache();
 
-            _log.Information($"-- {LogHelper.GetMethodName(this)} - Get channel list");
+            _log.Information(LogHelper.GetMethodName(this), $"Get channel list");
             _config.State.ChannelList = GetChannelList();
-            _log.Information($"{LogHelper.GetMethodName(this)} - Initialization finished - Channel list: {{@ChannelList}}", _config.State.ChannelList);
+            _log.Information(LogHelper.GetMethodName(this), "Initialization finished - Channel list: {@ChannelList}", _config.State.ChannelList);
         }
 
         public NowplayingList GetNowplayingList(int list_num = 1)
@@ -128,7 +127,7 @@ namespace RP_Notify.API
         {
             try
             {
-                _log.Information($"{LogHelper.GetMethodName(this)} - Invoked - URL resource path: {{Resource}} - Authenticated: {{IsUserAuthenticated}}", request.Resource, _config.State.IsUserAuthenticated);
+                _log.Information(LogHelper.GetMethodName(this), "Invoked - URL resource path: {Resource} - Authenticated: {IsUserAuthenticated}", request.Resource, _config.State.IsUserAuthenticated);
 
                 var taskCompletionSource = new TaskCompletionSource<T>();
 
@@ -138,13 +137,13 @@ namespace RP_Notify.API
                     taskCompletionSource.SetResult(response.Data);
                 });
 
-                _log.Information($"{LogHelper.GetMethodName(this)} - Returned - Result type: {{ResultType}}", taskCompletionSource.Task.Result.GetType());
+                _log.Information(LogHelper.GetMethodName(this), "Returned - Result type: {ResultType}", taskCompletionSource.Task.Result.GetType());
 
                 return taskCompletionSource.Task;
             }
             catch (Exception ex)
             {
-                _log.Error($"{LogHelper.GetMethodName(this)} - ERROR - {ex.Message}\n{ex.StackTrace}");
+                _log.Error(LogHelper.GetMethodName(this), ex);
                 return null;
             }
         }
@@ -165,11 +164,11 @@ namespace RP_Notify.API
 
                 if (CookieHelper.TryWriteCookieToDisk(_config.StaticConfig.CookieCachePath, cookieJar))
                 {
-                    _log.Information($"{LogHelper.GetMethodName(this)} - Cookie saved to cache");
+                    _log.Information(LogHelper.GetMethodName(this), "Cookie saved to cache");
                 }
                 else
                 {
-                    _log.Error($"{LogHelper.GetMethodName(this)} - Can't save cookie");
+                    _log.Error(LogHelper.GetMethodName(this), "Can't save cookie");
                 }
             }
         }
@@ -183,19 +182,19 @@ namespace RP_Notify.API
 
                 if (GetAuth().Status == "success")
                 {
-                    _log.Information($"{LogHelper.GetMethodName(this)} - Cookie validation Success");
+                    _log.Information(LogHelper.GetMethodName(this), "Cookie validation Success");
                 }
                 else
                 {
                     _config.State.IsUserAuthenticated = false;
                     Retry.Do(() => File.Delete(_config.StaticConfig.CookieCachePath));
-                    _log.Warning($"{LogHelper.GetMethodName(this)} - Invalid cookie found - DELETED");
+                    _log.Information(LogHelper.GetMethodName(this), $"Invalid cookie found - DELETED");
                 }
             }
             else
             {
                 _config.State.IsUserAuthenticated = false;
-                _log.Information($"{LogHelper.GetMethodName(this)} - No cached cookie found");
+                _log.Information(LogHelper.GetMethodName(this), "No cached cookie found");
             }
         }
     }

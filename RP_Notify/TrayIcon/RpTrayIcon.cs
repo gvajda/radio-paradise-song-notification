@@ -2,7 +2,6 @@
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using RP_Notify.Properties;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -16,7 +15,7 @@ namespace RP_Notify.TrayIcon
     class RpTrayIcon
     {
         private readonly IConfig _config;
-        private readonly ILogger _log;
+        private readonly ILog _log;
         private readonly ContextMenu contextMenu;
 
         public NotifyIcon NotifyIcon { get; }
@@ -28,7 +27,7 @@ namespace RP_Notify.TrayIcon
         public RpTrayIcon(IConfig config, ILog log)
         {
             _config = config;
-            _log = log.Logger;
+            _log = log;
 
             contextMenu = new ContextMenu();
             NotifyIcon = new NotifyIcon();
@@ -47,7 +46,7 @@ namespace RP_Notify.TrayIcon
 
         public void Dispose()
         {
-            _log.Debug($"{LogHelper.GetMethodName(this)} - Started");
+            _log.Information(LogHelper.GetMethodName(this), "Started");
 
             if (contextMenu != null)
             {
@@ -60,11 +59,11 @@ namespace RP_Notify.TrayIcon
                 NotifyIcon.Dispose();
             }
 
-            _log.Debug($"{LogHelper.GetMethodName(this)} - Finished");
+            _log.Information(LogHelper.GetMethodName(this), "Finished");
         }
         public void BuildContextMenu()
         {
-            _log.Debug($"{LogHelper.GetMethodName(this)} - Started");
+            _log.Information(LogHelper.GetMethodName(this), "Started");
 
             var menuEntryShowOnNewSong = CreateMenuEntryShowOnNewSong();
             var menuEntryLargeAlbumArt = CreateMenuEntryLargeAlbumArt();
@@ -104,7 +103,7 @@ namespace RP_Notify.TrayIcon
             contextMenu.MenuItems.Add(menuEntryAbout);
             contextMenu.MenuItems.Add(menuEntryExit);
 
-            _log.Debug($"{LogHelper.GetMethodName(this)} - Finished");
+            _log.Information(LogHelper.GetMethodName(this), "Finished");
         }
 
         private MenuItem CreateMenuEntryShowOnNewSong()

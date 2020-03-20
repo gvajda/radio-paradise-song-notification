@@ -1,7 +1,6 @@
 ﻿using Foobar2000.RESTClient.Api;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +13,7 @@ namespace RP_Notify.Foobar2000
     class Foobar2000Watcher
     {
         private readonly IConfig _config;
-        private readonly ILogger _log;
+        private readonly ILog _log;
         private readonly PlayerApi _playerApi;
 
         private int CheckDelayMillisecs { get; set; }
@@ -24,7 +23,7 @@ namespace RP_Notify.Foobar2000
         public Foobar2000Watcher(IConfig config, ILog log, PlayerApi playerApi)
         {
             _config = config;
-            _log = log.Logger;
+            _log = log;
             _playerApi = playerApi;
 
             Init();
@@ -41,12 +40,12 @@ namespace RP_Notify.Foobar2000
         {
             if (IsFoobar2000WatcherTaskRunning())
             {
-                _log.Information($"{LogHelper.GetMethodName(this)} - Shutdown initiated");
+                _log.Information(LogHelper.GetMethodName(this), $"Shutdown initiated");
                 Foobar2000WatcherTaskCancellationTokenSource.Cancel();
             }
             else
             {
-                _log.Information($"{LogHelper.GetMethodName(this)} - Not running");
+                _log.Information(LogHelper.GetMethodName(this), $"Not running");
             }
         }
 
@@ -54,18 +53,18 @@ namespace RP_Notify.Foobar2000
         {
             if (!IsFoobar2000WatcherTaskRunning())
             {
-                _log.Information($"{LogHelper.GetMethodName(this)} - Invoked");
+                _log.Information(LogHelper.GetMethodName(this), $"Invoked");
                 Run();
             }
             else
             {
-                _log.Information($"{LogHelper.GetMethodName(this)} - Alreay running");
+                _log.Information(LogHelper.GetMethodName(this), $"Alreay running");
             }
         }
 
         private void Run()
         {
-            _log.Information($"{LogHelper.GetMethodName(this)} - Starting");
+            _log.Information(LogHelper.GetMethodName(this), $"Starting");
 
             Foobar2000WatcherTaskCancellationTokenSource = new CancellationTokenSource();
 
@@ -85,17 +84,17 @@ namespace RP_Notify.Foobar2000
                     }
                     catch (Exception ex)
                     {
-                        _log.Error($"{LogHelper.GetMethodName(this)} - ERROR - {ex.Message}\n{ex.StackTrace}");
+                        _log.Error(LogHelper.GetMethodName(this), ex);
                     }
                 }
 
                 _config.State.Foobar2000IsPlayingRP = false;
 
-                _log.Information($"{LogHelper.GetMethodName(this)} - Stopped");
+                _log.Information(LogHelper.GetMethodName(this), $"Stopped");
 
             }, Foobar2000WatcherTaskCancellationTokenSource.Token);
 
-            _log.Information($"{LogHelper.GetMethodName(this)} - Running in background");
+            _log.Information(LogHelper.GetMethodName(this), $"Running in background");
         }
 
         public bool CheckFoobar2000Status(out bool channelChange)
@@ -112,7 +111,7 @@ namespace RP_Notify.Foobar2000
                     && !_config.IsRpPlayerTrackingChannel())
                 {
                     channelChange = true;
-                    _log.Information($"{LogHelper.GetMethodName(this)} - Channel change detected");
+                    _log.Information(LogHelper.GetMethodName(this), $"Channel change detected");
                     _config.ExternalConfig.Channel = matchingChannel;
                 }
                 return true;
