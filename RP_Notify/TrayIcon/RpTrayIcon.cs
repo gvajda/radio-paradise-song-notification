@@ -192,7 +192,7 @@ namespace RP_Notify.TrayIcon
             MenuItem reset = new MenuItem("Delete app data");
             reset.Click += (sender, e) =>
             {
-                _config.ExternalConfig.DeleteAllDataOnStartup = !_config.ExternalConfig.DeleteAllDataOnStartup;
+                _config.ExternalConfig.DeleteAllData = !_config.ExternalConfig.DeleteAllData;
             };
 
             return reset;
@@ -251,13 +251,13 @@ namespace RP_Notify.TrayIcon
 
                     trackedPlayer.Click += (sender, e) =>
                     {
-                        if (_config.State.RpTrackingConfig.ActivePlayerId != player.PlayerId)
+                        if (_config.State.RpTrackingConfig.ActivePlayerId == player.PlayerId)
                         {
-                            _config.State.RpTrackingConfig.ActivePlayerId = player.PlayerId;
+                            _config.State.RpTrackingConfig.ActivePlayerId = null;
                         }
                         else
                         {
-                            _config.State.RpTrackingConfig.ActivePlayerId = null;
+                            _config.State.RpTrackingConfig.ActivePlayerId = player.PlayerId;
                         }
                     };
 

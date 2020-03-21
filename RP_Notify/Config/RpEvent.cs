@@ -13,13 +13,13 @@ namespace RP_Notify.Config
 
         public EventType SentEventType { get; set; }
         public string ChangedFieldName { get; set; }
-        public bool? BoolValue { get; set; }
+        public object Content { get; set; }
 
-        public RpEvent(EventType eventType, string changedFieldName, bool? boolValue = null)
+        public RpEvent(EventType eventType, string changedFieldName, object content)
         {
             SentEventType = eventType;
             ChangedFieldName = changedFieldName;
-            BoolValue = boolValue;
+            Content = content;
         }
     }
 }

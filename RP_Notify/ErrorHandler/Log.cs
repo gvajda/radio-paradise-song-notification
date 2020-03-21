@@ -1,5 +1,6 @@
 ﻿using RP_Notify.Config;
 using Serilog;
+using Serilog.Core;
 using System;
 using System.Runtime.CompilerServices;
 
@@ -7,7 +8,8 @@ namespace RP_Notify.ErrorHandler
 {
     public class Log : ILog
     {
-        public ILogger Logger { get; set; }
+        private Logger Logger { get; set; }
+
         public Log(IConfig config)
         {
             Logger = GetLogger(config);
@@ -32,7 +34,12 @@ namespace RP_Notify.ErrorHandler
             }
         }
 
-        private ILogger GetLogger(IConfig config)
+        public void Dispose()
+        {
+            Logger.Dispose();
+        }
+
+        private Logger GetLogger(IConfig config)
         {
             if (config.ExternalConfig.EnableLoggingToFile)
             {
@@ -60,16 +67,19 @@ namespace RP_Notify.ErrorHandler
 
     public static class LogHelper
     {
-        public static string GetMethodName(this object type, [CallerMemberName] string caller = null, bool fullName = false)
+        public static string GetMethodName(this object type, [CallerMemberName] string caller = null)
         {
             if (type == null)
             {
                 throw new ArgumentNullException(nameof(type));
             }
 
-            var name = fullName ? type.GetType().FullName : type.GetType().Name;
-            return $"{name.PadLeft(17, '-')}.{(caller != ".ctor" ? caller : "CONSTRUCTOR")}()";
-            // return $"{name.PadRight(17, '-')} | {caller}()";
+            var name = type.GetType().Name;     // name of class
+            name = name.Length < 17             // add leading space if short
+                ? $" {name}"
+                : name;
+
+            return $"{name.PadLeft(17, '-')}.{(caller)}()";
         }
     }
 }

@@ -101,7 +101,7 @@ namespace RP_Notify.Config
         private readonly FileSystemWatcher _iniFileChangeWatcher;
 
         private int channel;
-        private bool deleteAllDataOnStartup;
+        private bool deleteAllData;
         private bool enableLoggingToFile;
         private bool enableFoobar2000Watcher;
         private bool enableRpOfficialTracking;
@@ -114,7 +114,7 @@ namespace RP_Notify.Config
         private const string ToastIniSectionName = "Toast";
         private const string AppSettingsIniSectionName = "AppSettings";
         private const string ChannelIniSectionName = "Channel";
-        private const string OnStartupSettingsIniSectionName = "OnStartupSettings";
+        private const string SpecialSettingsIniSectionName = "SpecialSettings";
 
         public bool ShowOnNewSong
         {
@@ -228,21 +228,21 @@ namespace RP_Notify.Config
                 if (channel != value)
                 {
                     channel = value;
-                    RaiseFieldChangeEvent(nameof(Channel));
+                    RaiseFieldChangeEvent(nameof(Channel), value);
                     SetIniValue(ChannelIniSectionName, nameof(Channel), value);
                 }
             }
         }
-        public bool DeleteAllDataOnStartup
+        public bool DeleteAllData
         {
-            get => deleteAllDataOnStartup;
+            get => deleteAllData;
             set
             {
-                if (deleteAllDataOnStartup != value)
+                if (deleteAllData != value)
                 {
-                    deleteAllDataOnStartup = value;
-                    RaiseFieldChangeEvent(nameof(DeleteAllDataOnStartup), value);
-                    SetIniValue(OnStartupSettingsIniSectionName, nameof(DeleteAllDataOnStartup), value);
+                    deleteAllData = value;
+                    RaiseFieldChangeEvent(nameof(DeleteAllData), value);
+                    SetIniValue(SpecialSettingsIniSectionName, nameof(DeleteAllData), value);
                 }
             }
         }
@@ -267,7 +267,7 @@ namespace RP_Notify.Config
             Retry.Do(() => Directory.Delete(_iniHelper._iniFolder, true));
         }
 
-        private void RaiseFieldChangeEvent(string fieldName, bool? value = null)
+        private void RaiseFieldChangeEvent(string fieldName, object value)
         {
             ExternalConfigChangeHandler.Invoke(this, new RpEvent(RpEvent.EventType.ConfigChange, fieldName, value));
         }
@@ -375,13 +375,13 @@ namespace RP_Notify.Config
                 ? _Channel
                 : Channel;
 
-            var _DeleteAllDataOnStartup = DeleteAllDataOnStartup;
-            DeleteAllDataOnStartup = iniFile
-                .Sections[OnStartupSettingsIniSectionName]
-                .Keys[nameof(DeleteAllDataOnStartup)]
+            var _DeleteAllDataOnStartup = DeleteAllData;
+            DeleteAllData = iniFile
+                .Sections[SpecialSettingsIniSectionName]
+                .Keys[nameof(DeleteAllData)]
                 .TryParseValue(out _DeleteAllDataOnStartup)
                 ? _DeleteAllDataOnStartup
-                : DeleteAllDataOnStartup;
+                : DeleteAllData;
         }
     }
 
@@ -397,14 +397,9 @@ namespace RP_Notify.Config
                     Environment.GetFolderPath(
                         Environment.SpecialFolder.ApplicationData), @"RP_Notify\config.ini");
             _iniFolder = Path.GetDirectoryName(_iniPath);
-            if (!File.Exists(_iniPath))
-            {
-                InitIni(_iniPath);
-            }
-            else
-            {
-                CheckIniIntegrity();
-            }
+
+            CreateIniWithDefaultValuesIfNotExists(_iniPath);
+            CheckIniIntegrity();
         }
 
         internal IniFile ReadIniFile()
@@ -445,7 +440,7 @@ namespace RP_Notify.Config
             iniFile.Save(_iniPath);
         }
 
-        private void InitIni(string pIniPath)
+        private void CreateIniWithDefaultValuesIfNotExists(string pIniPath)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(pIniPath));
             if (!File.Exists(pIniPath))
@@ -465,7 +460,7 @@ namespace RP_Notify.Config
 
                 try
                 {   // Should run once
-                    InitIni(arg);
+                    CreateIniWithDefaultValuesIfNotExists(arg);
                     return arg;
                 }
                 catch (Exception)

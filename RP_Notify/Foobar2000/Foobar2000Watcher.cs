@@ -85,6 +85,8 @@ namespace RP_Notify.Foobar2000
                     catch (Exception ex)
                     {
                         _log.Error(LogHelper.GetMethodName(this), ex);
+                        Task.Delay(10000).Wait();
+                        Application.Exit();
                     }
                 }
 
@@ -97,11 +99,12 @@ namespace RP_Notify.Foobar2000
             _log.Information(LogHelper.GetMethodName(this), $"Running in background");
         }
 
-        public bool CheckFoobar2000Status(out bool channelChange)
+        public bool CheckFoobar2000Status(out bool channelChanged)
         {
-            channelChange = false;
+            channelChanged = false;
 
-            if (RpChannelIsPlayingInFB2K(out int matchingChannel))
+            if (_config.ExternalConfig.EnableFoobar2000Watcher
+                && RpChannelIsPlayingInFB2K(out int matchingChannel))
             {
                 _config.State.Foobar2000IsPlayingRP = true;
 
@@ -110,7 +113,7 @@ namespace RP_Notify.Foobar2000
                 if (matchingChannel != _config.ExternalConfig.Channel
                     && !_config.IsRpPlayerTrackingChannel())
                 {
-                    channelChange = true;
+                    channelChanged = true;
                     _log.Information(LogHelper.GetMethodName(this), $"Channel change detected");
                     _config.ExternalConfig.Channel = matchingChannel;
                 }

@@ -108,90 +108,76 @@ namespace RP_Notify
                 return;
             }
 
-            string localEventCounter = EventCounter++.ToString().PadLeft(4, '0');
+            EventCounter++;
 
-            var valueMessageComponent = e.BoolValue.HasValue
-                ? $" - Boolean value: {e.BoolValue.Value}"
-                : $" - Value: [Object]";
-
-            int index = 0;
-            while (!(OnChangeTask == null || OnChangeTask.IsCompleted))
+            Task.Run(() =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Event [{localEventCounter}] - waiting to process in queue - Task status: {OnChangeTask.Status} - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                string valueMessageComponent = e.Content.ToString() == e.Content.GetType().FullName
+                    ? $"Object[{e.Content.ToString()}]"
+                    : e.Content.ToString();
 
-                Task.Delay(500).Wait();
-                index++;
+                _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Received - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
 
-                if (index > 20)
+                try
                 {
-                    _log.Error(LogHelper.GetMethodName(this), $"Event [{localEventCounter}] - TASK IS BLOCKED IN EVENT HANDLER QUEUE - STATUS: {OnChangeTask.Status} - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                    _rpTrayIcon.BuildContextMenu();
 
+                    switch (e.ChangedFieldName)
+                    {
+                        case nameof(_config.ExternalConfig.ShowOnNewSong):
+                            OnShowOnNewSongChange();
+                            break;
+                        case nameof(_config.ExternalConfig.EnableFoobar2000Watcher):
+                            OnEnablePlayerWatcherChange();
+                            break;
+                        case nameof(_config.ExternalConfig.LargeAlbumArt):
+                            OnLargeAlbumArtChange();
+                            break;
+                        case nameof(_config.ExternalConfig.ShowSongRating):
+                            OnShowSongRatingChange();
+                            break;
+                        case nameof(_config.ExternalConfig.PromptForRating):
+                            OnPromptForRatingChange();
+                            break;
+                        case nameof(_config.ExternalConfig.Channel):
+                            OnChannelChange();
+                            break;
+                        case nameof(_config.ExternalConfig.DeleteAllData):
+                            OnDeleteAllDataChange();
+                            break;
+                        case nameof(_config.State.Foobar2000IsPlayingRP):
+                            OnFoobar2000IsPlayingRPChange();
+                            break;
+                        case nameof(_config.State.IsUserAuthenticated):
+                            OnIsUserAuthenticatedChange();
+                            break;
+                        case nameof(_config.State.Playback):
+                            OnPlaybackChange();
+                            break;
+                        case nameof(_config.State.RpTrackingConfig.ActivePlayerId):
+                            OnActivePlayerIdChange();
+                            break;
+                        case nameof(_config.ExternalConfig.EnableRpOfficialTracking):
+                            OnEnableRpOfficialTrackingChange();
+                            break;
+                        case nameof(_config.State.RpTrackingConfig.Players):
+                            OnPlayersChange();
+                            break;
+                        default:
+                            _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Exit without action - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(LogHelper.GetMethodName(this), ex);
+                    _toastHandler.ErrorToast(ex);
+                    Task.Delay(10000).Wait();
                     Application.Exit();
                 }
-            }
 
-            // OnChangeTask = Task.Run(() =>
-            Task.Run(() =>
-           {
-               _log.Information(LogHelper.GetMethodName(this), $"Event [{localEventCounter}] - Received - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
-
-               try
-               {
-                   _rpTrayIcon.BuildContextMenu();
-
-                   switch (e.ChangedFieldName)
-                   {
-                       case nameof(_config.ExternalConfig.ShowOnNewSong):
-                           OnShowOnNewSongChange();
-                           break;
-                       case nameof(_config.ExternalConfig.EnableFoobar2000Watcher):
-                           OnEnablePlayerWatcherChange();
-                           break;
-                       case nameof(_config.ExternalConfig.LargeAlbumArt):
-                           OnLargeAlbumArtChange();
-                           break;
-                       case nameof(_config.ExternalConfig.ShowSongRating):
-                           OnShowSongRatingChange();
-                           break;
-                       case nameof(_config.ExternalConfig.PromptForRating):
-                           OnPromptForRatingChange();
-                           break;
-                       case nameof(_config.ExternalConfig.Channel):
-                           OnChannelChange();
-                           break;
-                       case nameof(_config.ExternalConfig.DeleteAllDataOnStartup):
-                           OnDeleteAllDataOnStartupChange();
-                           break;
-                       case nameof(_config.State.Foobar2000IsPlayingRP):
-                           OnFoobar2000IsPlayingRPChange();
-                           break;
-                       case nameof(_config.State.IsUserAuthenticated):
-                           OnIsUserAuthenticatedChange();
-                           break;
-                       case nameof(_config.State.Playback):
-                           OnPlaybackChange();
-                           break;
-                       case nameof(_config.State.RpTrackingConfig.ActivePlayerId):
-                           OnActivePlayerIdChange();
-                           break;
-                       case nameof(_config.ExternalConfig.EnableRpOfficialTracking):
-                           OnEnableRpOfficialTrackingChange();
-                           break;
-                       case nameof(_config.State.RpTrackingConfig.Players):
-                           OnPlayersChange();
-                           break;
-                       default:
-                           _log.Information(LogHelper.GetMethodName(this), $"Event [{localEventCounter}] - Exit without action - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
-                           break;
-                   }
-               }
-               catch (Exception ex)
-               {
-                   _log.Error(LogHelper.GetMethodName(this), ex);
-               }
-
-               _log.Information(LogHelper.GetMethodName(this), $"Event [{localEventCounter}] - Finished - Type: {{ChangedType}} - Changed field: {{ChannelChanged}}{{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
-           }).Wait();
+                _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Finished - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+            }).Wait();
         }
 
         private void OnShowOnNewSongChange()
@@ -252,26 +238,11 @@ namespace RP_Notify
             }
         }
 
-        private void OnDeleteAllDataOnStartupChange()
+        private void OnDeleteAllDataChange()
         {
             // USER - request to delete all config/log files in AppData
 
-            if (_config.ExternalConfig.DeleteAllDataOnStartup)
-            {
-                _log.Information(LogHelper.GetMethodName(this), "App data delete requested");
-
-                if (_config.ExternalConfig.EnableLoggingToFile)
-                {
-                    _config.ExternalConfig.EnableLoggingToFile = false;
-                    _config.ExternalConfig.DeleteAllDataOnStartup = true;
-                    Application.Restart();
-                }
-                else
-                {
-                    _config.ExternalConfig.DeleteAllDataOnStartup = true;
-                    Application.Exit();
-                }
-            }
+            CheckQueuedDataDeleteRequest();
         }
 
         private void OnFoobar2000IsPlayingRPChange()
@@ -318,8 +289,17 @@ namespace RP_Notify
         {
             // USER and APP - when RP tracking is started at Startup or user changes/enables/disables RP player
 
-            if (_config.IsRpPlayerTrackingChannel()
-                || !(_foobar2000Watcher.CheckFoobar2000Status(out bool channelChanged) && channelChanged))
+            // if player became un-tracked
+            if (!_config.IsRpPlayerTrackingChannel())
+            {
+                // if channel was favourites and Foobar2000 doesn't change it, then reset to the main stream
+                if (_config.ExternalConfig.Channel == 99
+                    && !(_foobar2000Watcher.CheckFoobar2000Status(out bool channelChanged) && channelChanged))
+                {
+                    _config.ExternalConfig.Channel = 0;
+                }
+            }
+            else
             {
                 _songInfoListener.ResetListenerLoop();
             }
@@ -336,7 +316,8 @@ namespace RP_Notify
             else
             {
                 if (_config.ExternalConfig.Channel == 99
-                    && !(_foobar2000Watcher.CheckFoobar2000Status(out bool channelChanged) && channelChanged))
+                    && !(_foobar2000Watcher.CheckFoobar2000Status(out bool channelChanged)
+                    && channelChanged))
                 {
                     _config.ExternalConfig.Channel = 0;
                 }
@@ -389,7 +370,7 @@ namespace RP_Notify
 
             _rpTrayIcon.Dispose();
 
-            if (_config.ExternalConfig.DeleteAllDataOnStartup)
+            if (_config.ExternalConfig.DeleteAllData)
             {
                 _shortcutHelper.DeleteShortcut();
                 _config.ExternalConfig.DeleteConfigRootFolder();
@@ -407,17 +388,13 @@ namespace RP_Notify
 
         private void CheckQueuedDataDeleteRequest()
         {
-            if (_config.ExternalConfig.DeleteAllDataOnStartup)
+            if (_config.ExternalConfig.DeleteAllData)
             {
-                _config.ExternalConfig.DeleteAllDataOnStartup = true;
-                _config.ExternalConfig.ShowOnNewSong = false;
-                _config.ExternalConfig.EnableFoobar2000Watcher = false;
-
-                Task.Run(() =>
-                {
-                    Task.Delay(3000).Wait();
-                    Application.Exit();
-                });
+                _log.Information(LogHelper.GetMethodName(this), "App data delete requested");
+                _log.Dispose();
+                _toastHandler.DataEraseToast();
+                Task.Delay(1000).Wait();
+                Application.Exit();
             }
         }
     }

@@ -137,13 +137,13 @@ namespace RP_Notify.Toast
 
         public void ShowSongDetailToast()
         {
-            Task.Run(() =>
+            //Task.Run(() =>
+            //{
+            string toastXmlString = null;
+            try
             {
-                string toastXmlString = null;
-                try
-                {
-                    string toastVisual =
-                    $@"<visual>
+                string toastVisual =
+                $@"<visual>
                       <binding template='ToastGeneric'>
                         {ToastHelper.CreateTitleText(_config, false)}
                         {ToastHelper.CreateContentText(_config)}
@@ -154,27 +154,27 @@ namespace RP_Notify.Toast
                       </binding>
                     </visual>";
 
-                    string toastActions =
-                    $@"<actions>
+                string toastActions =
+                $@"<actions>
                       {ToastHelper.RatingInputAction(_config)}
                       {ToastHelper.OpenInBrowserAction(_config)}
                     </actions>";
 
-                    // Create toast xml text
-                    toastXmlString =
-                    $@"<toast launch='{nameof(this.ShowSongDetailToast)}'>
+                // Create toast xml text
+                toastXmlString =
+                $@"<toast launch='{nameof(this.ShowSongDetailToast)}'>
                         {toastVisual}
                         {ToastHelper.toastAudio}
                         {toastActions}
                     </toast>";
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(LogHelper.GetMethodName(this), ex);
-                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(LogHelper.GetMethodName(this), ex);
+            }
 
-                DisplayToast(toastXmlString, HandleToastActivatedEvent);
-            });
+            DisplayToast(toastXmlString, HandleToastActivatedEvent);
+            //});
         }
 
         public void LoginToast()
@@ -228,7 +228,7 @@ namespace RP_Notify.Toast
                     .DeserializeObject<RpToastNotificationActivatedEventArgs>(
                         JsonConvert.SerializeObject(myEvent)
                     );
-					
+
                 _log.Information(LogHelper.GetMethodName(this), "{ eventArguments}", rpEvent.Arguments);
 
                 QueryString args = QueryString.Parse(rpEvent.Arguments);
@@ -289,7 +289,7 @@ namespace RP_Notify.Toast
                             <binding template='ToastGeneric'>
                                 <text>User authentication {authResp.Status}</text>
                                 <text>{authMessage}</text>
-                                {ToastHelper.CreateImage(_config, true)}
+                                {ToastHelper.CreateImage(_config, false)}
                             </binding>
                         </visual>
                         {ToastHelper.toastAudio}
@@ -304,8 +304,10 @@ namespace RP_Notify.Toast
             });
         }
 
-        public void SongInfoListenerErrorToast()
+        public void DataEraseToast()
         {
+            string logo = _config.StaticConfig.IconPath;
+
             Task.Run(() =>
             {
                 string toastXmlString = null;
@@ -313,13 +315,12 @@ namespace RP_Notify.Toast
                 {
                     // Create toast xml text
                     toastXmlString =
-                        $@"<toast launch='{nameof(this.SongInfoListenerErrorToast)}'>
+                        $@"<toast launch='{nameof(this.ErrorToast)}'>
                         <visual>
                             <binding template='ToastGeneric'>
-                                <text>Application ERROR</text>
-                                <text>Can't load song info</text>
-                                <text>Please check your network status and firewall settings</text>
-                                {ToastHelper.CreateImage(_config, true)}
+                                <text>Application Data Erase Requested</text>
+                                <text>Deleting RP_Notify folder from APPDATA</text>
+                                <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
                             </binding>
                         </visual>
                         {ToastHelper.toastAudio}
@@ -333,6 +334,44 @@ namespace RP_Notify.Toast
                 DisplayToast(toastXmlString);
             });
         }
+
+        public void ErrorToast(Exception exception)
+        {
+            var firstLine = $"<text>{exception.Message}</text>";
+            var secondLine = exception.InnerException != null
+                ? $"<text>{exception.Message}</text>"
+                : null;
+
+            string logo = _config.StaticConfig.IconPath;
+
+            Task.Run(() =>
+            {
+                string toastXmlString = null;
+                try
+                {
+                    // Create toast xml text
+                    toastXmlString =
+                        $@"<toast launch='{nameof(this.ErrorToast)}'>
+                        <visual>
+                            <binding template='ToastGeneric'>
+                                <text>Application ERROR</text>
+                                {firstLine}
+                                {secondLine}
+                                <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
+                            </binding>
+                        </visual>
+                        {ToastHelper.toastAudio}
+                    </toast>";
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(LogHelper.GetMethodName(this), ex);
+                }
+
+                DisplayToast(toastXmlString);
+            });
+        }
+
         private void DisplayToast(string toastXmlString, TypedEventHandler<ToastNotification, Object> activationHandler = null)
         {
             try
@@ -442,7 +481,7 @@ namespace RP_Notify.Toast
                 {
                     throw new IOException("Cover is not yet downloaded");
                 }
-            }, 1000, 5);
+            }, 1000, 15);
 
             return optionalLargeAlbumart && _config.ExternalConfig.LargeAlbumArt
                 ? largeAlbumart

@@ -35,7 +35,7 @@ namespace RP_Notify.Config
                 if (channelList != value)
                 {
                     channelList = value;
-                    RaiseFieldChangeEvent(nameof(ChannelList));
+                    RaiseFieldChangeEvent(nameof(ChannelList), value);
                 }
             }
         }
@@ -51,7 +51,7 @@ namespace RP_Notify.Config
                     || playback.SongInfo.Event != value.SongInfo.Event)
                 {
                     playback = value;
-                    RaiseFieldChangeEvent(nameof(Playback));
+                    RaiseFieldChangeEvent(nameof(Playback), value);
                 }
                 else if (playback.SongInfo.UserRating != value.SongInfo.UserRating
                     ||
@@ -62,7 +62,7 @@ namespace RP_Notify.Config
                 {
                     value.SameSongOnlyInternalUpdate = true;
                     playback = value;
-                    RaiseFieldChangeEvent(nameof(Playback));
+                    RaiseFieldChangeEvent(nameof(Playback), value);
                 }
             }
         }
@@ -75,7 +75,7 @@ namespace RP_Notify.Config
                 if (tooltipText != value)
                 {
                     tooltipText = value;
-                    RaiseFieldChangeEvent(nameof(TooltipText));
+                    RaiseFieldChangeEvent(nameof(TooltipText), value);
                 }
             }
         }
@@ -103,7 +103,7 @@ namespace RP_Notify.Config
             RpTrackingConfig = new RpTrackingConfig();
         }
 
-        private void RaiseFieldChangeEvent(string fieldName, bool? value = null)
+        private void RaiseFieldChangeEvent(string fieldName, object value)
         {
             StateChangeHandler.Invoke(this, new RpEvent(RpEvent.EventType.StateChange, fieldName, value));
         }

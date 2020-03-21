@@ -34,7 +34,7 @@ namespace RP_Notify.Config
         event EventHandler<RpEvent> ExternalConfigChangeHandler;
 
         int Channel { get; set; }
-        bool DeleteAllDataOnStartup { get; set; }
+        bool DeleteAllData { get; set; }
         bool EnableLoggingToFile { get; set; }
         bool EnableFoobar2000Watcher { get; set; }
         bool EnableRpOfficialTracking { get; set; }

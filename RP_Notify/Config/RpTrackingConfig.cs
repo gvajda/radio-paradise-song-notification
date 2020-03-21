@@ -22,7 +22,7 @@ namespace RP_Notify.Config
                 if (activePlayerId != value)
                 {
                     activePlayerId = value;
-                    RaiseFieldChangeEvent(nameof(ActivePlayerId));
+                    RaiseFieldChangeEvent(nameof(ActivePlayerId), value);
                 }
             }
         }
@@ -35,7 +35,7 @@ namespace RP_Notify.Config
                 if (value != null && ComparePlayerList(players, value))
                 {
                     players = value;
-                    RaiseFieldChangeEvent(nameof(Players));
+                    RaiseFieldChangeEvent(nameof(Players), value);
                 }
             }
         }
@@ -46,8 +46,12 @@ namespace RP_Notify.Config
             Players = new List<Player>();
         }
 
-        private void RaiseFieldChangeEvent(string fieldName, bool? value = null)
+        private void RaiseFieldChangeEvent(string fieldName, params object[] flexibleValue)
         {
+            object value = flexibleValue[0] != null
+                ? flexibleValue[0]
+                : "null";
+
             RpTrackingConfigChangeHandler.Invoke(this, new RpEvent(RpEvent.EventType.RpTrackingConfigChange, fieldName, value));
         }
 

@@ -73,23 +73,31 @@ namespace RP_Notify.SongInfoUpdater
                         NextSongWaiterCancellationTokenSource = new CancellationTokenSource();
                         var cancellationToken = NextSongWaiterCancellationTokenSource.Token;
 
-                        CheckTrackedRpPlayerStatus();
-                        UpdateSongInfo();
-
-                        var timeLeftFromSongMilliseconds = (int)(_config.State.Playback.SongInfoExpiration - DateTime.Now).TotalMilliseconds;
-
-                        // check more often when RP player is tracked
-                        var loopWaitMilliseconds = _config.IsRpPlayerTrackingChannel()
-                            ? Math.Min(7000, timeLeftFromSongMilliseconds)
-                            : timeLeftFromSongMilliseconds;
-
-                        // when Bill is talking
-                        loopWaitMilliseconds = loopWaitMilliseconds > 0
-                            ? loopWaitMilliseconds
-                            : 5000;
-
                         try
                         {
+                            Task update = Task.Run(() =>
+                            {
+                                CheckTrackedRpPlayerStatus();
+                                UpdateSongInfo();
+                            }, cancellationToken);
+
+                            if (_config.State.Playback == null)
+                            {
+                                update.Wait();
+                            }
+
+                            var timeLeftFromSongMilliseconds = (int)(_config.State.Playback.SongInfoExpiration - DateTime.Now).TotalMilliseconds;
+
+                            // check more often when RP player is tracked
+                            var loopWaitMilliseconds = _config.IsRpPlayerTrackingChannel()
+                                ? Math.Min(10000, timeLeftFromSongMilliseconds)
+                                : timeLeftFromSongMilliseconds;
+
+                            // when Bill is talking
+                            loopWaitMilliseconds = loopWaitMilliseconds > 0
+                                ? loopWaitMilliseconds
+                                : 5000;
+
                             var waitForNextSong = Task.Delay(loopWaitMilliseconds, cancellationToken);
 
                             while (!waitForNextSong.IsCompleted && !cancellationToken.IsCancellationRequested)
@@ -99,6 +107,7 @@ namespace RP_Notify.SongInfoUpdater
                                 PromptRatingAtTheEndOfSongOrIfCanceled();
                                 await RefreshDelay;
                             }
+                            await update;
                         }
                         catch (TaskCanceledException)
                         {
@@ -109,9 +118,9 @@ namespace RP_Notify.SongInfoUpdater
                     catch (Exception ex)
                     {
                         _log.Error(LogHelper.GetMethodName(this), ex);
-                        _toastHandler.SongInfoListenerErrorToast();
-                        await Task.Delay(10000);
-                        Application.Restart();
+                        _toastHandler.ErrorToast(ex);
+                        Task.Delay(10000).Wait();
+                        Application.Exit();
                     }
                 }
             }, listenerCancellationTokenSource.Token);
@@ -130,7 +139,7 @@ namespace RP_Notify.SongInfoUpdater
 
                 if (_config.IsRpPlayerTrackingChannel(out int trackedChannel) && _config.ExternalConfig.Channel != trackedChannel)
                 {
-                    _log.Information(LogHelper.GetMethodName(this), "Tracking is active - Tracked channel: {trackedChannel}");
+                    _log.Information(LogHelper.GetMethodName(this), $"Tracking is active - Tracked channel: {trackedChannel}");
 
                     _config.ExternalConfig.Channel = trackedChannel;
                 }
@@ -146,7 +155,7 @@ namespace RP_Notify.SongInfoUpdater
             var millisecsLeftToPrompt = (int)(_config.State.Playback.SongInfoExpiration - DateTime.Now).TotalMilliseconds - secondsBeforeSongEndsToPromptRating * 1000;
 
             if (_config.ExternalConfig.PromptForRating
-                && string.IsNullOrEmpty(_config.State.Playback.SongInfo.Rating)
+                && string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
                 && somethingIsPlaying)
             {
                 if (0 < millisecsLeftToPrompt && millisecsLeftToPrompt < 1000)
@@ -186,7 +195,7 @@ namespace RP_Notify.SongInfoUpdater
                 ? $"Player_ID: {player_id}"
                 : $"Channel: {_config.ExternalConfig.Channel.ToString()}";
 
-            _log.Information(LogHelper.GetMethodName(this), "Invoked - {logMessageDetail}");
+            _log.Information(LogHelper.GetMethodName(this), $"Invoked - {logMessageDetail}");
 
             var oldPlayback = _config.State.Playback;
             var nowPlayingList = _apiHandler.GetNowplayingList();
