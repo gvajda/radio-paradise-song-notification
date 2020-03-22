@@ -1,10 +1,13 @@
-﻿namespace RP_Notify.Toast
+﻿using System;
+
+namespace RP_Notify.Toast
 {
     public interface IToastHandler
     {
-        void ShowSongStartToast();
+        void ShowSongStartToast(bool force = false);
         void ShowSongRatingToast();
         void ShowSongDetailToast();
-        void SongInfoListenerError();
+        void ErrorToast(Exception exception);
+        void DataEraseToast();
     }
 }

@@ -1,68 +1,69 @@
-﻿using System;
+﻿using RP_Notify.ErrorHandler;
+using System;
 using System.IO;
 using System.Net;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace RP_Notify.API
 {
-    public class CookieHelper
+    public static class CookieHelper
     {
-        public static CookieContainer TryGetCookiesFromCache(string filePath)
+        public static bool TryGetCookieFromCache(string filePath, out CookieContainer cookieContainer)
         {
+            cookieContainer = null;
+
             if (!File.Exists(filePath) || !(File.ReadAllText(filePath).Length > 0))
             {
-                return null;
+                return false;
             }
+
             try
             {
-                using (Stream stream = File.Open(filePath, FileMode.Open))
-                {
-                    BinaryFormatter formatter = new BinaryFormatter();
-                    return (CookieContainer)formatter.Deserialize(stream);
-                }
+                cookieContainer = Retry.Do(() => ReadCookieFromDisk(filePath));
+                return true;
             }
             catch (Exception)
             {
-
-                return null;
+                Retry.Do(() => File.Delete(filePath));
+                return false;
             }
         }
-        public static void WriteCookiesToDisk(string filePath, CookieContainer cookieJar)
+
+        public static bool TryWriteCookieToDisk(string filePath, CookieContainer cookieJar)
         {
             if (cookieJar != null && cookieJar.Count > 0)
             {
-                using (Stream stream = File.Create(filePath))
+                try
                 {
-                    try
-                    {
-                        BinaryFormatter formatter = new BinaryFormatter();
-                        formatter.Serialize(stream, cookieJar);
-                    }
-                    catch (Exception)
-                    {
-                        //TODO
-                    }
+                    Retry.Do(() => WriteCookieToDisk(filePath, cookieJar));
+                    return true;
+                }
+                catch
+                {
+                    return false;
                 }
             }
-
+            else
+            {
+                return false;
+            }
         }
 
-        static CookieContainer ReadCookiesFromDisk(string filePath)
+        private static CookieContainer ReadCookieFromDisk(string filePath)
         {
-
-            try
+            using (Stream stream = File.Open(filePath, FileMode.Open))
             {
-                using (Stream stream = File.Open(filePath, FileMode.Open))
-                {
-                    Console.Out.Write("Reading cookies from disk... ");
-                    BinaryFormatter formatter = new BinaryFormatter();
-                    Console.Out.WriteLine("Done.");
-                    return (CookieContainer)formatter.Deserialize(stream);
-                }
+                BinaryFormatter formatter = new BinaryFormatter();
+                return (CookieContainer)formatter.Deserialize(stream);
             }
-            catch (Exception)
+        }
+
+        private static void WriteCookieToDisk(string filePath, CookieContainer cookieJar)
+        {
+            using (Stream stream = File.Create(filePath))
             {
-                return new CookieContainer();
+                BinaryFormatter formatter = new BinaryFormatter();
+                formatter.Serialize(stream, cookieJar);
             }
         }
     }

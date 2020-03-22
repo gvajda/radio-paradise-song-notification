@@ -1,8 +1,6 @@
 ﻿using Foobar2000.RESTClient.Api;
-using RP_Notify.API;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,77 +8,154 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RP_Notify.Foobar2000Watcher
+namespace RP_Notify.Foobar2000
 {
-    class Foobar2000Watcher : IPlayerWatcher
+    class Foobar2000Watcher
     {
         private readonly IConfig _config;
-        private readonly IRpApiHandler _apiHandler;
-        private readonly ILogger _log;
+        private readonly ILog _log;
         private readonly PlayerApi _playerApi;
-        private int checkDelayMillisecs;
-        public event EventHandler<ConfigChangeEventArgs> ConfigChangedEventHandler;
-        public CancellationTokenSource PlayerWatcherCancellationTokenSource { get; }
-        public bool PlayerIsActive { get; set; }
 
+        private int CheckDelayMillisecs { get; set; }
+        private Task Foobar2000WatcherTask { get; set; }
+        private CancellationTokenSource Foobar2000WatcherTaskCancellationTokenSource { get; set; }
 
-        public Foobar2000Watcher(IConfig config, IRpApiHandler apiHandler, ILog log, PlayerApi playerApi)
+        public Foobar2000Watcher(IConfig config, ILog log, PlayerApi playerApi)
         {
-            PlayerIsActive = false;
             _config = config;
-            _apiHandler = apiHandler;
-            _log = log.Logger;
+            _log = log;
             _playerApi = playerApi;
-            checkDelayMillisecs = 5000;
-            PlayerWatcherCancellationTokenSource = new CancellationTokenSource();
-            Application.ApplicationExit += (sender, e) => PlayerWatcherCancellationTokenSource.Cancel();
+
+            Init();
         }
 
-        public void StartChannelWatch()
+        private void Init()
         {
-            _log.Information("StartChannelWatch - Invoked");
-            Task.Run(async () =>
-            {
-                string matchingChannel = null;
-                bool showOnNewSongUserSetting = _config.ShowOnNewSong;
-                while (!PlayerWatcherCancellationTokenSource.Token.IsCancellationRequested)
-                {
-                    if (!PlayerIsActive)
-                    {
-                        showOnNewSongUserSetting = _config.ShowOnNewSong;
-                    }
+            CheckDelayMillisecs = 5000;
+            Foobar2000WatcherTaskCancellationTokenSource = new CancellationTokenSource();
+            Application.ApplicationExit += (sender, e) => Foobar2000WatcherTaskCancellationTokenSource.Cancel();
+        }
 
-                    if (_config.EnablePlayerWatcher)
+        public void Stop()
+        {
+            if (IsFoobar2000WatcherTaskRunning())
+            {
+                _log.Information(LogHelper.GetMethodName(this), $"Shutdown initiated");
+                Foobar2000WatcherTaskCancellationTokenSource.Cancel();
+            }
+            else
+            {
+                _log.Information(LogHelper.GetMethodName(this), $"Not running");
+            }
+        }
+
+        public void Start()
+        {
+            if (!IsFoobar2000WatcherTaskRunning())
+            {
+                _log.Information(LogHelper.GetMethodName(this), $"Invoked");
+                Run();
+            }
+            else
+            {
+                _log.Information(LogHelper.GetMethodName(this), $"Alreay running");
+            }
+        }
+
+        private void Run()
+        {
+            _log.Information(LogHelper.GetMethodName(this), $"Starting");
+
+            Foobar2000WatcherTaskCancellationTokenSource = new CancellationTokenSource();
+
+            Foobar2000WatcherTask = Task.Run(async () =>
+            {
+                while (!Foobar2000WatcherTaskCancellationTokenSource.IsCancellationRequested)
+                {
+                    try
                     {
-                        if (TryGetPlayedFilePath(out string playedFilePath)
-                            && RpChannelIsPlaying(playedFilePath, out matchingChannel))
-                        {
-                            checkDelayMillisecs = 1000;
-                            HandleChannelMatch(matchingChannel);
-                        }
-                        else
-                        {
-                            checkDelayMillisecs = 5000;
-                            HandleInactivePlayer(showOnNewSongUserSetting);
-                        }
+                        CheckFoobar2000Status(out bool notUsedHere);
+
+                        await Task.Delay(CheckDelayMillisecs);
                     }
-                    else
+                    catch (TaskCanceledException)
                     {
-                        checkDelayMillisecs = 5000;
-                        if (!_config.RpTrackingConfig.Enabled)
-                        {
-                            HandleInactivePlayer(showOnNewSongUserSetting);
-                        }
+                        // Don't log error for stopping
                     }
-                    await Task.Delay(checkDelayMillisecs, PlayerWatcherCancellationTokenSource.Token);
+                    catch (Exception ex)
+                    {
+                        _log.Error(LogHelper.GetMethodName(this), ex);
+                        Task.Delay(10000).Wait();
+                        Application.Exit();
+                    }
                 }
-            }, PlayerWatcherCancellationTokenSource.Token);
-            _log.Information("StartChannelWatch - Running in background");
+
+                _config.State.Foobar2000IsPlayingRP = false;
+
+                _log.Information(LogHelper.GetMethodName(this), $"Stopped");
+
+            }, Foobar2000WatcherTaskCancellationTokenSource.Token);
+
+            _log.Information(LogHelper.GetMethodName(this), $"Running in background");
+        }
+
+        public bool CheckFoobar2000Status(out bool channelChanged)
+        {
+            channelChanged = false;
+
+            if (_config.ExternalConfig.EnableFoobar2000Watcher
+                && RpChannelIsPlayingInFB2K(out int matchingChannel))
+            {
+                _config.State.Foobar2000IsPlayingRP = true;
+
+                CheckDelayMillisecs = 1000;
+
+                if (matchingChannel != _config.ExternalConfig.Channel
+                    && !_config.IsRpPlayerTrackingChannel())
+                {
+                    channelChanged = true;
+                    _log.Information(LogHelper.GetMethodName(this), $"Channel change detected");
+                    _config.ExternalConfig.Channel = matchingChannel;
+                }
+                return true;
+            }
+            else
+            {
+                CheckDelayMillisecs = 5000;
+                _config.State.Foobar2000IsPlayingRP = false;
+                return false;
+            }
+        }
+
+        private bool IsFoobar2000WatcherTaskRunning()
+        {
+            return !(Foobar2000WatcherTask == null || Foobar2000WatcherTask.IsCompleted);
+        }
+
+        private bool RpChannelIsPlayingInFB2K(out int matchingChannel)
+        {
+            if (TryGetPlayedFilePath(out string playedFilePath)
+                && playedFilePath.Contains("radioparadise"))
+            {
+                matchingChannel = Int32.Parse(
+                    _config.State.ChannelList
+                        .Where(channel => playedFilePath.Contains(channel.StreamName))
+                        .DefaultIfEmpty(_config.State.ChannelList.First())
+                        .FirstOrDefault()
+                        .Chan
+                );
+
+                return true;
+            }
+            else
+            {
+                matchingChannel = -1;
+                return false;
+            }
         }
 
         private bool TryGetPlayedFilePath(out string playedFilePath)
         {
-            playedFilePath = null;
             var columns = new List<string>();
             columns.Add("%path%");
 
@@ -92,90 +167,11 @@ namespace RP_Notify.Foobar2000Watcher
             }
             catch
             {
+                playedFilePath = null;
                 return false;
             }
 
         }
 
-        private bool RpChannelIsPlaying(string playedFilePath, out string matchingChannel)
-        {
-            matchingChannel = "0";
-            if (!playedFilePath.Contains("radioparadise"))
-            {
-                return false;
-            }
-
-            foreach (var channel in _apiHandler.ChannelList.Where(channel => playedFilePath.Contains(channel.StreamName)))
-            {
-                matchingChannel = channel.Chan;
-            }
-
-            return true;
-        }
-
-
-        private void HandleChannelMatch(string matchingChannel)
-        {
-            bool sendShowOnNewSongChangeEvent = false;
-            bool sendChannelChangeEvent = false;
-            bool playerStateChanged = false;
-            _config.RpTrackingConfig.ActivePlayerId = "Foobar2000";
-            if (!_config.ShowOnNewSong)
-            {
-                _config.ShowOnNewSong = !_config.ShowOnNewSong;
-                sendShowOnNewSongChangeEvent = true;
-            }
-            if (_config.Channel != Int32.Parse(matchingChannel))
-            {
-                _config.Channel = Int32.Parse(matchingChannel);
-                sendChannelChangeEvent = true;
-            }
-            if (!PlayerIsActive)
-            {
-                PlayerIsActive = true;
-                playerStateChanged = true;
-
-            }
-            if (sendShowOnNewSongChangeEvent || sendChannelChangeEvent || playerStateChanged)
-            {
-                ConfigChangedEventHandler?
-                    .Invoke(this,
-                        new ConfigChangeEventArgs()
-                        {
-                            ChannelChanged = sendChannelChangeEvent,
-                            ShowOnNewSongChanged = sendShowOnNewSongChangeEvent,
-                            PlayerStateChanged = playerStateChanged
-                        });
-            }
-        }
-
-        private void HandleInactivePlayer(bool showOnNewSong)
-        {
-
-            _config.RpTrackingConfig.ActivePlayerId = null;
-            bool sendShowOnNewSongChangeEvent = false;
-            bool playerStateChanged = false;
-            if (_config.ShowOnNewSong != showOnNewSong)
-            {
-                _config.ShowOnNewSong = showOnNewSong;
-                sendShowOnNewSongChangeEvent = true;
-            }
-            if (PlayerIsActive)
-            {
-                PlayerIsActive = false;
-                playerStateChanged = true;
-
-            }
-            if (sendShowOnNewSongChangeEvent || playerStateChanged)
-            {
-                ConfigChangedEventHandler?
-                    .Invoke(this,
-                        new ConfigChangeEventArgs()
-                        {
-                            ShowOnNewSongChanged = sendShowOnNewSongChangeEvent,
-                            PlayerStateChanged = playerStateChanged
-                        });
-            }
-        }
     }
 }
