@@ -220,7 +220,6 @@ namespace RP_Notify.TrayIcon
             MenuItem rpTracking = new MenuItem("Track official RP players")
             {
                 Checked = _config.ExternalConfig.EnableRpOfficialTracking,
-                DefaultItem = _config.IsRpPlayerTrackingChannel()
             };
 
             rpTracking.Click += (sender, e) =>
@@ -247,6 +246,7 @@ namespace RP_Notify.TrayIcon
                     {
                         RadioCheck = true,
                         Checked = _config.State.RpTrackingConfig.ActivePlayerId == player.PlayerId,
+                        DefaultItem = _config.State.RpTrackingConfig.ActivePlayerId == player.PlayerId
                     };
 
                     trackedPlayer.Click += (sender, e) =>

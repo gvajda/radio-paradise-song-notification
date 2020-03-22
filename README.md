@@ -18,9 +18,9 @@ The goal was to get non-intrusive but detailed updates of what's currently playi
 - **Show song rating** - optional
 - **Support for rating songs** - this needs the user to provide login data. No authentication data is stored or logged, only the cookie that a browser would store
 - **Track stream played in Foobar2000 player** - [see below](#foobar2000-integration)
-- **Track official Radio Paradise players (*New*)** - display updates of songs played in the browser or mobile apps, including the "My Favorites" channel
+- **Track official Radio Paradise players (*New*)** - display updates of songs played in the browser or mobile apps, including the "My Favorites" channel 
 *Note*: this feature works without logging in if the player/browser is on the same network (has the same IP)
-- **Prompt for song rating (*New*)** - display a toast notification with the song rating input field 20 seconds before the song ends or if the channel is changed. Optional and only available if the user is logged in
+- **Prompt for song rating (*New*)** - display a toast notification with the song rating input field 20 seconds before the song ends or if the channel is changed. Optional and only available if the user is logged in 
 *Tip*: very useful to grow the song pool of the "My Favorites" channel
 
 ### Technical
@@ -34,7 +34,7 @@ The goal was to get non-intrusive but detailed updates of what's currently playi
 
 ### Foobar2000 integration
 
-If this feature is enabled in the menu and an RP stream is played with the F2K player then the desktop notification is adjusted to the played stream and displaying the desktop notification turns on/off with the playback. Requires a plugin for Foobar2000 that provides REST interface to the player.
+If this feature is enabled in the menu and an RP stream is played with the Foobar2000 player then the desktop notification is adjusted to the played stream and displaying the desktop notification turns on/off with the playback. Requires a plugin for Foobar2000 that provides REST interface to the player.
 
 [Download foobar2000 for Windows](https://www.foobar2000.org/download)
 
@@ -68,5 +68,4 @@ This is hobby a project to obtain deeper knowledge in C# and practice
 ### To-do
 
 - Improve login panel (Toast notifications don't support masking input text boxes for passwords)
-- Clean up Toast notification XML generating code
 - Display history and upcoming songs
