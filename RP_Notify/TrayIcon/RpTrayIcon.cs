@@ -2,9 +2,11 @@
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using RP_Notify.Properties;
+using RP_Notify.Toast;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +18,9 @@ namespace RP_Notify.TrayIcon
     {
         private readonly IConfig _config;
         private readonly ILog _log;
+        private readonly IToastHandler _toastHandler;
+
+
         private readonly ContextMenu contextMenu;
 
         public NotifyIcon NotifyIcon { get; }
@@ -24,10 +29,11 @@ namespace RP_Notify.TrayIcon
 
         private Task ContextMenuBuilderTask { get; set; }
 
-        public RpTrayIcon(IConfig config, ILog log)
+        public RpTrayIcon(IConfig config, ILog log, IToastHandler toastHandler)
         {
             _config = config;
             _log = log;
+            _toastHandler = toastHandler;
 
             contextMenu = new ContextMenu();
             NotifyIcon = new NotifyIcon();
@@ -65,18 +71,19 @@ namespace RP_Notify.TrayIcon
         {
             _log.Information(LogHelper.GetMethodName(this), "Started");
 
-            var menuEntryShowOnNewSong = CreateMenuEntryShowOnNewSong();
-            var menuEntryLargeAlbumArt = CreateMenuEntryLargeAlbumArt();
-            var menuEntryShowSongRating = CreateMenuEntryShowSongRating();
-            var menuEntryPromptForRating = CreateMenuEntryPromptForRating();
-            var menuEntryLeaveShorcutInStartMenu = CreateMenuEntryLeaveShorcutInStartMenu();
-            var menuEntryReset = CreateMenuEntryReset();
-            var menuEntryEnablePlayerWatcher = CreateMenuEntryEnablePlayerWatcher();
-            var menuEntryRpTracking = CreateMenuEntryRpTracking();
-            var menuEntryListTrackablePlayers = CreateMenuEntryListTrackablePlayers();
-            var menuEntryListChannels = CreateMenuEntryListChannels();
-            var menuEntryAbout = CreateMenuEntryAbout();
-            var menuEntryExit = CreateMenuEntryExit();
+            var menuEntryShowOnNewSong = MenuEntryShowOnNewSong();
+            var menuEntryLargeAlbumArt = MenuEntryLargeAlbumArt();
+            var menuEntryShowSongRating = MenuEntryShowSongRating();
+            var menuEntryPromptForRating = MenuEntryPromptForRating();
+            var menuEntryLeaveShorcutInStartMenu = MenuEntryLeaveShorcutInStartMenu();
+            var menuEntryReset = MenuEntryReset();
+            var menuEntryEnablePlayerWatcher = MenuEntryEnablePlayerWatcher();
+            var menuEntryRpTracking = MenuEntryRpTracking();
+            var menuEntryListTrackablePlayers = MenuEntryListTrackablePlayers();
+            var menuEntryListChannels = MenuEntryListChannels();
+            var menuEntryLogin = MenuEntryLogIn();
+            var menuEntryAbout = MenuEntryAbout();
+            var menuEntryExit = MenuEntryExit();
 
             contextMenu.MenuItems.Clear();
 
@@ -100,18 +107,20 @@ namespace RP_Notify.TrayIcon
             contextMenu.MenuItems.Add("-");
             contextMenu.MenuItems.AddRange(menuEntryListChannels);
             contextMenu.MenuItems.Add("-");
+            contextMenu.MenuItems.Add(menuEntryLogin);
             contextMenu.MenuItems.Add(menuEntryAbout);
             contextMenu.MenuItems.Add(menuEntryExit);
 
             _log.Information(LogHelper.GetMethodName(this), "Finished");
         }
 
-        private MenuItem CreateMenuEntryShowOnNewSong()
+        private MenuItem MenuEntryShowOnNewSong()
         {
             bool trackingActive = _config.State.Foobar2000IsPlayingRP
                 || _config.IsRpPlayerTrackingChannel();
+            var menuName = $"Show on new song{(!trackingActive ? " (Live stream)" : null)}";
 
-            MenuItem showOnNewSong = new MenuItem($"Show on new song{(!trackingActive ? " (Live stream)" : null)}")
+            MenuItem showOnNewSong = new MenuItem(menuName)
             {
                 Checked = _config.ExternalConfig.ShowOnNewSong || trackingActive,
                 Enabled = !trackingActive,
@@ -121,45 +130,54 @@ namespace RP_Notify.TrayIcon
 
             showOnNewSong.Click += (sender, e) =>
             {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
                 _config.ExternalConfig.ShowOnNewSong = !_config.ExternalConfig.ShowOnNewSong;
             };
 
             return showOnNewSong;
         }
 
-        private MenuItem CreateMenuEntryLargeAlbumArt()
+        private MenuItem MenuEntryLargeAlbumArt()
         {
-            MenuItem largeAlbumArt = new MenuItem("Large album art")
+            var menuName = "Large album art";
+
+            MenuItem largeAlbumArt = new MenuItem(menuName)
             {
                 Checked = _config.ExternalConfig.LargeAlbumArt
             };
 
             largeAlbumArt.Click += (sender, e) =>
             {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
                 _config.ExternalConfig.LargeAlbumArt = !_config.ExternalConfig.LargeAlbumArt;
             };
 
             return largeAlbumArt;
         }
 
-        private MenuItem CreateMenuEntryShowSongRating()
+        private MenuItem MenuEntryShowSongRating()
         {
-            MenuItem showSongRating = new MenuItem("Show song rating")
+            var menuName = "Show song rating";
+
+            MenuItem showSongRating = new MenuItem(menuName)
             {
                 Checked = _config.ExternalConfig.ShowSongRating
             };
 
             showSongRating.Click += (sender, e) =>
             {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
                 _config.ExternalConfig.ShowSongRating = !_config.ExternalConfig.ShowSongRating;
             };
 
             return showSongRating;
         }
 
-        private MenuItem CreateMenuEntryPromptForRating()
+        private MenuItem MenuEntryPromptForRating()
         {
-            MenuItem promptForRating = new MenuItem("Prompt for Rating")
+            var menuName = "Prompt for Rating";
+
+            MenuItem promptForRating = new MenuItem(menuName)
             {
                 Checked = _config.ExternalConfig.PromptForRating,
                 Enabled = _config.State.IsUserAuthenticated
@@ -167,40 +185,49 @@ namespace RP_Notify.TrayIcon
 
             promptForRating.Click += (sender, e) =>
             {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
                 _config.ExternalConfig.PromptForRating = !_config.ExternalConfig.PromptForRating;
             };
 
             return promptForRating;
         }
 
-        private MenuItem CreateMenuEntryLeaveShorcutInStartMenu()
+        private MenuItem MenuEntryLeaveShorcutInStartMenu()
         {
-            MenuItem leaveShorcutInStartMenu = new MenuItem("Leave shortcut in Start menu")
+            var menuName = "Leave shortcut in Start menu";
+
+            MenuItem leaveShorcutInStartMenu = new MenuItem(menuName)
             {
                 Checked = _config.ExternalConfig.LeaveShorcutInStartMenu
             };
             leaveShorcutInStartMenu.Click += (sender, e) =>
             {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
                 _config.ExternalConfig.LeaveShorcutInStartMenu = !_config.ExternalConfig.LeaveShorcutInStartMenu;
             };
 
             return leaveShorcutInStartMenu;
         }
 
-        private MenuItem CreateMenuEntryReset()
+        private MenuItem MenuEntryReset()
         {
-            MenuItem reset = new MenuItem("Delete app data");
+            var menuName = "Delete app data";
+
+            MenuItem reset = new MenuItem(menuName);
             reset.Click += (sender, e) =>
             {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
                 _config.ExternalConfig.DeleteAllData = !_config.ExternalConfig.DeleteAllData;
             };
 
             return reset;
         }
 
-        private MenuItem CreateMenuEntryEnablePlayerWatcher()
+        private MenuItem MenuEntryEnablePlayerWatcher()
         {
-            MenuItem enablePlayerWatcher = new MenuItem("Track Foobar2000")
+            var menuName = "Track Foobar2000";
+
+            MenuItem enablePlayerWatcher = new MenuItem(menuName)
             {
                 Checked = _config.ExternalConfig.EnableFoobar2000Watcher,
                 DefaultItem = _config.State.Foobar2000IsPlayingRP
@@ -209,28 +236,32 @@ namespace RP_Notify.TrayIcon
 
             enablePlayerWatcher.Click += (sender, e) =>
             {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
                 _config.ExternalConfig.EnableFoobar2000Watcher = !_config.ExternalConfig.EnableFoobar2000Watcher;
             };
 
             return enablePlayerWatcher;
         }
 
-        private MenuItem CreateMenuEntryRpTracking()
+        private MenuItem MenuEntryRpTracking()
         {
-            MenuItem rpTracking = new MenuItem("Track official RP players")
+            var menuName = "Track official RP players";
+
+            MenuItem rpTracking = new MenuItem(menuName)
             {
                 Checked = _config.ExternalConfig.EnableRpOfficialTracking,
             };
 
             rpTracking.Click += (sender, e) =>
             {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
                 _config.ExternalConfig.EnableRpOfficialTracking = !_config.ExternalConfig.EnableRpOfficialTracking;
             };
 
             return rpTracking;
         }
 
-        private MenuItem[] CreateMenuEntryListTrackablePlayers()
+        private MenuItem[] MenuEntryListTrackablePlayers()
         {
             List<MenuItem> TrackablePlayers = new List<MenuItem>();
 
@@ -241,8 +272,9 @@ namespace RP_Notify.TrayIcon
                     var playedChannel = _config.State.ChannelList.Where(c => c.Chan == player.Chan).FirstOrDefault();
                     TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
                     var channelName = textInfo.ToTitleCase(playedChannel.StreamName);
+                    var menuName = $"{player.Source} ({channelName})";
 
-                    MenuItem trackedPlayer = new MenuItem($"{player.Source} ({channelName})")
+                    MenuItem trackedPlayer = new MenuItem(menuName)
                     {
                         RadioCheck = true,
                         Checked = _config.State.RpTrackingConfig.ActivePlayerId == player.PlayerId,
@@ -251,6 +283,8 @@ namespace RP_Notify.TrayIcon
 
                     trackedPlayer.Click += (sender, e) =>
                     {
+                        _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+
                         if (_config.State.RpTrackingConfig.ActivePlayerId == player.PlayerId)
                         {
                             _config.State.RpTrackingConfig.ActivePlayerId = null;
@@ -268,15 +302,16 @@ namespace RP_Notify.TrayIcon
             return TrackablePlayers.ToArray();
         }
 
-        private MenuItem[] CreateMenuEntryListChannels()
+        private MenuItem[] MenuEntryListChannels()
         {
             List<MenuItem> Channels = new List<MenuItem>();
 
             foreach (Channel loopChannel in _config.State.ChannelList)
             {
                 TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
+                var menuName = textInfo.ToTitleCase(loopChannel.StreamName);
 
-                MenuItem channelMenuItem = new MenuItem(textInfo.ToTitleCase(loopChannel.StreamName))
+                MenuItem channelMenuItem = new MenuItem(menuName)
                 {
                     RadioCheck = true,
                     Checked = _config.ExternalConfig.Channel.Equals(Int32.Parse(loopChannel.Chan)),
@@ -288,6 +323,8 @@ namespace RP_Notify.TrayIcon
 
                 channelMenuItem.Click += (sender, e) =>
                 {
+                    _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+
                     foreach (MenuItem menu in contextMenu.MenuItems)
                     {
                         if (menu.Tag == null || menu.Tag.GetType() != loopChannel.GetType())
@@ -307,21 +344,56 @@ namespace RP_Notify.TrayIcon
             return Channels.ToArray();
         }
 
-        private MenuItem CreateMenuEntryAbout()
+        private MenuItem MenuEntryLogIn()
         {
-            MenuItem about = new MenuItem("About");
+            var menuName = _config.State.IsUserAuthenticated
+                ? "Log Out"
+                : "Log In";
+
+            MenuItem login = new MenuItem(menuName);
+            login.Click += (sender, e) =>
+            {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+
+                if (_config.State.IsUserAuthenticated)
+                {
+                    Retry.Do(() => { File.Delete(_config.StaticConfig.CookieCachePath); });
+                    _log.Information(LogHelper.GetMethodName(this), "Cookie cache deleted - Restart");
+                    Application.Restart();
+                }
+                else
+                {
+                    _toastHandler.ShowLoginToast();
+                }
+            };
+
+            return login;
+        }
+
+        private MenuItem MenuEntryAbout()
+        {
+            var menuName = "About";
+
+            MenuItem about = new MenuItem(menuName);
             about.Click += (sender, e) =>
             {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
                 System.Diagnostics.Process.Start("https://github.com/gvajda/radio-paradise-song-notification");
             };
 
             return about;
         }
 
-        private MenuItem CreateMenuEntryExit()
+        private MenuItem MenuEntryExit()
         {
-            MenuItem exit = new MenuItem("E&xit");
-            exit.Click += (sender, e) => { Application.Exit(); };
+            var menuName = "E&xit";
+
+            MenuItem exit = new MenuItem(menuName);
+            exit.Click += (sender, e) =>
+            {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                Application.Exit();
+            };
 
             return exit;
         }

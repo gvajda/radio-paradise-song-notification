@@ -177,7 +177,7 @@ namespace RP_Notify.Toast
             //});
         }
 
-        public void LoginToast()
+        public void ShowLoginToast()
         {
             Task.Run(() =>
             {
@@ -188,7 +188,7 @@ namespace RP_Notify.Toast
 
                     // Create toast xml text
                     toastXmlString =
-                    $@"<toast launch='{nameof(this.LoginToast)}'>
+                    $@"<toast launch='{nameof(this.ShowLoginToast)}'>
                         <visual>
                             <binding template='ToastGeneric'>
                                 <text>User authentication</text>
@@ -234,7 +234,7 @@ namespace RP_Notify.Toast
                 QueryString args = QueryString.Parse(rpEvent.Arguments);
                 if (args["action"] == "LoginRequested")
                 {
-                    LoginToast();
+                    ShowLoginToast();
                 }
                 else
                 if (args["action"] == "LoginDataSent")
