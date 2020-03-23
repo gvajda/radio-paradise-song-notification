@@ -81,7 +81,12 @@ namespace RP_Notify.SongInfoUpdater
                                 UpdateSongInfo();
                             }, cancellationToken);
 
-                            if (_config.State.Playback == null)
+                            // if an RP player is tracked then wait this only at the end of the
+                            // listener loop in order to don't potentially skip the rating prompt
+                            // while checking song data
+                            // in other cases it would cause unnecessary double API calls
+                            if (_config.State.Playback == null
+                                || !_config.IsRpPlayerTrackingChannel())
                             {
                                 update.Wait();
                             }
