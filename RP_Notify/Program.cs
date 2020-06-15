@@ -4,7 +4,6 @@ using RestSharp;
 using RP_Notify.API;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
-using RP_Notify.PlayerWatcher;
 using RP_Notify.PlayerWatcher.Foobar2000;
 using RP_Notify.PlayerWatcher.MusicBee;
 using RP_Notify.PlayerWatcher.MusicBee.API;

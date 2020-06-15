@@ -8,7 +8,6 @@
 
 using System;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
 
 namespace RP_Notify.PlayerWatcher.MusicBee.API
 {
