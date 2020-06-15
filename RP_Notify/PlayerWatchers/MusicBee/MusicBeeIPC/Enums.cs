@@ -10,7 +10,7 @@ using System;
 
 
 
-namespace RP_Notify.MusicBee.API
+namespace RP_Notify.PlayerWatcher.MusicBee.API
 {
 
     public partial class MusicBeeIPC

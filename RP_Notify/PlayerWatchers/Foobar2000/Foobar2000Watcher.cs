@@ -8,9 +8,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RP_Notify.Foobar2000
+namespace RP_Notify.PlayerWatcher.Foobar2000
 {
-    class Foobar2000Watcher
+    class Foobar2000Watcher : IPlayerWatcher
     {
         private readonly IConfig _config;
         private readonly ILog _log;
@@ -74,7 +74,7 @@ namespace RP_Notify.Foobar2000
                 {
                     try
                     {
-                        CheckFoobar2000Status(out bool notUsedHere);
+                        CheckPlayerState(out bool notUsedHere);
 
                         await Task.Delay(CheckDelayMillisecs);
                     }
@@ -99,7 +99,7 @@ namespace RP_Notify.Foobar2000
             _log.Information(LogHelper.GetMethodName(this), $"Running in background");
         }
 
-        public bool CheckFoobar2000Status(out bool channelChanged)
+        public bool CheckPlayerState(out bool channelChanged)
         {
             channelChanged = false;
 

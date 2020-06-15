@@ -1,6 +1,6 @@
 ﻿using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
-using RP_Notify.MusicBee.API;
+using RP_Notify.PlayerWatcher.MusicBee.API;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,9 +8,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RP_Notify.MusicBee
+namespace RP_Notify.PlayerWatcher.MusicBee
 {
-    class MusicBeeWatcher
+    class MusicBeeWatcher : IPlayerWatcher
     {
         private readonly IConfig _config;
         private readonly ILog _log;
@@ -74,7 +74,7 @@ namespace RP_Notify.MusicBee
                 {
                     try
                     {
-                        CheckMusicBeeStatus(out bool notUsedHere);
+                        CheckPlayerState(out bool notUsedHere);
 
                         await Task.Delay(CheckDelayMillisecs);
                     }
@@ -99,7 +99,7 @@ namespace RP_Notify.MusicBee
             _log.Information(LogHelper.GetMethodName(this), $"Running in background");
         }
 
-        public bool CheckMusicBeeStatus(out bool channelChanged)
+        public bool CheckPlayerState(out bool channelChanged)
         {
             channelChanged = false;
 
