@@ -4,6 +4,8 @@ For Windows 10
 
 [Download](https://github.com/gvajda/radio-paradise-song-notification/releases/latest/download/RP_Notify.exe)
 
+![Build](https://github.com/gvajda/radio-paradise-song-notification/workflows/Build/badge.svg)
+
 ## Summary
 
 A tray-only application to track the songs played on [Radio Paradise](https://radioparadise.com/) via Desktop notification.
@@ -28,7 +30,7 @@ The goal was to receive non-intrusive but detailed updates of the currently play
 - The application will write data in folder:
  *c:\Users\<username>\AppData\Roaming\RP_Notify*
     - The values in the *config.ini* file in the folder referred above is synchronized with the in-memory config so besides of storing configuration it can act as an API to change settings
-    - In case the user provides logs in data, the generated cookie file will be kept in the same folder
+    - In case the user enters the RP username/password, the generated cookie file will be kept in the same folder
     - Logging can be enabled only by editing the *config.ini* file. Log files will be kept in the same folder
 - When the application is running, the shortcut of the app will apperar in the Start menu (this is required for the Desktop notifications). This shortcut will be left in Start menu or deleted upon exiting the app depending on the settings in the tray menu.
 
