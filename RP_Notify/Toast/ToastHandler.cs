@@ -53,6 +53,7 @@ namespace RP_Notify.Toast
                 force
                 || (_config.ExternalConfig.ShowOnNewSong && !_config.State.Playback.ShowedOnNewSong)
                     || _config.State.Foobar2000IsPlayingRP
+                    || _config.State.MusicBeeIsPlayingRP
                     || _config.IsRpPlayerTrackingChannel()
                 ))
             {
@@ -503,9 +504,9 @@ namespace RP_Notify.Toast
         {
             if (_config.IsRpPlayerTrackingChannel())
             {
-                var activePlayerId = _config.State.RpTrackingConfig.ActivePlayerId;
                 var activePlayer = _config.State.RpTrackingConfig.Players
-                    .Where(p => p.PlayerId == activePlayerId).First().Source;
+                    .First(p => p.PlayerId == _config.State.RpTrackingConfig.ActivePlayerId)
+                    .Source;
 
                 return $" • {activePlayer}";
             }
@@ -513,6 +514,11 @@ namespace RP_Notify.Toast
             if (_config.State.Foobar2000IsPlayingRP)
             {
                 return " • Foobar2000";
+            }
+
+            if (_config.State.MusicBeeIsPlayingRP)
+            {
+                return " • MusicBee";
             }
 
             return null;

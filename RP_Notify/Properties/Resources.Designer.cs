@@ -22,73 +22,68 @@ namespace RP_Notify.Properties
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Resources {
-        
+    internal class Resources
+    {
+
         private static global::System.Resources.ResourceManager resourceMan;
-        
+
         private static global::System.Globalization.CultureInfo resourceCulture;
-        
+
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Resources() {
+        internal Resources()
+        {
         }
-        
+
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager {
-            get {
-                if (object.ReferenceEquals(resourceMan, null)) {
+        internal static global::System.Resources.ResourceManager ResourceManager
+        {
+            get
+            {
+                if (object.ReferenceEquals(resourceMan, null))
+                {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("RP_Notify.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
             }
         }
-        
+
         /// <summary>
         ///   Overrides the current thread's CurrentUICulture property for all
         ///   resource lookups using this strongly typed resource class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture {
-            get {
+        internal static global::System.Globalization.CultureInfo Culture
+        {
+            get
+            {
                 return resourceCulture;
             }
-            set {
+            set
+            {
                 resourceCulture = value;
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to [Toast]
-        ///ShowOnNewSong=True
-        ///LargeAlbumArt=true
-        ///ShowSongRating=true
-        ///[AppSettings]
-        ///LeaveShorcutInStartMenu=true
-        ///EnablePlayerWatcher=True
-        ///[Channel]
-        ///Channel=0
-        ///[PlayerWatcherConfig]
-        ///PlayerName=foobar2000
-        ///flac  [foobar2000]=0
-        ///mellow-flac  [foobar2000]=1
-        ///rock-flac  [foobar2000]=2
-        ///eclectic-flac  [foobar2000]=3
-        ///.
+
         /// </summary>
-        internal static string config {
-            get {
+        internal static string config
+        {
+            get
+            {
                 return ResourceManager.GetString("config", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static System.Drawing.Icon RPIcon {
-            get {
+        internal static System.Drawing.Icon RPIcon
+        {
+            get
+            {
                 object obj = ResourceManager.GetObject("RPIcon", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }

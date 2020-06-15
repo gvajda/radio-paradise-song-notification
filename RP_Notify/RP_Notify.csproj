@@ -118,6 +118,12 @@
     <Compile Include="Foobar2000\Model\PlaylistsResult.cs" />
     <Compile Include="Foobar2000\Model\VolumeType.cs" />
     <Compile Include="Config\RpTrackingConfig.cs" />
+    <Compile Include="MusicBee\MusicBeeWatcher.cs" />
+    <Compile Include="MusicBee\MusicBeeIPC\Enums.cs" />
+    <Compile Include="MusicBee\MusicBeeIPC\MusicBeeIPC.cs" />
+    <Compile Include="MusicBee\MusicBeeIPC\Pack.cs" />
+    <Compile Include="MusicBee\MusicBeeIPC\Structs.cs" />
+    <Compile Include="MusicBee\MusicBeeIPC\Unpack.cs" />
     <Compile Include="SongInfoUpdater\ISongInfoListener.cs" />
     <Compile Include="SongInfoUpdater\SongInfoListener.cs" />
     <Compile Include="StartMenuShortcut\ShortcutHelper.cs" />
@@ -203,6 +209,17 @@
       <Version>4.7.0</Version>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.6.1 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

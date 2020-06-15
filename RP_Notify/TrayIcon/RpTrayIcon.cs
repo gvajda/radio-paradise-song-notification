@@ -77,7 +77,8 @@ namespace RP_Notify.TrayIcon
             var menuEntryPromptForRating = MenuEntryPromptForRating();
             var menuEntryLeaveShorcutInStartMenu = MenuEntryLeaveShorcutInStartMenu();
             var menuEntryReset = MenuEntryReset();
-            var menuEntryEnablePlayerWatcher = MenuEntryEnablePlayerWatcher();
+            var menuEntryEnableFoobar2000Watcher = MenuEntryEnableFoobar2000Watcher();
+            var menuEntryEnableMusicbeeWatcher = MenuEntryEnableMusicbeeWatcher();
             var menuEntryRpTracking = MenuEntryRpTracking();
             var menuEntryListTrackablePlayers = MenuEntryListTrackablePlayers();
             var menuEntryListChannels = MenuEntryListChannels();
@@ -100,7 +101,8 @@ namespace RP_Notify.TrayIcon
             appSettings.MenuItems.Add(menuEntryReset);
             contextMenu.MenuItems.Add(appSettings);
             contextMenu.MenuItems.Add("-");
-            contextMenu.MenuItems.Add(menuEntryEnablePlayerWatcher);
+            contextMenu.MenuItems.Add(menuEntryEnableFoobar2000Watcher);
+            contextMenu.MenuItems.Add(menuEntryEnableMusicbeeWatcher);
             contextMenu.MenuItems.Add("-");
             contextMenu.MenuItems.Add(menuEntryRpTracking);
             contextMenu.MenuItems.AddRange(menuEntryListTrackablePlayers);
@@ -117,6 +119,7 @@ namespace RP_Notify.TrayIcon
         private MenuItem MenuEntryShowOnNewSong()
         {
             bool trackingActive = _config.State.Foobar2000IsPlayingRP
+                || _config.State.MusicBeeIsPlayingRP
                 || _config.IsRpPlayerTrackingChannel();
             var menuName = $"Show on new song{(!trackingActive ? " (Live stream)" : null)}";
 
@@ -223,7 +226,7 @@ namespace RP_Notify.TrayIcon
             return reset;
         }
 
-        private MenuItem MenuEntryEnablePlayerWatcher()
+        private MenuItem MenuEntryEnableFoobar2000Watcher()
         {
             var menuName = "Track Foobar2000";
 
@@ -238,6 +241,26 @@ namespace RP_Notify.TrayIcon
             {
                 _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
                 _config.ExternalConfig.EnableFoobar2000Watcher = !_config.ExternalConfig.EnableFoobar2000Watcher;
+            };
+
+            return enablePlayerWatcher;
+        }
+
+        private MenuItem MenuEntryEnableMusicbeeWatcher()
+        {
+            var menuName = "Track MusicBee";
+
+            MenuItem enablePlayerWatcher = new MenuItem(menuName)
+            {
+                Checked = _config.ExternalConfig.EnableMusicBeeWatcher,
+                DefaultItem = _config.State.MusicBeeIsPlayingRP
+                    && !_config.IsRpPlayerTrackingChannel()
+            };
+
+            enablePlayerWatcher.Click += (sender, e) =>
+            {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _config.ExternalConfig.EnableMusicBeeWatcher = !_config.ExternalConfig.EnableMusicBeeWatcher;
             };
 
             return enablePlayerWatcher;
@@ -318,6 +341,7 @@ namespace RP_Notify.TrayIcon
                     Tag = loopChannel,
                     Enabled = loopChannel.Chan != "99"
                         && (!((_config.ExternalConfig.EnableFoobar2000Watcher && _config.State.Foobar2000IsPlayingRP)
+                        || (_config.ExternalConfig.EnableMusicBeeWatcher && _config.State.MusicBeeIsPlayingRP)
                         || _config.IsRpPlayerTrackingChannel()))
                 };
 

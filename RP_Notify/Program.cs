@@ -4,6 +4,9 @@ using RestSharp;
 using RP_Notify.API;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
+using RP_Notify.Foobar2000;
+using RP_Notify.MusicBee;
+using RP_Notify.MusicBee.API;
 using RP_Notify.SongInfoUpdater;
 using RP_Notify.StartMenuShortcut;
 using RP_Notify.Toast;
@@ -29,7 +32,9 @@ namespace RP_Notify
                 .AddSingleton<IRpApiHandler, RpApiHandler>()
                 .AddScoped<IToastHandler, ToastHandler>()
                 .AddSingleton<PlayerApi>()
-                .AddSingleton<Foobar2000.Foobar2000Watcher>()
+                .AddSingleton<Foobar2000Watcher>()
+                .AddSingleton<MusicBeeIPC>()
+                .AddSingleton<MusicBeeWatcher>()
                 .AddSingleton<ISongInfoListener, SongInfoListener>()
                 .AddTransient<ShortcutHelper>()
                 .AddSingleton<RpTrayIcon>()
