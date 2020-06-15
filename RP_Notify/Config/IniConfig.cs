@@ -104,6 +104,7 @@ namespace RP_Notify.Config
         private bool deleteAllData;
         private bool enableLoggingToFile;
         private bool enableFoobar2000Watcher;
+        private bool enableMusicBeeWatcher;
         private bool enableRpOfficialTracking;
         private bool largeAlbumArt;
         private bool leaveShorcutInStartMenu;
@@ -181,6 +182,7 @@ namespace RP_Notify.Config
                 }
             }
         }
+
         public bool EnableFoobar2000Watcher
         {
             get => enableFoobar2000Watcher;
@@ -194,6 +196,21 @@ namespace RP_Notify.Config
                 }
             }
         }
+
+        public bool EnableMusicBeeWatcher
+        {
+            get => enableMusicBeeWatcher;
+            set
+            {
+                if (enableMusicBeeWatcher != value)
+                {
+                    enableMusicBeeWatcher = value;
+                    RaiseFieldChangeEvent(nameof(EnableMusicBeeWatcher), value);
+                    SetIniValue(AppSettingsIniSectionName, nameof(EnableMusicBeeWatcher), value);
+                }
+            }
+        }
+
         public bool EnableRpOfficialTracking
         {
             get => enableRpOfficialTracking;
@@ -318,6 +335,14 @@ namespace RP_Notify.Config
                 .TryParseValue(out _EnableFoobar2000Watcher)
                 ? _EnableFoobar2000Watcher
                 : EnableFoobar2000Watcher;
+
+            var _EnableMusicBeeWatcher = EnableMusicBeeWatcher;
+            EnableMusicBeeWatcher = iniFile
+                .Sections[AppSettingsIniSectionName]
+                .Keys[nameof(EnableMusicBeeWatcher)]
+                .TryParseValue(out _EnableMusicBeeWatcher)
+                ? _EnableMusicBeeWatcher
+                : EnableMusicBeeWatcher;
 
             var _EnableRpOfficialTracking = EnableRpOfficialTracking;
             EnableRpOfficialTracking = iniFile

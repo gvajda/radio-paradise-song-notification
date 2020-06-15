@@ -1,26 +1,25 @@
-﻿using Foobar2000.RESTClient.Api;
-using RP_Notify.Config;
+﻿using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
+using RP_Notify.PlayerWatcher.MusicBee.API;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RP_Notify.Foobar2000
+namespace RP_Notify.PlayerWatcher.MusicBee
 {
-    class Foobar2000Watcher
+    class MusicBeeWatcher : IPlayerWatcher
     {
         private readonly IConfig _config;
         private readonly ILog _log;
-        private readonly PlayerApi _playerApi;
+        private readonly MusicBeeIPC _playerApi;
 
         private int CheckDelayMillisecs { get; set; }
-        private Task Foobar2000WatcherTask { get; set; }
-        private CancellationTokenSource Foobar2000WatcherTaskCancellationTokenSource { get; set; }
+        private Task MusicBeeWatcherTask { get; set; }
+        private CancellationTokenSource MusicBeeWatcherTaskCancellationTokenSource { get; set; }
 
-        public Foobar2000Watcher(IConfig config, ILog log, PlayerApi playerApi)
+        public MusicBeeWatcher(IConfig config, ILog log, MusicBeeIPC playerApi)
         {
             _config = config;
             _log = log;
@@ -32,16 +31,16 @@ namespace RP_Notify.Foobar2000
         private void Init()
         {
             CheckDelayMillisecs = 5000;
-            Foobar2000WatcherTaskCancellationTokenSource = new CancellationTokenSource();
-            Application.ApplicationExit += (sender, e) => Foobar2000WatcherTaskCancellationTokenSource.Cancel();
+            MusicBeeWatcherTaskCancellationTokenSource = new CancellationTokenSource();
+            Application.ApplicationExit += (sender, e) => MusicBeeWatcherTaskCancellationTokenSource.Cancel();
         }
 
         public void Stop()
         {
-            if (IsFoobar2000WatcherTaskRunning())
+            if (IsMusicBeeWatcherTaskRunning())
             {
                 _log.Information(LogHelper.GetMethodName(this), $"Shutdown initiated");
-                Foobar2000WatcherTaskCancellationTokenSource.Cancel();
+                MusicBeeWatcherTaskCancellationTokenSource.Cancel();
             }
             else
             {
@@ -51,7 +50,7 @@ namespace RP_Notify.Foobar2000
 
         public void Start()
         {
-            if (!IsFoobar2000WatcherTaskRunning())
+            if (!IsMusicBeeWatcherTaskRunning())
             {
                 _log.Information(LogHelper.GetMethodName(this), $"Invoked");
                 Run();
@@ -66,15 +65,15 @@ namespace RP_Notify.Foobar2000
         {
             _log.Information(LogHelper.GetMethodName(this), $"Starting");
 
-            Foobar2000WatcherTaskCancellationTokenSource = new CancellationTokenSource();
+            MusicBeeWatcherTaskCancellationTokenSource = new CancellationTokenSource();
 
-            Foobar2000WatcherTask = Task.Run(async () =>
+            MusicBeeWatcherTask = Task.Run(async () =>
             {
-                while (!Foobar2000WatcherTaskCancellationTokenSource.IsCancellationRequested)
+                while (!MusicBeeWatcherTaskCancellationTokenSource.IsCancellationRequested)
                 {
                     try
                     {
-                        CheckFoobar2000Status(out bool notUsedHere);
+                        CheckPlayerState(out bool notUsedHere);
 
                         await Task.Delay(CheckDelayMillisecs);
                     }
@@ -90,23 +89,23 @@ namespace RP_Notify.Foobar2000
                     }
                 }
 
-                _config.State.Foobar2000IsPlayingRP = false;
+                _config.State.MusicBeeIsPlayingRP = false;
 
                 _log.Information(LogHelper.GetMethodName(this), $"Stopped");
 
-            }, Foobar2000WatcherTaskCancellationTokenSource.Token);
+            }, MusicBeeWatcherTaskCancellationTokenSource.Token);
 
             _log.Information(LogHelper.GetMethodName(this), $"Running in background");
         }
 
-        public bool CheckFoobar2000Status(out bool channelChanged)
+        public bool CheckPlayerState(out bool channelChanged)
         {
             channelChanged = false;
 
-            if (_config.ExternalConfig.EnableFoobar2000Watcher
-                && RpChannelIsPlayingInFB2K(out int matchingChannel))
+            if (_config.ExternalConfig.EnableMusicBeeWatcher
+                && RpChannelIsPlayingInMusicBee(out int matchingChannel))
             {
-                _config.State.Foobar2000IsPlayingRP = true;
+                _config.State.MusicBeeIsPlayingRP = true;
 
                 CheckDelayMillisecs = 1000;
 
@@ -122,20 +121,21 @@ namespace RP_Notify.Foobar2000
             else
             {
                 CheckDelayMillisecs = 5000;
-                _config.State.Foobar2000IsPlayingRP = false;
+                _config.State.MusicBeeIsPlayingRP = false;
                 return false;
             }
         }
 
-        private bool IsFoobar2000WatcherTaskRunning()
+        private bool IsMusicBeeWatcherTaskRunning()
         {
-            return !(Foobar2000WatcherTask == null || Foobar2000WatcherTask.IsCompleted);
+            return !(MusicBeeWatcherTask == null || MusicBeeWatcherTask.IsCompleted);
         }
 
-        private bool RpChannelIsPlayingInFB2K(out int matchingChannel)
+        private bool RpChannelIsPlayingInMusicBee(out int matchingChannel)
         {
             if (TryGetPlayedFilePath(out string playedFilePath)
-                && playedFilePath.Contains("radioparadise"))
+                && playedFilePath.Contains("radioparadise")
+                && _playerApi.GetPlayState() == MusicBeeIPC.PlayState.Playing)
             {
                 matchingChannel = Int32.Parse(
                     _config.State.ChannelList
@@ -156,22 +156,23 @@ namespace RP_Notify.Foobar2000
 
         private bool TryGetPlayedFilePath(out string playedFilePath)
         {
-            var columns = new List<string>();
-            columns.Add("%path%");
+            playedFilePath = null;
+
 
             try
             {
-                var foobarApiResp = _playerApi.GetPlayerStateAsync(columns).Result;
-                playedFilePath = foobarApiResp.Player.ActiveItem.Columns.First();
+                if (!_playerApi.Probe())
+                {
+                    return false;
+                }
+
+                playedFilePath = _playerApi.GetFileUrl();
                 return true;
             }
             catch
             {
-                playedFilePath = null;
                 return false;
             }
-
         }
-
     }
 }

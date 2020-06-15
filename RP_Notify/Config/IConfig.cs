@@ -37,6 +37,7 @@ namespace RP_Notify.Config
         bool DeleteAllData { get; set; }
         bool EnableLoggingToFile { get; set; }
         bool EnableFoobar2000Watcher { get; set; }
+        bool EnableMusicBeeWatcher { get; set; }
         bool EnableRpOfficialTracking { get; set; }
         bool LargeAlbumArt { get; set; }
         bool LeaveShorcutInStartMenu { get; set; }

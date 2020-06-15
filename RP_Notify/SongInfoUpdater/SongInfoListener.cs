@@ -155,6 +155,7 @@ namespace RP_Notify.SongInfoUpdater
         {
             bool somethingIsPlaying = _config.ExternalConfig.ShowOnNewSong
                 || _config.State.Foobar2000IsPlayingRP
+                || _config.State.MusicBeeIsPlayingRP
                 || _config.IsRpPlayerTrackingChannel();
 
             var millisecsLeftToPrompt = (int)(_config.State.Playback.SongInfoExpiration - DateTime.Now).TotalMilliseconds - secondsBeforeSongEndsToPromptRating * 1000;

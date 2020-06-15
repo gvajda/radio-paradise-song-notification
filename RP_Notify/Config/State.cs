@@ -13,6 +13,7 @@ namespace RP_Notify.Config
         private Playback playback;
         private string tooltipText;
         private bool foobar2000IsPlayingRP;
+        private bool musicBeeIsPlayingRP;
 
         public bool IsUserAuthenticated
         {
@@ -92,6 +93,20 @@ namespace RP_Notify.Config
                 }
             }
         }
+
+        public bool MusicBeeIsPlayingRP
+        {
+            get => musicBeeIsPlayingRP;
+            set
+            {
+                if (musicBeeIsPlayingRP != value)
+                {
+                    musicBeeIsPlayingRP = value;
+                    RaiseFieldChangeEvent(nameof(MusicBeeIsPlayingRP), value);
+                }
+            }
+        }
+
         public RpTrackingConfig RpTrackingConfig { get; set; }
 
         public State()

@@ -3,7 +3,9 @@ using RP_Notify.API;
 using RP_Notify.API.ResponseModel;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
-using RP_Notify.Foobar2000;
+using RP_Notify.PlayerWatcher;
+using RP_Notify.PlayerWatcher.Foobar2000;
+using RP_Notify.PlayerWatcher.MusicBee;
 using RP_Notify.SongInfoUpdater;
 using RP_Notify.StartMenuShortcut;
 using RP_Notify.Toast;
@@ -23,15 +25,15 @@ namespace RP_Notify
         private readonly IConfig _config;
         private readonly IToastHandler _toastHandler;
         private readonly ShortcutHelper _shortcutHelper;
-        private readonly Foobar2000Watcher _foobar2000Watcher;
+        private readonly IPlayerWatcher _foobar2000Watcher;
+        private readonly IPlayerWatcher _musicBeeWatcher;
         private readonly ISongInfoListener _songInfoListener;
         private readonly ILog _log;
         private readonly RpTrayIcon _rpTrayIcon;
 
-        private Task OnChangeTask { get; set; }
         private int EventCounter { get; set; }
 
-        public RpApplicationCore(IConfig config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, ISongInfoListener songInfoListener, ILog log, RpTrayIcon rpTrayIcon, ShortcutHelper shortcutHelper)
+        public RpApplicationCore(IConfig config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIcon rpTrayIcon, ShortcutHelper shortcutHelper)
         {
             _log = log;
             _apihandler = apiHandler;
@@ -39,6 +41,7 @@ namespace RP_Notify
             _toastHandler = toastHandler;
             _songInfoListener = songInfoListener;
             _foobar2000Watcher = foobar2000Watcher;
+            _musicBeeWatcher = musicBeeWatcher;
             _rpTrayIcon = rpTrayIcon;
             _shortcutHelper = shortcutHelper;
 
@@ -64,8 +67,13 @@ namespace RP_Notify
 
             if (_config.ExternalConfig.EnableFoobar2000Watcher)
             {
-                _foobar2000Watcher.CheckFoobar2000Status(out bool notUsedHere);
+                _foobar2000Watcher.CheckPlayerState(out bool notUsedHere);
                 _foobar2000Watcher.Start();
+            }
+            else if (_config.ExternalConfig.EnableMusicBeeWatcher)
+            {
+                _musicBeeWatcher.CheckPlayerState(out bool notUsedHere);
+                _musicBeeWatcher.Start();
             }
 
             // Init fields
@@ -128,7 +136,10 @@ namespace RP_Notify
                             OnShowOnNewSongChange();
                             break;
                         case nameof(_config.ExternalConfig.EnableFoobar2000Watcher):
-                            OnEnablePlayerWatcherChange();
+                            OnEnableFooBar2000WatcherChange();
+                            break;
+                        case nameof(_config.ExternalConfig.EnableMusicBeeWatcher):
+                            OnEnableMusicBeeWatcherChange();
                             break;
                         case nameof(_config.ExternalConfig.LargeAlbumArt):
                             OnLargeAlbumArtChange();
@@ -147,6 +158,9 @@ namespace RP_Notify
                             break;
                         case nameof(_config.State.Foobar2000IsPlayingRP):
                             OnFoobar2000IsPlayingRPChange();
+                            break;
+                        case nameof(_config.State.MusicBeeIsPlayingRP):
+                            OnMusicBeeIsPlayingRPChange();
                             break;
                         case nameof(_config.State.IsUserAuthenticated):
                             OnIsUserAuthenticatedChange();
@@ -190,7 +204,7 @@ namespace RP_Notify
             }
         }
 
-        private void OnEnablePlayerWatcherChange()
+        private void OnEnableFooBar2000WatcherChange()
         {
             // USER - turn on and off the Foobar2000 watching infinite loop
 
@@ -201,6 +215,20 @@ namespace RP_Notify
             else
             {
                 _foobar2000Watcher.Stop();
+            }
+        }
+
+        private void OnEnableMusicBeeWatcherChange()
+        {
+            // USER - turn on and off the Foobar2000 watching infinite loop
+
+            if (_config.ExternalConfig.EnableMusicBeeWatcher)
+            {
+                _musicBeeWatcher.Start();
+            }
+            else
+            {
+                _musicBeeWatcher.Stop();
             }
         }
 
@@ -252,7 +280,21 @@ namespace RP_Notify
             if (_config.State.Playback != null
                 && _config.State.Foobar2000IsPlayingRP
                 && !_config.IsRpPlayerTrackingChannel()
-                && _foobar2000Watcher.CheckFoobar2000Status(out bool channelChange)
+                && _foobar2000Watcher.CheckPlayerState(out bool channelChange)
+                && !channelChange)
+            {
+                _toastHandler.ShowSongStartToast();
+            }
+        }
+
+        private void OnMusicBeeIsPlayingRPChange()
+        {
+            // APP - flag if MusicBee is watched and actively playing an RP stream
+
+            if (_config.State.Playback != null
+                && _config.State.MusicBeeIsPlayingRP
+                && !_config.IsRpPlayerTrackingChannel()
+                && _musicBeeWatcher.CheckPlayerState(out bool channelChange)
                 && !channelChange)
             {
                 _toastHandler.ShowSongStartToast();
@@ -292,9 +334,10 @@ namespace RP_Notify
             // if player became un-tracked
             if (!_config.IsRpPlayerTrackingChannel())
             {
-                // if channel was favourites and Foobar2000 doesn't change it, then reset to the main stream
+                // if channel was favourites and Foobar2000 or MusicBee doesn't change it, then reset to the main stream
                 if (_config.ExternalConfig.Channel == 99
-                    && !(_foobar2000Watcher.CheckFoobar2000Status(out bool channelChanged) && channelChanged))
+                    && !(_foobar2000Watcher.CheckPlayerState(out bool channelChangedF) && channelChangedF)
+                    && !(_musicBeeWatcher.CheckPlayerState(out bool channelChangedM) && channelChangedM))
                 {
                     _config.ExternalConfig.Channel = 0;
                 }
@@ -316,8 +359,8 @@ namespace RP_Notify
             else
             {
                 if (_config.ExternalConfig.Channel == 99
-                    && !(_foobar2000Watcher.CheckFoobar2000Status(out bool channelChanged)
-                    && channelChanged))
+                    && !(_foobar2000Watcher.CheckPlayerState(out bool channelChanged) && channelChanged)
+                    && !(_musicBeeWatcher.CheckPlayerState(out bool channelChangedM) && channelChangedM))
                 {
                     _config.ExternalConfig.Channel = 0;
                 }
@@ -332,10 +375,11 @@ namespace RP_Notify
         {
             // APP - availablable RP player list is refreshed
 
-            // if Foobar2000 is not tracking an RP channel then start trackin without a second click
+            // if Foobar2000 or MusicBee is not tracking an RP channel then start trackin without a second click
             if (_config.State.RpTrackingConfig.Players.Any()
                 && !_config.IsRpPlayerTrackingChannel()
-                && !_config.State.Foobar2000IsPlayingRP)
+                && !_config.State.Foobar2000IsPlayingRP
+                && !_config.State.MusicBeeIsPlayingRP)
             {
                 _config.State.RpTrackingConfig.ActivePlayerId = _config.State.RpTrackingConfig.Players.FirstOrDefault().PlayerId;
             }
