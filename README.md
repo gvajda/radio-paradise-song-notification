@@ -32,13 +32,25 @@ The goal was to receive non-intrusive but detailed updates of the currently play
     - Logging can be enabled only by editing the *config.ini* file. Log files will be kept in the same folder
 - When the application is running, the shortcut of the app will apperar in the Start menu (this is required for the Desktop notifications). This shortcut will be left in Start menu or deleted upon exiting the app depending on the settings in the tray menu.
 
-### Foobar2000 integration
+### Audio player integration
 
-If this feature is enabled in the menu and an RP stream is played with the Foobar2000 player then the desktop notification is adjusted to the played stream and displaying the desktop notification turns on/off with the playback. Requires a plugin for Foobar2000 that provides REST interface to the player.
+Radio Paradise can be played in any audio player using the [stream links](https://radioparadise.com/listen/stream-links) and the application works with some of them to enable/disable song notification when a stream is started/stopped and change channels based on which channel is played. This feature can be enabled one-by-one for each supported audio player. Please see the details below.
+
+#### Foobar2000
+
+The integration requires the *foo_beefweb* plugin for Foobar2000 that provides REST interface to the player.
 
 [Download foobar2000 for Windows](https://www.foobar2000.org/download)
 
 [Download foo_beefweb plugin](https://www.foobar2000.org/components/view/foo_beefweb)
+
+#### MusicBee
+
+The integration requires the *MusicBeeIPC* plugin for MusicBee that provides an API and SDK for several various programming languages to the player.
+
+[Download MusicBee for Windows](https://getmusicbee.com/downloads/)
+
+[Download MusicBeeIPC plugin](https://getmusicbee.com/forum/index.php?topic=11492.msg70007)
 
 ## Screenshots
 
