@@ -4,6 +4,8 @@ For Windows 10
 
 [Download](https://github.com/gvajda/radio-paradise-song-notification/releases/latest/download/RP_Notify.exe)
 
+![Build](https://github.com/gvajda/radio-paradise-song-notification/workflows/Build/badge.svg)
+
 ## Summary
 
 A tray-only application to track the songs played on [Radio Paradise](https://radioparadise.com/) via Desktop notification.
