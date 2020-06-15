@@ -20,13 +20,16 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v1
 
-    # Runs a single command using the runners shell
-    - name: Setup .NET Framework
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '4.6.1' # SDK Version to use.
+    - name: Setup NuGet
+      uses: warrenbuckley/Setup-NuGet@v1
 
-    - name: Build with dotnet
-      run: dotnet build--configuration Release
+    - name: Restore packages
+      run: nuget restore RP_Notify.sln
+
+    - name: Setup MSBuild Path
+      uses: warrenbuckley/Setup-MSBuild@v1
+       
+    - name: Build
+      run: msbuild RP_Notify.sln -p:Configuration=Release
