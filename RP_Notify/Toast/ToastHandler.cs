@@ -4,7 +4,6 @@ using RP_Notify.API;
 using RP_Notify.API.ResponseModel;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
-using RP_Notify.Toast.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,6 +15,7 @@ using System.Windows.Forms;
 using Windows.Data.Xml.Dom;
 using Windows.Foundation;
 using Windows.UI.Notifications;
+using Microsoft.Toolkit.Uwp.Notifications;
 
 namespace RP_Notify.Toast
 {
@@ -62,34 +62,39 @@ namespace RP_Notify.Toast
 
             Task.Run(() =>
             {
-                string toastXmlString = null;
+                ToastContent toast = null;
                 try
                 {
+                    toast = new ToastContent()
+                    {
+                        Launch = nameof(this.ShowSongStartToast),
 
-                    string toastVisual =
-                    $@"<visual>
-                  <binding template='ToastGeneric'>
-                    {ToastHelper.CreateTitleText(_config, true)}
-                    {ToastHelper.CreateContentText(_config)}
-                    {ToastHelper.CreateRatingText(_config)}
-                    {ToastHelper.CreateToastFooter(_config)}
-                    {ToastHelper.CreateImage(_config, false)}
-                  </binding>
-                </visual>";
+                        Visual = new ToastVisual()
+                        {
+                            BindingGeneric = new ToastBindingGeneric()
+                            {
+                                AppLogoOverride = (ToastGenericAppLogo)ToastHelper.AlbumArtImage(_config, ToastHelper.ImageType.ApplogoOverride),
+                                Attribution = ToastHelper.CreateToastFooter(_config),
+                                Children =
+                                {
+                                    ToastHelper.CreateTitleText(_config, true),
+                                    ToastHelper.CreateContentText(_config),
+                                    ToastHelper.CreateRatingText(_config)
+                                }
+                            }
+                        },
 
-                    // Create toast xml text
-                    toastXmlString =
-                   $@"<toast launch='{nameof(this.ShowSongStartToast)}'>
-                    {toastVisual}
-                    {ToastHelper.toastAudio}
-                </toast>";
+                        Audio = ToastHelper.toastAudio
+                    };
+
+
                 }
                 catch (Exception ex)
                 {
                     _log.Error(LogHelper.GetMethodName(this), ex);
                 }
 
-                DisplayToast(toastXmlString);
+                DisplayToast(toast.GetXml().GetXml());
             });
 
             _config.State.Playback.ShowedOnNewSong = true;
@@ -99,83 +104,79 @@ namespace RP_Notify.Toast
         {
             Task.Run(() =>
             {
-                string toastXmlString = null;
+                ToastContent toast = null;
                 try
                 {
-                    string toastVisual =
-                    $@"<visual>
-                      <binding template='ToastGeneric'>
-                        {ToastHelper.CreateTitleText(_config, true)}
-                        {ToastHelper.CreateContentText(_config)}
-                        {ToastHelper.CreateRatingText(_config)}
-                        {ToastHelper.CreateToastFooter(_config)}
-                        {ToastHelper.CreateImage(_config, false)}
-                      </binding>
-                    </visual>";
+                    toast = new ToastContent()
+                    {
+                        Launch = nameof(this.ShowSongRatingToast),
 
-                    string toastActions =
-                    $@"<actions>
-                        {ToastHelper.RatingInputAction(_config)}
-                        {ToastHelper.OpenInBrowserAction(_config)}
-                    </actions>";
+                        Visual = new ToastVisual()
+                        {
+                            BindingGeneric = new ToastBindingGeneric()
+                            {
+                                AppLogoOverride = (ToastGenericAppLogo)ToastHelper.AlbumArtImage(_config, ToastHelper.ImageType.ApplogoOverride),
+                                Attribution = ToastHelper.CreateToastFooter(_config),
+                                Children =
+                                {
+                                    ToastHelper.CreateTitleText(_config, true),
+                                    ToastHelper.CreateContentText(_config),
+                                    ToastHelper.CreateRatingText(_config)
+                                }
+                            }
+                        },
 
-                    // Create toast xml text
-                    toastXmlString =
-                    $@"<toast launch='{nameof(this.ShowSongRatingToast)}'>
-                        {toastVisual}
-                        {ToastHelper.toastAudio}
-                        {toastActions}
-                    </toast>";
+                        Actions = ToastHelper.Actions(_config),
+
+                        Audio = ToastHelper.toastAudio
+                    };
                 }
                 catch (Exception ex)
                 {
                     _log.Error(LogHelper.GetMethodName(this), ex);
                 }
 
-                DisplayToast(toastXmlString, HandleToastActivatedEvent);
+                DisplayToast(toast.GetXml().GetXml(), HandleToastActivatedEvent);
             });
         }
 
         public void ShowSongDetailToast()
         {
-            //Task.Run(() =>
-            //{
-            string toastXmlString = null;
+            ToastContent toast = null;
             try
             {
-                string toastVisual =
-                $@"<visual>
-                      <binding template='ToastGeneric'>
-                        {ToastHelper.CreateTitleText(_config, false)}
-                        {ToastHelper.CreateContentText(_config)}
-                        {ToastHelper.CreateRatingText(_config)}
-                        {ToastHelper.CreateToastFooter(_config)}
-                        {ToastHelper.CreateProgressBar(_config)}
-                        {ToastHelper.CreateImage(_config, true)}
-                      </binding>
-                    </visual>";
+                toast = new ToastContent()
+                {
+                    Launch = nameof(this.ShowSongDetailToast),
 
-                string toastActions =
-                $@"<actions>
-                      {ToastHelper.RatingInputAction(_config)}
-                      {ToastHelper.OpenInBrowserAction(_config)}
-                    </actions>";
+                    Visual = new ToastVisual()
+                    {
+                        BindingGeneric = new ToastBindingGeneric()
+                        {
+                            AppLogoOverride = (ToastGenericAppLogo)ToastHelper.RpLogo(_config),
+                            Attribution = ToastHelper.CreateToastFooter(_config),
+                            Children =
+                                {
+                                    ToastHelper.CreateTitleText(_config, true),
+                                    ToastHelper.CreateContentText(_config),
+                                    ToastHelper.CreateRatingText(_config),
+                                    (AdaptiveImage)ToastHelper.AlbumArtImage(_config, ToastHelper.ImageType.InlineImage),
+                                    ToastHelper.CreateProgressBar(_config)
+                                }
+                        }
+                    },
 
-                // Create toast xml text
-                toastXmlString =
-                $@"<toast launch='{nameof(this.ShowSongDetailToast)}'>
-                        {toastVisual}
-                        {ToastHelper.toastAudio}
-                        {toastActions}
-                    </toast>";
+                    Actions = ToastHelper.Actions(_config),
+
+                    Audio = ToastHelper.toastAudio
+                };
             }
             catch (Exception ex)
             {
                 _log.Error(LogHelper.GetMethodName(this), ex);
             }
 
-            DisplayToast(toastXmlString, HandleToastActivatedEvent);
-            //});
+            DisplayToast(toast.GetXml().GetXml(), HandleToastActivatedEvent);
         }
 
         public void ShowLoginToast()
@@ -189,7 +190,7 @@ namespace RP_Notify.Toast
 
                     // Create toast xml text
                     toastXmlString =
-                    $@"<toast launch='{nameof(this.ShowLoginToast)}'>
+                $@"<toast launch='{nameof(this.ShowLoginToast)}'>
                         <visual>
                             <binding template='ToastGeneric'>
                                 <text>User authentication</text>
@@ -285,12 +286,11 @@ namespace RP_Notify.Toast
                         : "Please try again")}";
                     // Create toast xml text
                     toastXmlString =
-                    $@"<toast launch='{nameof(this.LoginResponseToast)}'>
+                $@"<toast launch='{nameof(this.LoginResponseToast)}'>
                         <visual>
                             <binding template='ToastGeneric'>
                                 <text>User authentication {authResp.Status}</text>
                                 <text>{authMessage}</text>
-                                {ToastHelper.CreateImage(_config, false)}
                             </binding>
                         </visual>
                         {ToastHelper.toastAudio}
@@ -316,7 +316,7 @@ namespace RP_Notify.Toast
                 {
                     // Create toast xml text
                     toastXmlString =
-                        $@"<toast launch='{nameof(this.ErrorToast)}'>
+                    $@"<toast launch='{nameof(this.ErrorToast)}'>
                         <visual>
                             <binding template='ToastGeneric'>
                                 <text>Application Data Erase Requested</text>
@@ -352,7 +352,7 @@ namespace RP_Notify.Toast
                 {
                     // Create toast xml text
                     toastXmlString =
-                        $@"<toast launch='{nameof(this.ErrorToast)}'>
+                    $@"<toast launch='{nameof(this.ErrorToast)}'>
                         <visual>
                             <binding template='ToastGeneric'>
                                 <text>Application ERROR</text>
@@ -425,36 +425,48 @@ namespace RP_Notify.Toast
 
     internal static class ToastHelper
     {
-        internal static string toastAudio = "<audio silent='true' />";
 
-        internal static string CreateTitleText(IConfig _config, bool withDuration)
+        internal static ToastAudio toastAudio = new ToastAudio() { Silent = true };
+
+        internal static IToastBindingGenericChild CreateTitleText(IConfig _config, bool withDuration)
         {
             string duration = $" ({TimeSpanToMinutes(Int32.Parse(_config.State.Playback.SongInfo.Duration))})";
             string title = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Artist}\n{_config.State.Playback.SongInfo.Title}{(withDuration ? duration : null)}");
 
-            return $"<text>{title}</text>";
+            return new AdaptiveText()
+            {
+                Text = title
+            };
         }
 
-        internal static string CreateContentText(IConfig _config)
+        internal static IToastBindingGenericChild CreateContentText(IConfig _config)
         {
             string content = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Album} ({_config.State.Playback.SongInfo.Year})");
 
-            return $"<text>{content}</text>";
+            return new AdaptiveText()
+            {
+                Text = content
+            };
         }
 
-        internal static string CreateRatingText(IConfig _config)
+        internal static IToastBindingGenericChild CreateRatingText(IConfig _config)
         {
             bool userRated = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating);
             var userRatingText = userRated
                     ? $" - User rating: {_config.State.Playback.SongInfo.UserRating}"
                     : " - Not rated";
-            string ratingText = $@"★ {_config.State.Playback.SongInfo.Rating}{(_config.State.IsUserAuthenticated ? userRatingText : null)}";
-            return _config.ExternalConfig.ShowSongRating || userRated
-                ? $"<text>{ratingText}</text>"
+            string ratingTextValue = $@"★ {_config.State.Playback.SongInfo.Rating}{(_config.State.IsUserAuthenticated ? userRatingText : null)}";
+            string ratingText = _config.ExternalConfig.ShowSongRating || userRated
+                ? ratingTextValue
                 : null;
+
+            return new AdaptiveText()
+            {
+                Text = ratingText
+            };
         }
 
-        internal static string CreateProgressBar(IConfig _config)
+        internal static IToastBindingGenericChild CreateProgressBar(IConfig _config)
         {
             // Construct the visuals of the toast
             int songDuration = Int32.Parse(_config.State.Playback.SongInfo.Duration);      // value is in milliseconds
@@ -462,34 +474,59 @@ namespace RP_Notify.Toast
             var elapsedMillisecs = Math.Min((songDuration - mSecsLeftFromSong + 500), songDuration);    // Corrigate rounding issues 
             double progressValue = (double)(songDuration - mSecsLeftFromSong) / songDuration;
 
-            return $"<progress value = '{progressValue}' title = '{TimeSpanToMinutes(songDuration)}' status = '{TimeSpanToMinutes(elapsedMillisecs)}' valueStringOverride = '-{TimeSpanToMinutes(mSecsLeftFromSong)}'/> ";
+            return new AdaptiveProgressBar()
+            {
+                Title = TimeSpanToMinutes(songDuration),
+                Value = progressValue,
+                ValueStringOverride = TimeSpanToMinutes(mSecsLeftFromSong),
+                Status = TimeSpanToMinutes(elapsedMillisecs)
+            };
         }
 
-        internal static string CreateImage(IConfig _config, bool optionalLargeAlbumart)
+        internal static IBaseImage RpLogo(IConfig _config)
         {
-            string image = _config.StaticConfig.AlbumArtImagePath;
-            string logo = _config.StaticConfig.IconPath;
+            return new ToastGenericAppLogo()
+            {
+                Source = _config.StaticConfig.IconPath,
+                HintCrop = ToastGenericAppLogoCrop.Circle
+            };
+        }
 
-            string largeAlbumart = $@"
-                <image src='{image}'/>
-                <image src='{logo}' placement='appLogoOverride' hint-crop='circle'/>
-            ";
-            string smallAlbumArt = $"<image src='{image}' placement='appLogoOverride'/>";
+        internal enum ImageType
+        {
+            ApplogoOverride,
+            InlineImage
+        }
 
+        internal static IBaseImage AlbumArtImage(IConfig _config, ImageType imageType)
+        {
             Retry.Do(() =>
             {
-                if (!File.Exists(image))
+                if (!File.Exists(_config.StaticConfig.AlbumArtImagePath))
                 {
                     throw new IOException("Cover is not yet downloaded");
                 }
             }, 1000, 15);
 
-            return optionalLargeAlbumart && _config.ExternalConfig.LargeAlbumArt
-                ? largeAlbumart
-                : smallAlbumArt;
+            if (imageType == ImageType.ApplogoOverride)
+            {
+                return new ToastGenericAppLogo()
+                {
+                    Source = _config.StaticConfig.AlbumArtImagePath,
+                };
+            }
+            else if (imageType == ImageType.InlineImage)
+            {
+                return new AdaptiveImage()
+                {
+                    Source = _config.StaticConfig.AlbumArtImagePath
+                };
+            }
+
+            return null;
         }
 
-        internal static string CreateToastFooter(IConfig _config)
+        internal static ToastGenericAttributionText CreateToastFooter(IConfig _config)
         {
             string chanTitle = _config.State.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.ExternalConfig.Channel).First().Title;
 
@@ -497,7 +534,10 @@ namespace RP_Notify.Toast
                 ? chanTitle.Split(new[] { "RP " }, StringSplitOptions.None)[1]
                 : chanTitle;
 
-            return $"<text placement='attribution'>{trimmedTitle}{TrackedPlayerAsSuffix(_config)}</text>";
+            return new ToastGenericAttributionText()
+            {
+                Text = $"{trimmedTitle}{TrackedPlayerAsSuffix(_config)}"
+            };
         }
 
         private static string TrackedPlayerAsSuffix(IConfig _config)
@@ -544,17 +584,55 @@ namespace RP_Notify.Toast
                 : loggedOutAction;
         }
 
-        internal static string OpenInBrowserAction(IConfig _config)
+        internal static ToastButton OpenInBrowserAction(IConfig _config)
         {
             string songWebUrl = $"https://radioparadise.com/player/info/{_config.State.Playback.SongInfo.SongId}";
 
-            var actionElementText = $@"
-                <action
-                    content='Open in browser'
-                    arguments='{songWebUrl}'
-                    activationType ='protocol'/>";
+            return new ToastButton("Open in browser", songWebUrl)
+            {
+                ActivationType = ToastActivationType.Protocol
+            };
+        }
 
-            return actionElementText;
+        internal static ToastActionsCustom Actions(IConfig _config)
+        {
+            var ratingHintText = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
+                    ? $"Current rating: {_config.State.Playback.SongInfo.UserRating}"
+                    : "Type your rating (1-10)";
+            var ratingInputField = new ToastTextBox("UserRating")
+            {
+                PlaceholderContent = ratingHintText
+            };
+
+            var result = new ToastActionsCustom();
+
+            string ratingButtonContent;
+            string ratingButtonAction;
+
+            if (_config.State.IsUserAuthenticated)
+            {
+                result.Inputs.Add(ratingInputField);
+                ratingButtonContent = string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
+                    ? "Send"
+                    : "Update";
+                ratingButtonContent += " rating";
+                ratingButtonAction = $"action=RateSubmitted&amp;SongId={_config.State.Playback.SongInfo.SongId}";
+            }
+            else
+            {
+                ratingButtonContent = " Log in to rate";
+                ratingButtonAction = "action=LoginRequested";
+            }
+
+            var ratingButton = new ToastButton(ratingButtonContent, ratingButtonAction)
+            {
+                ActivationType = ToastActivationType.Foreground
+            };
+
+            result.Buttons.Add(ratingButton);
+
+            return result;
+
         }
 
         internal static string TimeSpanToMinutes(int timeLength)
