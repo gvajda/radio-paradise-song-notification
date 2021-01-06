@@ -31,6 +31,7 @@ namespace RP_Notify
                 .AddSingleton<RestClient>()
                 .AddSingleton<IRpApiHandler, RpApiHandler>()
                 .AddScoped<IToastHandler, ToastHandler>()
+                .AddScoped<IAlbumartHelper, AlbumartHelper>()
                 .AddSingleton<PlayerApi>()
                 .AddSingleton<Foobar2000Watcher>()
                 .AddSingleton<MusicBeeIPC>()

@@ -30,10 +30,11 @@ namespace RP_Notify
         private readonly ISongInfoListener _songInfoListener;
         private readonly ILog _log;
         private readonly RpTrayIcon _rpTrayIcon;
+        private readonly IAlbumartHelper _albumartHelper;
 
         private int EventCounter { get; set; }
 
-        public RpApplicationCore(IConfig config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIcon rpTrayIcon, ShortcutHelper shortcutHelper)
+        public RpApplicationCore(IConfig config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIcon rpTrayIcon, ShortcutHelper shortcutHelper, IAlbumartHelper albumartHelper)
         {
             _log = log;
             _apihandler = apiHandler;
@@ -44,6 +45,7 @@ namespace RP_Notify
             _musicBeeWatcher = musicBeeWatcher;
             _rpTrayIcon = rpTrayIcon;
             _shortcutHelper = shortcutHelper;
+            _albumartHelper = albumartHelper;
 
             EventCounter = 0;
 
@@ -200,7 +202,7 @@ namespace RP_Notify
 
             if (_config.ExternalConfig.ShowOnNewSong)
             {
-                _toastHandler.ShowSongStartToast(true);
+                _toastHandler.ShowSongStartToast(null, true);
             }
         }
 
@@ -243,7 +245,7 @@ namespace RP_Notify
         {
             // USER - menu button demonstration
 
-            _toastHandler.ShowSongStartToast(true);
+            _toastHandler.ShowSongStartToast(null, true);
         }
 
         private void OnPromptForRatingChange()
@@ -318,12 +320,6 @@ namespace RP_Notify
         private void OnPlaybackChange()
         {
             // APP - song is updated in State
-
-            if (!_config.State.Playback.SameSongOnlyInternalUpdate)
-            {
-                Retry.Do(() => { File.Delete(_config.StaticConfig.AlbumArtImagePath); });
-            }
-
             _toastHandler.ShowSongStartToast();
         }
 
@@ -400,11 +396,8 @@ namespace RP_Notify
         {
             _log.Information(LogHelper.GetMethodName(this), "Exit process started");
 
-            if (File.Exists(_config.StaticConfig.AlbumArtImagePath))
-            {
-                _log.Information(LogHelper.GetMethodName(this), $"Delete album art");
-                File.Delete(_config.StaticConfig.AlbumArtImagePath);
-            }
+            _log.Information(LogHelper.GetMethodName(this), $"Delete album art");
+            _albumartHelper.DeleteAlbumArtFiles();
 
             if (!_config.ExternalConfig.LeaveShorcutInStartMenu)
             {

@@ -1,4 +1,5 @@
 ﻿using MadMilkman.Ini;
+using RP_Notify.API.ResponseModel;
 using RP_Notify.ErrorHandler;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,51 @@ using System.Windows.Forms;
 
 namespace RP_Notify.Config
 {
+    public interface IConfig
+    {
+        IStaticConfig StaticConfig { get; set; }
+
+        IExternalConfig ExternalConfig { get; set; }
+
+        State State { get; set; }
+
+        bool IsRpPlayerTrackingChannel();
+
+        bool IsRpPlayerTrackingChannel(out int channel);
+    }
+
+    public interface IStaticConfig
+    {
+        // Internal values 
+        string ConfigBaseFolder { get; }
+        string CookieCachePath { get; }
+        string IconPath { get; }
+        string LogFilePath { get; }
+        string RpApiBaseUrl { get; }
+        string RpImageBaseUrl { get; }
+        string ToastActivatorCLSID { get; }
+        string ToastAppID { get; }
+    }
+
+    public interface IExternalConfig
+    {
+        event EventHandler<RpEvent> ExternalConfigChangeHandler;
+
+        int Channel { get; set; }
+        bool DeleteAllData { get; set; }
+        bool EnableLoggingToFile { get; set; }
+        bool EnableFoobar2000Watcher { get; set; }
+        bool EnableMusicBeeWatcher { get; set; }
+        bool EnableRpOfficialTracking { get; set; }
+        bool LargeAlbumArt { get; set; }
+        bool LeaveShorcutInStartMenu { get; set; }
+        bool PromptForRating { get; set; }
+        bool ShowOnNewSong { get; set; }
+        bool ShowSongRating { get; set; }
+
+        void DeleteConfigRootFolder();
+    }
+
     public class IniConfig : IConfig
     {
         public IStaticConfig StaticConfig { get; set; }
@@ -65,7 +111,6 @@ namespace RP_Notify.Config
 
     public class StaticConfig : IStaticConfig
     {
-        public string AlbumArtImagePath { get; }
         public string ConfigBaseFolder { get; }
         public string CookieCachePath { get; }
         public string IconPath { get; }
@@ -74,6 +119,7 @@ namespace RP_Notify.Config
         public string RpImageBaseUrl { get; }
         public string ToastActivatorCLSID { get; }
         public string ToastAppID { get; }
+        public int SongHistoryLength { get; }
 
         private readonly IniHelper _iniHelper;
 
@@ -81,15 +127,15 @@ namespace RP_Notify.Config
         {
             _iniHelper = new IniHelper();
 
-            AlbumArtImagePath = Path.Combine(_iniHelper._iniFolder, "albumart.jpg");
             ConfigBaseFolder = _iniHelper._iniFolder;
             CookieCachePath = Path.Combine(_iniHelper._iniFolder, "_cookieCache");
             IconPath = Path.Combine(_iniHelper._iniFolder, "rp.ico");
-            LogFilePath = Path.Combine(_iniHelper._iniFolder, "log.txt");
+            LogFilePath = Path.Combine(_iniHelper._iniFolder, ".log");
             RpApiBaseUrl = "https://api.radioparadise.com";
             RpImageBaseUrl = "https://img.radioparadise.com";
             ToastActivatorCLSID = "8a8d7d8c-b191-4b17-b527-82c795243a12";
             ToastAppID = "GergelyVajda.RP_Notify";
+            SongHistoryLength = 20;
         }
     }
 
@@ -409,6 +455,171 @@ namespace RP_Notify.Config
                 : DeleteAllData;
         }
     }
+    public class State
+    {
+        public event EventHandler<RpEvent> StateChangeHandler = delegate { };
+
+        private bool isUserAuthenticated;
+        private List<Channel> channelList;
+        private List<PlayListSong> songHistory;
+        private Playback playback;
+        private string tooltipText;
+        private bool foobar2000IsPlayingRP;
+        private bool musicBeeIsPlayingRP;
+
+        public bool IsUserAuthenticated
+        {
+            get => isUserAuthenticated;
+            set
+            {
+                if (isUserAuthenticated != value)
+                {
+                    isUserAuthenticated = value;
+                    RaiseFieldChangeEvent(nameof(IsUserAuthenticated), value);
+                }
+            }
+        }
+
+        public List<Channel> ChannelList
+        {
+            get => channelList;
+            set
+            {
+                if (channelList != value)
+                {
+                    channelList = value;
+                    RaiseFieldChangeEvent(nameof(ChannelList), value);
+                }
+            }
+        }
+
+        public List<PlayListSong> SongHistory
+        {
+            get => songHistory;
+            set
+            {
+                if (songHistory != value)
+                {
+                    songHistory = value;
+                    RaiseFieldChangeEvent(nameof(SongHistory), value);
+                }
+            }
+        }
+
+        public Playback Playback
+        {
+            get => playback;
+            set
+            {
+                if (playback == null
+                    || string.IsNullOrEmpty(playback.SongInfo.SongId)
+                    || playback.SongInfo.SongId != value.SongInfo.SongId
+                    || playback.SongInfo.Event != value.SongInfo.Event)
+                {
+                    playback = value;
+
+                    RaiseFieldChangeEvent(nameof(Playback), value);
+                }
+                else if (playback.SongInfo.UserRating != value.SongInfo.UserRating
+                    ||
+                        (   // if RP player was paused and restarted
+                            playback.SongInfoExpiration.AddSeconds(10) < value.SongInfoExpiration
+                            && DateTime.Now.AddSeconds(10) < value.SongInfoExpiration
+                        ))
+                {
+                    value.SameSongOnlyInternalUpdate = true;
+                    playback = value;
+                    RaiseFieldChangeEvent(nameof(Playback), value);
+                }
+            }
+        }
+
+        public string TooltipText
+        {
+            get => tooltipText;
+            set
+            {
+                if (tooltipText != value)
+                {
+                    tooltipText = value;
+                    RaiseFieldChangeEvent(nameof(TooltipText), value);
+                }
+            }
+        }
+
+        public bool Foobar2000IsPlayingRP
+        {
+            get => foobar2000IsPlayingRP;
+            set
+            {
+                if (foobar2000IsPlayingRP != value)
+                {
+                    foobar2000IsPlayingRP = value;
+                    RaiseFieldChangeEvent(nameof(Foobar2000IsPlayingRP), value);
+                }
+            }
+        }
+
+        public bool MusicBeeIsPlayingRP
+        {
+            get => musicBeeIsPlayingRP;
+            set
+            {
+                if (musicBeeIsPlayingRP != value)
+                {
+                    musicBeeIsPlayingRP = value;
+                    RaiseFieldChangeEvent(nameof(MusicBeeIsPlayingRP), value);
+                }
+            }
+        }
+
+        public RpTrackingConfig RpTrackingConfig { get; set; }
+
+        public State()
+        {
+            IsUserAuthenticated = false;
+            ChannelList = null;
+            TooltipText = null;
+            Foobar2000IsPlayingRP = false;
+            RpTrackingConfig = new RpTrackingConfig();
+        }
+
+        private void RaiseFieldChangeEvent(string fieldName, object value)
+        {
+            StateChangeHandler.Invoke(this, new RpEvent(RpEvent.EventType.StateChange, fieldName, value));
+        }
+    }
+
+    public class Playback
+    {
+        private DateTime songInfoExpiration;
+
+        public NowplayingList NowplayingList { get; }
+        public PlayListSong SongInfo { get; }
+        public DateTime SongInfoExpiration
+        {
+            get => DateTime.Compare(DateTime.Now, songInfoExpiration) <= 0      // If expiration timestamp is in the future
+                    ? songInfoExpiration
+                    : DateTime.Now;
+            set => songInfoExpiration = value;
+        }
+        public bool SameSongOnlyInternalUpdate { get; internal set; }
+        public bool ShowedOnNewSong { get; set; }
+
+        public Playback(NowplayingList NowplayingList)
+        {
+            this.NowplayingList = NowplayingList;
+
+            SongInfo = NowplayingList.Song.TryGetValue("0", out var nowPlayingSong)
+                ? nowPlayingSong
+                : null;
+
+            SongInfoExpiration = DateTime.Now.Add(TimeSpan.FromSeconds(NowplayingList.Refresh));
+            SameSongOnlyInternalUpdate = false;
+            ShowedOnNewSong = false;
+        }
+    }
+
 
     internal class IniHelper
     {

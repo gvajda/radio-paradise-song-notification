@@ -10,14 +10,38 @@
 // THE CODE OR THE USE OR OTHER DEALINGS IN THE CODE.
 // ******************************************************************
 
+/*
+ * License for the RegisterActivator portion of code from FrecherxDachs
+The MIT License (MIT)
+Copyright (c) 2020 Michael Dietrich
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+ * */
+
+using Microsoft.Win32;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Text;
 using Windows.UI.Notifications;
+//using static DesktopNotifications.NotificationActivator;
 
 namespace RP_Notify.Toast.Helpers
 {
@@ -30,7 +54,7 @@ namespace RP_Notify.Toast.Helpers
         private static bool _registeredActivator;
 
         /// <summary>
-        /// If not running under the Desktop Bridge, you must call this method to register your AUMID with the Compat library and to
+        /// If you're not using MSIX or sparse packages, you must call this method to register your AUMID with the Compat library and to
         /// register your COM CLSID and EXE in LocalServer32 registry. Feel free to call this regardless, and we will no-op if running
         /// under Desktop Bridge. Call this upon application startup, before calling any other APIs.
         /// </summary>
@@ -66,12 +90,32 @@ namespace RP_Notify.Toast.Helpers
             where T : NotificationActivator
         {
             // We register the EXE to start up when the notification is activated
-            string regString = String.Format("SOFTWARE\\Classes\\CLSID\\{{{0}}}\\LocalServer32", typeof(T).GUID);
-            var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(regString);
+            string regString = String.Format("SOFTWARE\\Classes\\CLSID\\{{{0}}}", typeof(T).GUID);
+            using (var key = Registry.CurrentUser.CreateSubKey(regString))
+            {
+                // Include a flag so we know this was a toast activation and should wait for COM to process
+                // We also wrap EXE path in quotes for extra security
+                key.SetValue("LocalServer32", '"' + exePath + '"' + " " + TOAST_ACTIVATED_LAUNCH_ARG);
+            }
 
-            // Include a flag so we know this was a toast activation and should wait for COM to process
-            // We also wrap EXE path in quotes for extra security
-            key.SetValue(null, '"' + exePath + '"' + " " + TOAST_ACTIVATED_LAUNCH_ARG);
+            if (IsElevated)
+            {
+                // For elevated apps, we need to ensure they'll activate in existing running process by adding
+                // some values in local machine
+                using (var key = Registry.LocalMachine.CreateSubKey(regString))
+                {
+                    // Same as above, except also including AppId to link to our AppId entry below
+                    key.SetValue("LocalServer32", '"' + exePath + '"' + " " + TOAST_ACTIVATED_LAUNCH_ARG);
+                    key.SetValue("AppId", "{" + typeof(T).GUID + "}");
+                }
+
+                // This tells COM to match any client, so Action Center will activate our elevated process.
+                // More info: https://docs.microsoft.com/windows/win32/com/runas
+                using (var key = Registry.LocalMachine.CreateSubKey(String.Format("SOFTWARE\\Classes\\AppID\\{{{0}}}", typeof(T).GUID)))
+                {
+                    key.SetValue("RunAs", "Interactive User");
+                }
+            }
         }
 
         /// <summary>
@@ -79,18 +123,69 @@ namespace RP_Notify.Toast.Helpers
         /// </summary>
         /// <typeparam name="T">Your implementation of NotificationActivator. Must have GUID and ComVisible attributes on class.</typeparam>
         public static void RegisterActivator<T>()
-            where T : NotificationActivator
+            where T : NotificationActivator, new()
         {
-            // Register type
-            var regService = new RegistrationServices();
-
-            regService.RegisterTypeForComClients(
-                typeof(T),
-                RegistrationClassContext.LocalServer,
-                RegistrationConnectionType.MultipleUse);
+            // Big thanks to FrecherxDachs for figuring out the following code which works in .NET Core 3: https://github.com/FrecherxDachs/UwpNotificationNetCoreTest
+            var uuid = typeof(T).GUID;
+            uint _cookie;
+            CoRegisterClassObject(uuid, new NotificationActivatorClassFactory<T>(), CLSCTX_LOCAL_SERVER,
+                REGCLS_MULTIPLEUSE, out _cookie);
 
             _registeredActivator = true;
         }
+
+        [ComImport]
+        [Guid("00000001-0000-0000-C000-000000000046")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        private interface IClassFactory
+        {
+            [PreserveSig]
+            int CreateInstance(IntPtr pUnkOuter, ref Guid riid, out IntPtr ppvObject);
+
+            [PreserveSig]
+            int LockServer(bool fLock);
+        }
+
+        private const int CLASS_E_NOAGGREGATION = -2147221232;
+        private const int E_NOINTERFACE = -2147467262;
+        private const int CLSCTX_LOCAL_SERVER = 4;
+        private const int REGCLS_MULTIPLEUSE = 1;
+        private const int S_OK = 0;
+        private static readonly Guid IUnknownGuid = new Guid("00000000-0000-0000-C000-000000000046");
+
+        private class NotificationActivatorClassFactory<T> : IClassFactory where T : NotificationActivator, new()
+        {
+            public int CreateInstance(IntPtr pUnkOuter, ref Guid riid, out IntPtr ppvObject)
+            {
+                ppvObject = IntPtr.Zero;
+
+                if (pUnkOuter != IntPtr.Zero)
+                    Marshal.ThrowExceptionForHR(CLASS_E_NOAGGREGATION);
+
+                if (riid == typeof(T).GUID || riid == IUnknownGuid)
+                    // Create the instance of the .NET object
+                    ppvObject = Marshal.GetComInterfaceForObject(new T(),
+                        typeof(NotificationActivator.INotificationActivationCallback));
+                else
+                    // The object that ppvObject points to does not support the
+                    // interface identified by riid.
+                    Marshal.ThrowExceptionForHR(E_NOINTERFACE);
+                return S_OK;
+            }
+
+            public int LockServer(bool fLock)
+            {
+                return S_OK;
+            }
+        }
+
+        [DllImport("ole32.dll")]
+        private static extern int CoRegisterClassObject(
+            [MarshalAs(UnmanagedType.LPStruct)] Guid rclsid,
+            [MarshalAs(UnmanagedType.IUnknown)] object pUnk,
+            uint dwClsContext,
+            uint flags,
+            out uint lpdwRegister);
 
         /// <summary>
         /// Creates a toast notifier. You must have called <see cref="RegisterActivator{T}"/> first (and also <see cref="RegisterAumidAndComServer(string)"/> if you're a classic Win32 app), or this will throw an exception.
@@ -153,9 +248,17 @@ namespace RP_Notify.Toast.Helpers
         }
 
         /// <summary>
-        /// Gets a boolean representing whether http images can be used within toasts. This is true if running under Desktop Bridge.
+        /// Gets a boolean representing whether http images can be used within toasts. This is true if running with package identity (MSIX or sparse package).
         /// </summary>
         public static bool CanUseHttpImages { get { return DesktopBridgeHelpers.IsRunningAsUwp(); } }
+
+        private static bool IsElevated
+        {
+            get
+            {
+                return new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+            }
+        }
 
         /// <summary>
         /// Code from https://github.com/qmatteoq/DesktopBridgeHelpers/edit/master/DesktopBridge.Helpers/Helpers.cs
