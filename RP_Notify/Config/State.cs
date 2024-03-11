@@ -143,11 +143,16 @@ namespace RP_Notify.Config
         {
             this.NowplayingList = NowplayingList;
 
-            SongInfo = NowplayingList.Song.TryGetValue("0", out var nowPlayingSong)
-                ? nowPlayingSong
-                : null;
+            if(NowplayingList.Song.TryGetValue("0", out var nowPlayingSong))
+            {
+                SongInfo = nowPlayingSong;
+                SongInfoExpiration = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(nowPlayingSong.SchedTime + "000") + long.Parse(nowPlayingSong.Duration)).LocalDateTime;
+            } else
+            {
+                SongInfo = null;
+                SongInfoExpiration = DateTime.Now;
+            }
 
-            SongInfoExpiration = DateTime.Now.Add(TimeSpan.FromSeconds(NowplayingList.Refresh));
             SameSongOnlyInternalUpdate = false;
             ShowedOnNewSong = false;
         }
