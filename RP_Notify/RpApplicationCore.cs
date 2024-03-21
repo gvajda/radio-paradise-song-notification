@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using Microsoft.Toolkit.Uwp.Notifications;
+using Microsoft.Win32;
 using RP_Notify.API;
 using RP_Notify.API.ResponseModel;
 using RP_Notify.Config;
@@ -438,6 +439,7 @@ namespace RP_Notify
                 _log.Dispose();
                 _toastHandler.DataEraseToast();
                 Task.Delay(1000).Wait();
+                ToastNotificationManagerCompat.Uninstall();
                 Application.Exit();
             }
         }

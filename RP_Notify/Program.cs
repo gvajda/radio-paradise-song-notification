@@ -30,7 +30,7 @@ namespace RP_Notify
                 .AddSingleton<ILog, Log>()
                 .AddSingleton<RestClient>()
                 .AddSingleton<IRpApiHandler, RpApiHandler>()
-                .AddScoped<IToastHandler, ToastHandler>()
+                .AddScoped<IToastHandler, PackageToastHandler>()
                 .AddSingleton<PlayerApi>()
                 .AddSingleton<Foobar2000Watcher>()
                 .AddSingleton<MusicBeeIPC>()

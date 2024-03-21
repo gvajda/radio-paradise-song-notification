@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RP_Notify.API.ResponseModel;
+using System;
 
 namespace RP_Notify.Toast
 {
@@ -10,5 +11,6 @@ namespace RP_Notify.Toast
         void ShowLoginToast();
         void ErrorToast(Exception exception);
         void DataEraseToast();
+        void LoginResponseToast(Auth authResp);
     }
 }

@@ -340,7 +340,7 @@ namespace RP_Notify.Toast
         {
             var firstLine = $"<text>{exception.Message}</text>";
             var secondLine = exception.InnerException != null
-                ? $"<text>{exception.Message}</text>"
+                ? $"<text>{exception.InnerException}</text>"
                 : null;
 
             string logo = _config.StaticConfig.IconPath;
