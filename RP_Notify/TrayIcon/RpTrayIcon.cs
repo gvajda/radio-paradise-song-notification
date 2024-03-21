@@ -75,7 +75,6 @@ namespace RP_Notify.TrayIcon
             var menuEntryLargeAlbumArt = MenuEntryLargeAlbumArt();
             var menuEntryShowSongRating = MenuEntryShowSongRating();
             var menuEntryPromptForRating = MenuEntryPromptForRating();
-            var menuEntryLeaveShorcutInStartMenu = MenuEntryLeaveShorcutInStartMenu();
             var menuEntryReset = MenuEntryReset();
             var menuEntryEnableFoobar2000Watcher = MenuEntryEnableFoobar2000Watcher();
             var menuEntryEnableMusicbeeWatcher = MenuEntryEnableMusicbeeWatcher();
@@ -96,7 +95,6 @@ namespace RP_Notify.TrayIcon
             contextMenu.MenuItems.Add(toastFormat);
             MenuItem appSettings = new MenuItem("App settings");
             appSettings.MenuItems.Add(menuEntryPromptForRating);
-            appSettings.MenuItems.Add(menuEntryLeaveShorcutInStartMenu);
             appSettings.MenuItems.Add("-");
             appSettings.MenuItems.Add(menuEntryReset);
             contextMenu.MenuItems.Add(appSettings);
@@ -193,23 +191,6 @@ namespace RP_Notify.TrayIcon
             };
 
             return promptForRating;
-        }
-
-        private MenuItem MenuEntryLeaveShorcutInStartMenu()
-        {
-            var menuName = "Leave shortcut in Start menu";
-
-            MenuItem leaveShorcutInStartMenu = new MenuItem(menuName)
-            {
-                Checked = _config.ExternalConfig.LeaveShorcutInStartMenu
-            };
-            leaveShorcutInStartMenu.Click += (sender, e) =>
-            {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
-                _config.ExternalConfig.LeaveShorcutInStartMenu = !_config.ExternalConfig.LeaveShorcutInStartMenu;
-            };
-
-            return leaveShorcutInStartMenu;
         }
 
         private MenuItem MenuEntryReset()

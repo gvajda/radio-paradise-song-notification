@@ -1,4 +1,4 @@
-﻿namespace RP_Notify.SongInfoUpdater
+﻿namespace RP_Notify.SongInfoListener
 {
     public interface ISongInfoListener
     {

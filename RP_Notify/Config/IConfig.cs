@@ -40,7 +40,6 @@ namespace RP_Notify.Config
         bool EnableMusicBeeWatcher { get; set; }
         bool EnableRpOfficialTracking { get; set; }
         bool LargeAlbumArt { get; set; }
-        bool LeaveShorcutInStartMenu { get; set; }
         bool PromptForRating { get; set; }
         bool ShowOnNewSong { get; set; }
         bool ShowSongRating { get; set; }

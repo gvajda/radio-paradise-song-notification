@@ -107,7 +107,6 @@ namespace RP_Notify.Config
         private bool enableMusicBeeWatcher;
         private bool enableRpOfficialTracking;
         private bool largeAlbumArt;
-        private bool leaveShorcutInStartMenu;
         private bool promptForRating;
         private bool showOnNewSong;
         private bool showSongRating;
@@ -166,19 +165,6 @@ namespace RP_Notify.Config
                     promptForRating = value;
                     RaiseFieldChangeEvent(nameof(PromptForRating), value);
                     SetIniValue(AppSettingsIniSectionName, nameof(PromptForRating), value);
-                }
-            }
-        }
-        public bool LeaveShorcutInStartMenu
-        {
-            get => leaveShorcutInStartMenu;
-            set
-            {
-                if (leaveShorcutInStartMenu != value)
-                {
-                    leaveShorcutInStartMenu = value;
-                    RaiseFieldChangeEvent(nameof(LeaveShorcutInStartMenu), value);
-                    SetIniValue(AppSettingsIniSectionName, nameof(LeaveShorcutInStartMenu), value);
                 }
             }
         }
@@ -318,15 +304,6 @@ namespace RP_Notify.Config
         {
             _iniHelper.CheckIniIntegrity();
             var iniFile = _iniHelper.ReadIniFile();
-
-
-            var _LeaveShorcutInStartMenu = LeaveShorcutInStartMenu;
-            LeaveShorcutInStartMenu = iniFile
-                .Sections[AppSettingsIniSectionName]
-                .Keys[nameof(LeaveShorcutInStartMenu)]
-                .TryParseValue(out _LeaveShorcutInStartMenu)
-                ? _LeaveShorcutInStartMenu
-                : LeaveShorcutInStartMenu;
 
             var _EnableFoobar2000Watcher = EnableFoobar2000Watcher;
             EnableFoobar2000Watcher = iniFile

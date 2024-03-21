@@ -125,15 +125,11 @@
     <Compile Include="PlayerWatchers\MusicBee\MusicBeeIPC\Pack.cs" />
     <Compile Include="PlayerWatchers\MusicBee\MusicBeeIPC\Structs.cs" />
     <Compile Include="PlayerWatchers\MusicBee\MusicBeeIPC\Unpack.cs" />
-    <Compile Include="SongInfoUpdater\ISongInfoListener.cs" />
-    <Compile Include="SongInfoUpdater\SongInfoListener.cs" />
-    <Compile Include="StartMenuShortcut\ShortcutHelper.cs" />
+    <Compile Include="SongInfoListener\ISongInfoListener.cs" />
+    <Compile Include="SongInfoListener\SongInfoListener.cs" />
     <Compile Include="Toast\KeyboardHelper.cs" />
-    <Compile Include="Toast\DesktopNotificationManagerCompat.cs" />
-    <Compile Include="StartMenuShortcut\ShellHelpers.cs" />
     <Compile Include="Toast\IToastHandler.cs" />
     <Compile Include="Toast\PackageToastHandler.cs" />
-    <Compile Include="Toast\ToastHandler.cs" />
     <Compile Include="RpApplicationCore.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

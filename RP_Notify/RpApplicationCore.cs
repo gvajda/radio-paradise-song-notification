@@ -7,8 +7,7 @@ using RP_Notify.ErrorHandler;
 using RP_Notify.PlayerWatcher;
 using RP_Notify.PlayerWatcher.Foobar2000;
 using RP_Notify.PlayerWatcher.MusicBee;
-using RP_Notify.SongInfoUpdater;
-using RP_Notify.StartMenuShortcut;
+using RP_Notify.SongInfoListener;
 using RP_Notify.Toast;
 using RP_Notify.TrayIcon;
 using System;
@@ -25,7 +24,6 @@ namespace RP_Notify
         private readonly IRpApiHandler _apihandler;
         private readonly IConfig _config;
         private readonly IToastHandler _toastHandler;
-        private readonly ShortcutHelper _shortcutHelper;
         private readonly IPlayerWatcher _foobar2000Watcher;
         private readonly IPlayerWatcher _musicBeeWatcher;
         private readonly ISongInfoListener _songInfoListener;
@@ -34,7 +32,7 @@ namespace RP_Notify
 
         private int EventCounter { get; set; }
 
-        public RpApplicationCore(IConfig config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIcon rpTrayIcon, ShortcutHelper shortcutHelper)
+        public RpApplicationCore(IConfig config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIcon rpTrayIcon)
         {
             _log = log;
             _apihandler = apiHandler;
@@ -44,7 +42,6 @@ namespace RP_Notify
             _foobar2000Watcher = foobar2000Watcher;
             _musicBeeWatcher = musicBeeWatcher;
             _rpTrayIcon = rpTrayIcon;
-            _shortcutHelper = shortcutHelper;
 
             EventCounter = 0;
 
@@ -76,9 +73,6 @@ namespace RP_Notify
                 _musicBeeWatcher.CheckPlayerState(out bool notUsedHere);
                 _musicBeeWatcher.Start();
             }
-
-            // Init fields
-            _shortcutHelper.TryCreateShortcut();    // Add shortcut to Start menu (required for Toast Notifications)
 
             // Set up event handlers
             _log.Information(LogHelper.GetMethodName(this), "Create event listeners");
@@ -407,17 +401,10 @@ namespace RP_Notify
                 File.Delete(_config.StaticConfig.AlbumArtImagePath);
             }
 
-            if (!_config.ExternalConfig.LeaveShorcutInStartMenu)
-            {
-                _shortcutHelper.DeleteShortcut();
-                _log.Information(LogHelper.GetMethodName(this), $"Shortcut removed from start menu");
-            }
-
             _rpTrayIcon.Dispose();
 
             if (_config.ExternalConfig.DeleteAllData)
             {
-                _shortcutHelper.DeleteShortcut();
                 _config.ExternalConfig.DeleteConfigRootFolder();
             }
             else

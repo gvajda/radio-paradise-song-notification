@@ -363,8 +363,21 @@ namespace RP_Notify.Toast
 
         private static void DownloadImageIfDoesntExist(IConfig _config)
         {
-            //TODO
-            return; 
+            // Download album art
+            var rpImageUrl = new Uri($"{_config.StaticConfig.RpImageBaseUrl}/{_config.State.Playback.SongInfo.Cover}");
+            var tempFileName = $"{_config.StaticConfig.AlbumArtImagePath}.inprogress";
+
+            using (WebClient client = new WebClient())
+            {
+                Retry.Do(() => { client.DownloadFile(rpImageUrl, tempFileName); }, 500, 5);
+            }
+
+            if (File.Exists(_config.StaticConfig.AlbumArtImagePath))
+            {
+                File.Delete(_config.StaticConfig.AlbumArtImagePath);
+            }
+
+            File.Move(tempFileName, _config.StaticConfig.AlbumArtImagePath);
         }
 
         internal static ToastContentBuilder AddSongFooterText(this ToastContentBuilder toastContentBuilder, IConfig _config)

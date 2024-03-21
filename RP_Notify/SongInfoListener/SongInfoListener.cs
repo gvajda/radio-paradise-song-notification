@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RP_Notify.SongInfoUpdater
+namespace RP_Notify.SongInfoListener
 {
     class SongInfoListener : ISongInfoListener
     {

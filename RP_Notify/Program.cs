@@ -7,8 +7,7 @@ using RP_Notify.ErrorHandler;
 using RP_Notify.PlayerWatcher.Foobar2000;
 using RP_Notify.PlayerWatcher.MusicBee;
 using RP_Notify.PlayerWatcher.MusicBee.API;
-using RP_Notify.SongInfoUpdater;
-using RP_Notify.StartMenuShortcut;
+using RP_Notify.SongInfoListener;
 using RP_Notify.Toast;
 using RP_Notify.TrayIcon;
 using System;
@@ -35,8 +34,7 @@ namespace RP_Notify
                 .AddSingleton<Foobar2000Watcher>()
                 .AddSingleton<MusicBeeIPC>()
                 .AddSingleton<MusicBeeWatcher>()
-                .AddSingleton<ISongInfoListener, SongInfoListener>()
-                .AddTransient<ShortcutHelper>()
+                .AddSingleton<ISongInfoListener, SongInfoListener.SongInfoListener>()
                 .AddSingleton<RpTrayIcon>()
                 .AddSingleton<RpApplicationCore>()
                 .BuildServiceProvider();
