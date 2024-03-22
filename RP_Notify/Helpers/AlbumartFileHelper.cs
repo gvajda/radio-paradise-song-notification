@@ -15,14 +15,23 @@ namespace RP_Notify.Helpers
 {
     public static class AlbumartFileHelper
     {
+        private const string AlbumArtFolderName = "AlbumArtCache";
+        private const int MaxAgeDays = 3;
+        private const int MaxFileCount = 100;
+
         public static string DownloadAlbumartImageIfDoesntExist(IConfig _config, PlayListSong overrideSongInfo = null)
         {
             var songInfo = overrideSongInfo != null
                 ? overrideSongInfo
                 : _config.State.Playback.SongInfo;
 
-            // Download album art
-            var albumartFilePath = Path.Combine(_config.StaticConfig.ConfigBaseFolder, songInfo.SongId + ".jpg");
+            var albumArtCacheDirectory = Path.Combine(_config.StaticConfig.ConfigBaseFolder, AlbumArtFolderName);
+            var albumartFilePath = Path.Combine(albumArtCacheDirectory, songInfo.SongId + ".jpg");
+
+            if (!Directory.Exists(albumArtCacheDirectory))
+            {
+                Directory.CreateDirectory(albumArtCacheDirectory);
+            }
 
             if (File.Exists(albumartFilePath))
             {
@@ -44,27 +53,28 @@ namespace RP_Notify.Helpers
             return albumartFilePath;
         }
 
-        public static void DeleteOldAlbumartImageFiles(IConfig _config, int maxAgeDays = 3)
+        public static void DeleteOldAlbumartImageFiles(IConfig _config)
         {
             try
             {
                 DateTime currentDateTime = DateTime.Now;
-                DateTime minimumDate = currentDateTime.AddDays(-maxAgeDays);
+                DateTime minimumDate = currentDateTime.AddDays(-MaxAgeDays);
 
-                var cachedImagePathList = Directory.GetFiles(_config.StaticConfig.ConfigBaseFolder);
+                var albumArtCacheDirectory = Path.Combine(_config.StaticConfig.ConfigBaseFolder, AlbumArtFolderName);
+                var cachedImageFileInfoList = Directory
+                    .GetFiles(albumArtCacheDirectory)
+                    .Select(p => new FileInfo(p));
 
-                var albumartFilePattern = new Regex(@"\d+\.jpg");
+                cachedImageFileInfoList
+                    .Where(f => f.LastWriteTime < minimumDate)
+                    .ToList()
+                    .ForEach(f => f.Delete());
 
-                foreach (string filePath in cachedImagePathList)
-                {
-                    FileInfo fileInfo = new FileInfo(filePath);
-                    var regexMatch = albumartFilePattern.Match(fileInfo.Name);
-
-                    if (regexMatch.Success && fileInfo.LastAccessTime < minimumDate)
-                    {
-                        fileInfo.Delete();
-                    }
-                }
+                cachedImageFileInfoList
+                    .OrderByDescending(f => f.LastWriteTime)
+                    .Skip(MaxFileCount)
+                    .ToList()
+                    .ForEach(f => f.Delete());
             }
             catch (Exception e)
             {

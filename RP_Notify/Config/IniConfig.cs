@@ -81,7 +81,7 @@ namespace RP_Notify.Config
             ConfigBaseFolder = _iniHelper._iniFolder;
             CookieCachePath = Path.Combine(_iniHelper._iniFolder, "_cookieCache");
             IconPath = Path.Combine(_iniHelper._iniFolder, "rp.ico");
-            LogFilePath = Path.Combine(_iniHelper._iniFolder, "log.txt");
+            LogFilePath = Path.Combine(_iniHelper._iniFolder, "rpnotify.log");
             RpApiBaseUrl = "https://api.radioparadise.com";
             RpImageBaseUrl = "https://img.radioparadise.com";
         }
