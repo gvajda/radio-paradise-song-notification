@@ -1,7 +1,7 @@
 ﻿using Foobar2000.RESTClient.Api;
 using Microsoft.Extensions.DependencyInjection;
 using RestSharp;
-using RP_Notify.API;
+using RP_Notify.RpApi;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using RP_Notify.PlayerWatcher.Foobar2000;
@@ -29,7 +29,7 @@ namespace RP_Notify
                 .AddSingleton<ILog, Log>()
                 .AddSingleton<RestClient>()
                 .AddSingleton<IRpApiHandler, RpApiHandler>()
-                .AddScoped<IToastHandler, PackageToastHandler>()
+                .AddScoped<IToastHandler, ToastHandler>()
                 .AddSingleton<PlayerApi>()
                 .AddSingleton<Foobar2000Watcher>()
                 .AddSingleton<MusicBeeIPC>()

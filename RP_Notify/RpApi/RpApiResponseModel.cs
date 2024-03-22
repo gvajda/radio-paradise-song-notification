@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace RP_Notify.API.ResponseModel
+namespace RP_Notify.RpApi.ResponseModel
 {
     public class Info
     {

@@ -1,4 +1,4 @@
-﻿using RP_Notify.API.ResponseModel;
+﻿using RP_Notify.RpApi.ResponseModel;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using RP_Notify.Properties;

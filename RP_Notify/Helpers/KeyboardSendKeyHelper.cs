@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RP_Notify.Toast
+namespace RP_Notify.Helpers
 {
-    public static class KeyboardHelper
+    public static class KeyboardSendKeyHelper
     {
         [DllImport("user32.dll")]
         public static extern void keybd_event(byte virtualKey, byte scanCode, uint flags, IntPtr extraInfo);

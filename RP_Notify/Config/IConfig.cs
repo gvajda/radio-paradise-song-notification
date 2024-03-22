@@ -17,16 +17,13 @@ namespace RP_Notify.Config
 
     public interface IStaticConfig
     {
-        // Internal values 
-        string AlbumArtImagePath { get; }
+        // Internal values
         string ConfigBaseFolder { get; }
         string CookieCachePath { get; }
         string IconPath { get; }
         string LogFilePath { get; }
         string RpApiBaseUrl { get; }
         string RpImageBaseUrl { get; }
-        string ToastActivatorCLSID { get; }
-        string ToastAppID { get; }
     }
 
     public interface IExternalConfig

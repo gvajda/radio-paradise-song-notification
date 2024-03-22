@@ -1,5 +1,5 @@
-﻿using RP_Notify.API;
-using RP_Notify.API.ResponseModel;
+﻿using RP_Notify.RpApi;
+using RP_Notify.RpApi.ResponseModel;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using RP_Notify.Toast;
@@ -213,27 +213,7 @@ namespace RP_Notify.SongInfoListener
             if (oldPlayback == null
                 || _config.State.Playback.SongInfo.SongId != oldPlayback.SongInfo.SongId)
             {
-                if (!_config.State.Playback.SameSongOnlyInternalUpdate)
-                {
-                    _log.Information(LogHelper.GetMethodName(this), "New song - Start downloading album art - Song info: {@Songdata}", _config.State.Playback.SongInfo);
-
-                    // Download album art
-                    var tempFileName = $"{_config.StaticConfig.AlbumArtImagePath}.inprogress";
-
-                    using (WebClient client = new WebClient())
-                    {
-                        Retry.Do(() => { client.DownloadFile(new Uri($"{_config.StaticConfig.RpImageBaseUrl}/{_config.State.Playback.SongInfo.Cover}"), tempFileName); }, 500, 5);
-                    }
-
-                    if (File.Exists(_config.StaticConfig.AlbumArtImagePath))
-                    {
-                        File.Delete(_config.StaticConfig.AlbumArtImagePath);
-                    }
-
-                    File.Move(tempFileName, _config.StaticConfig.AlbumArtImagePath);
-                    _log.Information(LogHelper.GetMethodName(this), "Albumart downloaded - Song expires: {@RefreshTimestamp} ({ExpirySeconds} seconds)", _config.State.Playback.SongInfoExpiration.ToString(), _config.State.Playback.NowplayingList.Refresh);
-                }
-                else
+                if (_config.State.Playback.SameSongOnlyInternalUpdate)
                 {
                     var newRatinText = _config.State.Playback.SongInfo.Rating != oldPlayback.SongInfo.Rating
                         ? $" - New rating: {_config.State.Playback.SongInfo.Rating}"

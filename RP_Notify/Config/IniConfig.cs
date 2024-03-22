@@ -65,15 +65,12 @@ namespace RP_Notify.Config
 
     public class StaticConfig : IStaticConfig
     {
-        public string AlbumArtImagePath { get; }
         public string ConfigBaseFolder { get; }
         public string CookieCachePath { get; }
         public string IconPath { get; }
         public string LogFilePath { get; }
         public string RpApiBaseUrl { get; }
         public string RpImageBaseUrl { get; }
-        public string ToastActivatorCLSID { get; }
-        public string ToastAppID { get; }
 
         private readonly IniHelper _iniHelper;
 
@@ -81,15 +78,12 @@ namespace RP_Notify.Config
         {
             _iniHelper = new IniHelper();
 
-            AlbumArtImagePath = Path.Combine(_iniHelper._iniFolder, "albumart.jpg");
             ConfigBaseFolder = _iniHelper._iniFolder;
             CookieCachePath = Path.Combine(_iniHelper._iniFolder, "_cookieCache");
             IconPath = Path.Combine(_iniHelper._iniFolder, "rp.ico");
             LogFilePath = Path.Combine(_iniHelper._iniFolder, "log.txt");
             RpApiBaseUrl = "https://api.radioparadise.com";
             RpImageBaseUrl = "https://img.radioparadise.com";
-            ToastActivatorCLSID = "8a8d7d8c-b191-4b17-b527-82c795243a12";
-            ToastAppID = "GergelyVajda.RP_Notify";
         }
     }
 

@@ -1,8 +1,8 @@
 ﻿using Microsoft.QueryStringDotNET;
 using Microsoft.Toolkit.Uwp.Notifications;
 using Newtonsoft.Json;
-using RP_Notify.API;
-using RP_Notify.API.ResponseModel;
+using RP_Notify.RpApi;
+using RP_Notify.RpApi.ResponseModel;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using Serilog;
@@ -18,16 +18,22 @@ using System.Windows.Forms;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation.Collections;
 using Windows.UI.Notifications;
+using RP_Notify.Helpers;
+using System.Web.UI.WebControls;
+using System.Globalization;
+using RestSharp;
+using System.Web;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace RP_Notify.Toast
 {
-    internal class PackageToastHandler : IToastHandler
+    internal class ToastHandler : IToastHandler
     {
         private readonly IConfig _config;
         private readonly IRpApiHandler _apiHandler;
         private readonly ILog _log;
 
-        public PackageToastHandler(IConfig config, IRpApiHandler apiHandler, ILog log)
+        public ToastHandler(IConfig config, IRpApiHandler apiHandler, ILog log)
         {
             _config = config;
             _apiHandler = apiHandler;
@@ -36,7 +42,7 @@ namespace RP_Notify.Toast
             ToastNotificationManagerCompat.OnActivated += toastArgs => HandleToastActivatedEvent(toastArgs);
         }
 
-        public void ShowSongStartToast(bool force = false)
+        public void ShowSongStartToast(bool force = false, PlayListSong songInfo = null)
         {
             // don't run without song info
             if (_config.State.Playback == null)
@@ -56,13 +62,17 @@ namespace RP_Notify.Toast
                 return;
             }
 
+            var displaySongInfo = songInfo != null
+                ? songInfo
+                : _config.State.Playback.SongInfo;
+
             Task.Run(() =>
             {
                 try
                 {
-                    PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowSongStartToast))
-                    .AddSongInfoText(_config, true)
-                    .AddSongAlbumText(_config)
+                    PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowSongStartToast), displaySongInfo)
+                    .AddSongInfoText(true)
+                    .AddSongAlbumText()
                     .AddSongRatingText(_config)
                     .AddSongFooterText(_config)
                     .AddSongAlbumArt(_config, false)
@@ -77,15 +87,18 @@ namespace RP_Notify.Toast
             _config.State.Playback.ShowedOnNewSong = true;
         }
 
-        public void ShowSongRatingToast()
+        public void ShowSongRatingToast(PlayListSong songInfo = null)
         {
+            var displaySongInfo = songInfo != null
+                ? songInfo
+                : _config.State.Playback.SongInfo;
             Task.Run(() =>
             {
                 try
                 {
-                    PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowSongRatingToast))
-                    .AddSongInfoText(_config, true)
-                    .AddSongAlbumText(_config)
+                    PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowSongRatingToast), displaySongInfo)
+                    .AddSongInfoText(true)
+                    .AddSongAlbumText()
                     .AddSongRatingText(_config)
                     .AddSongFooterText(_config)
                     .AddSongAlbumArt(_config, false)
@@ -103,9 +116,9 @@ namespace RP_Notify.Toast
         {
             try
             {
-                PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowSongDetailToast))
-                .AddSongInfoText(_config, true)
-                .AddSongAlbumText(_config)
+                PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowSongDetailToast), _config.State.Playback.SongInfo)
+                .AddSongInfoText(true)
+                .AddSongAlbumText()
                 .AddSongRatingText(_config)
                 .AddSongFooterText(_config)
                 .AddSongAlbumArt(_config, true)
@@ -220,9 +233,10 @@ namespace RP_Notify.Toast
 
                 // Obtain any user input (text boxes, menu selections) from the notification
                 ValueSet userInput = toastArgs.UserInput;
-               
 
-                _log.Information(LogHelper.GetMethodName(this), "{ eventArguments}", args.ToString());
+                var formattedArgumentsForLogging = string.Join("&", args.Select(kvp => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}"));
+                _log.Information(LogHelper.GetMethodName(this), " eventArguments: " + formattedArgumentsForLogging);
+                
                 if (args["action"] == "LoginRequested")
                 {
                     ShowLoginToast();
@@ -243,23 +257,35 @@ namespace RP_Notify.Toast
                 }
                 else if (args["action"] == "RateSubmitted")
                 {
-                    userInput.TryGetValue("UserRate", out object rawUserRate);
-                    if (Int32.TryParse((string)rawUserRate, out int userRate)
-                        && 1 <= userRate && userRate <= 10
-                        && Int32.TryParse(args["SongId"], out int songId))
+
+                    var songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(args["serializedSongInfo"]);
+
+                    if (!userInput.TryGetValue("UserRate", out object rawUserRate)) return;
+                    if (!Int32.TryParse((string)rawUserRate, out int userRate)
+                        && 1 <= userRate && userRate <= 10) return;
+
+                    var ratingResponse = _apiHandler.GetRating(songInfo.SongId, userRate);
+                    if (ratingResponse.Status == "success")
                     {
-                        var ratingResponse = _apiHandler.GetRating(songId.ToString(), userRate);
-                        if (ratingResponse.Status == "success")
+                        if (songInfo.SongId == _config.State.Playback.SongInfo.SongId)
                         {
                             _config.State.Playback = new Playback(_apiHandler.GetNowplayingList());
                         }
+                        else
+                        {
+                            var newRating = _apiHandler.GetInfo(songInfo.SongId).UserRating.ToString();
+                            songInfo.UserRating = newRating;
+                            ShowSongStartToast(true, songInfo);
+                        }
                     }
+
                 }
                 else if (args["action"] == "RateTileRequested")
                 {
-                    KeyboardHelper.SendWinKeyN();
+                    var songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(args["serializedSongInfo"]);
+                    KeyboardSendKeyHelper.SendWinKeyN();
                     Task.Delay(200).Wait();
-                    ShowSongRatingToast();
+                    ShowSongRatingToast(songInfo);
                 }
             }
             catch (Exception ex)
@@ -271,7 +297,7 @@ namespace RP_Notify.Toast
 
     internal static class PackagedToastHelper
     {
-        internal static ToastContentBuilder CreateBaseToastContentBuilder(string toastId)
+        internal static ToastContentBuilder CreateBaseToastContentBuilder(string toastId, PlayListSong songInfo = null)
         {
             var toastContentBuilder = new ToastContentBuilder()
                 .AddArgument(toastId)
@@ -280,28 +306,62 @@ namespace RP_Notify.Toast
                     Silent = true,
                 });
 
-            toastContentBuilder.Content.Actions = new ToastActionsCustom()
+            if(songInfo != null)
             {
-                ContextMenuItems = {
-                    new ToastContextMenuItem("Display song rating tile", "action=RateTileRequested")
-                }
-            };
+                var serializedSongInfo = ObjectSerializer.SerializeToBase64(songInfo);
+                toastContentBuilder.Content.Actions = new ToastActionsCustom()
+                {
+                    ContextMenuItems = {
+                    new ToastContextMenuItem("Display song rating tile from Action Center", $"action=RateTileRequested;serializedSongInfo={serializedSongInfo}")
+                    }
+                };
+            }
+
+            var content = toastContentBuilder.GetToastContent();
+            var toast = new ToastNotification(content.GetXml());
+            
+            toast.Group = "RP_Notify";
+            if(songInfo != null)
+            {
+                toast.Tag = songInfo.SongId;
+            }
 
             return toastContentBuilder;
         }
 
-        internal static ToastContentBuilder AddSongInfoText(this ToastContentBuilder toastContentBuilder, IConfig _config, bool withDuration)
+        internal static PlayListSong ExtractSonginfoObjectFromContextAction(this ToastContentBuilder toastContentBuilder)
         {
-            string duration = $" ({TimeSpanToMinutes(Int32.Parse(_config.State.Playback.SongInfo.Duration))})";
-            string title = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Artist}\n{_config.State.Playback.SongInfo.Title}{(withDuration ? duration : null)}");
+
+            ToastArguments args = ToastArguments
+                .Parse(
+                    toastContentBuilder
+                        .Content
+                        .Actions
+                        .ContextMenuItems.FirstOrDefault()
+                        .Arguments);
+            var serializedSongInfo = args["serializedSongInfo"];
+
+            var deserializedSongInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(serializedSongInfo);
+
+            return deserializedSongInfo;
+        }
+
+        internal static ToastContentBuilder AddSongInfoText(this ToastContentBuilder toastContentBuilder, bool withDuration)
+        {
+            var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction ();
+
+            string duration = $" ({TimeSpanToMinutes(Int32.Parse(songInfo.Duration))})";
+            string title = $"{songInfo.Artist}\n{songInfo.Title}{(withDuration ? duration : null)}";
 
             toastContentBuilder.AddText(title);
             return toastContentBuilder;
         }
 
-        internal static ToastContentBuilder AddSongAlbumText(this ToastContentBuilder toastContentBuilder, IConfig _config)
+        internal static ToastContentBuilder AddSongAlbumText(this ToastContentBuilder toastContentBuilder)
         {
-            string content = SecurityElement.Escape($"{_config.State.Playback.SongInfo.Album} ({_config.State.Playback.SongInfo.Year})");
+            var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction();
+
+            string content = $"{songInfo.Album} ({songInfo.Year})";
 
             toastContentBuilder.AddText(content);
             return toastContentBuilder;
@@ -309,13 +369,15 @@ namespace RP_Notify.Toast
 
         internal static ToastContentBuilder AddSongRatingText(this ToastContentBuilder toastContentBuilder, IConfig _config)
         {
-            bool userRated = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating);
+            var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction();
+
+            bool userRated = !string.IsNullOrEmpty(songInfo.UserRating);
 
             var userRatingElement = userRated
-                    ? $" - User rating: {_config.State.Playback.SongInfo.UserRating}"
+                    ? $" - User rating: {songInfo.UserRating}"
                     : " - Not rated";
 
-            string fullRatingText = $@"★ {_config.State.Playback.SongInfo.Rating}{(_config.State.IsUserAuthenticated ? userRatingElement : null)}";
+            string fullRatingText = $@"★ {songInfo.Rating}{(_config.State.IsUserAuthenticated ? userRatingElement : null)}";
 
             return _config.ExternalConfig.ShowSongRating || userRated
                 ? toastContentBuilder.AddText(fullRatingText)
@@ -324,8 +386,10 @@ namespace RP_Notify.Toast
 
         internal static ToastContentBuilder AddSongProgressBar(this ToastContentBuilder toastContentBuilder, IConfig _config)
         {
+            var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction();
+
             // Construct the visuals of the toast
-            int songDuration = Int32.Parse(_config.State.Playback.SongInfo.Duration);      // value is in milliseconds
+            int songDuration = Int32.Parse(songInfo.Duration);      // value is in milliseconds
             var mSecsLeftFromSong = (int)(_config.State.Playback.SongInfoExpiration - DateTime.Now).TotalMilliseconds;
             var elapsedMillisecs = Math.Min((songDuration - mSecsLeftFromSong + 500), songDuration);    // Corrigate rounding issues 
 
@@ -346,38 +410,20 @@ namespace RP_Notify.Toast
 
         internal static ToastContentBuilder AddSongAlbumArt(this ToastContentBuilder toastContentBuilder, IConfig _config, bool optionalLargeAlbumart)
         {
+            var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction();
+            var albumartFilePath = AlbumartFileHelper.DownloadAlbumartImageIfDoesntExist(_config, songInfo);
+
             Retry.Do(() =>
             {
-                if (!File.Exists(_config.StaticConfig.AlbumArtImagePath))
+                if (!File.Exists(albumartFilePath))
                 {
                     throw new IOException("Cover is not yet downloaded");
                 }
             }, 1000, 15);
 
-            DownloadImageIfDoesntExist(_config);
-
             return optionalLargeAlbumart && _config.ExternalConfig.LargeAlbumArt
-                ? toastContentBuilder.AddInlineImage(new Uri(_config.StaticConfig.AlbumArtImagePath))
-                : toastContentBuilder.AddAppLogoOverride(new Uri(_config.StaticConfig.AlbumArtImagePath));
-        }
-
-        private static void DownloadImageIfDoesntExist(IConfig _config)
-        {
-            // Download album art
-            var rpImageUrl = new Uri($"{_config.StaticConfig.RpImageBaseUrl}/{_config.State.Playback.SongInfo.Cover}");
-            var tempFileName = $"{_config.StaticConfig.AlbumArtImagePath}.inprogress";
-
-            using (WebClient client = new WebClient())
-            {
-                Retry.Do(() => { client.DownloadFile(rpImageUrl, tempFileName); }, 500, 5);
-            }
-
-            if (File.Exists(_config.StaticConfig.AlbumArtImagePath))
-            {
-                File.Delete(_config.StaticConfig.AlbumArtImagePath);
-            }
-
-            File.Move(tempFileName, _config.StaticConfig.AlbumArtImagePath);
+                ? toastContentBuilder.AddInlineImage(new Uri(albumartFilePath))
+                : toastContentBuilder.AddAppLogoOverride(new Uri(albumartFilePath));
         }
 
         internal static ToastContentBuilder AddSongFooterText(this ToastContentBuilder toastContentBuilder, IConfig _config)
@@ -419,11 +465,13 @@ namespace RP_Notify.Toast
 
         internal static ToastContentBuilder AddSongInputActions(this ToastContentBuilder toastContentBuilder, IConfig _config)
         {
-            var ratingHintText = !string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
-                    ? $"Current rating: {_config.State.Playback.SongInfo.UserRating}"
+            var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction();
+
+            var ratingHintText = !string.IsNullOrEmpty(songInfo.UserRating)
+                    ? $"Current rating: {songInfo.UserRating}"
                     : "Type your rating (1-10)";
 
-            var buttonText = (string.IsNullOrEmpty(_config.State.Playback.SongInfo.UserRating)
+            var buttonText = (string.IsNullOrEmpty(songInfo.UserRating)
                                 ? "Send"
                                 : "Update")
                         + " rating";
@@ -432,7 +480,7 @@ namespace RP_Notify.Toast
                 ? toastContentBuilder
                     .AddInputTextBox("UserRate", ratingHintText)
                     .AddArgument("action", "RateSubmitted")
-                    .AddArgument("SongId", _config.State.Playback.SongInfo.SongId)
+                    .AddArgument("serializedSongInfo", ObjectSerializer.SerializeToBase64(songInfo))
                     .AddButton(new ToastButton()
                         .SetContent(buttonText)
                         .SetTextBoxId("UserRate"))
@@ -440,19 +488,6 @@ namespace RP_Notify.Toast
                     .AddButton(new ToastButton()
                         .SetContent("Log in to rate song")
                         .AddArgument("action", "LoginRequested"));
-        }
-
-        internal static string OpenInBrowserAction(IConfig _config)
-        {
-            string songWebUrl = $"https://radioparadise.com/player/info/{_config.State.Playback.SongInfo.SongId}";
-
-            var actionElementText = $@"
-                <action
-                    content='Open in browser'
-                    arguments='{songWebUrl}'
-                    activationType ='protocol'/>";
-
-            return actionElementText;
         }
 
         internal static string TimeSpanToMinutes(int timeLength)

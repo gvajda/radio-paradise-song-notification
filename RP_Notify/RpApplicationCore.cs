@@ -1,9 +1,10 @@
 ﻿using Microsoft.Toolkit.Uwp.Notifications;
 using Microsoft.Win32;
-using RP_Notify.API;
-using RP_Notify.API.ResponseModel;
+using RP_Notify.RpApi;
+using RP_Notify.RpApi.ResponseModel;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
+using RP_Notify.Helpers;
 using RP_Notify.PlayerWatcher;
 using RP_Notify.PlayerWatcher.Foobar2000;
 using RP_Notify.PlayerWatcher.MusicBee;
@@ -313,12 +314,6 @@ namespace RP_Notify
         private void OnPlaybackChange()
         {
             // APP - song is updated in State
-
-            if (!_config.State.Playback.SameSongOnlyInternalUpdate)
-            {
-                Retry.Do(() => { File.Delete(_config.StaticConfig.AlbumArtImagePath); });
-            }
-
             _toastHandler.ShowSongStartToast();
         }
 
@@ -395,12 +390,6 @@ namespace RP_Notify
         {
             _log.Information(LogHelper.GetMethodName(this), "Exit process started");
 
-            if (File.Exists(_config.StaticConfig.AlbumArtImagePath))
-            {
-                _log.Information(LogHelper.GetMethodName(this), $"Delete album art");
-                File.Delete(_config.StaticConfig.AlbumArtImagePath);
-            }
-
             _rpTrayIcon.Dispose();
 
             if (_config.ExternalConfig.DeleteAllData)
@@ -409,6 +398,7 @@ namespace RP_Notify
             }
             else
             {
+                AlbumartFileHelper.DeleteOldAlbumartImageFiles(_config);
                 _log.Information(LogHelper.GetMethodName(this), $@"Finished
 ********************************************************************
 ********************************************************************
@@ -425,7 +415,8 @@ namespace RP_Notify
                 _log.Information(LogHelper.GetMethodName(this), "App data delete requested");
                 _log.Dispose();
                 _toastHandler.DataEraseToast();
-                Task.Delay(1000).Wait();
+                Task.Delay(5000).Wait();
+                ToastNotificationManagerCompat.History.Clear();
                 ToastNotificationManagerCompat.Uninstall();
                 Application.Exit();
             }

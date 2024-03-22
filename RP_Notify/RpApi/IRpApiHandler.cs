@@ -1,7 +1,7 @@
-﻿using RP_Notify.API.ResponseModel;
+﻿using RP_Notify.RpApi.ResponseModel;
 using System.Collections.Generic;
 
-namespace RP_Notify.API
+namespace RP_Notify.RpApi
 {
     public interface IRpApiHandler
     {

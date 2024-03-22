@@ -1,4 +1,4 @@
-﻿using RP_Notify.API.ResponseModel;
+﻿using RP_Notify.RpApi.ResponseModel;
 using System;
 using System.Collections.Generic;
 using System.Globalization;

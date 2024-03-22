@@ -1,5 +1,5 @@
 ﻿using RestSharp;
-using RP_Notify.API.ResponseModel;
+using RP_Notify.RpApi.ResponseModel;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using System;
@@ -7,8 +7,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using RP_Notify.Helpers;
 
-namespace RP_Notify.API
+namespace RP_Notify.RpApi
 {
     class RpApiHandler : IRpApiHandler
     {

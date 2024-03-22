@@ -4,7 +4,7 @@ using System.IO;
 using System.Net;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace RP_Notify.API
+namespace RP_Notify.Helpers
 {
     public static class CookieHelper
     {
