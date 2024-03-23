@@ -210,7 +210,7 @@ namespace RP_Notify.Toast
                     .AddArgument(nameof(this.DataEraseToast))
                     .AddText(exception.Message);
 
-                    if(exception.InnerException != null)
+                    if (exception.InnerException != null)
                     {
                         toastBuilder.AddText(exception.InnerException.Message);
                     }
@@ -236,7 +236,7 @@ namespace RP_Notify.Toast
 
                 var formattedArgumentsForLogging = string.Join("&", args.Select(kvp => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}"));
                 _log.Information(LogHelper.GetMethodName(this), " eventArguments: " + formattedArgumentsForLogging);
-                
+
                 if (args["action"] == "LoginRequested")
                 {
                     ShowLoginToast();
@@ -306,22 +306,22 @@ namespace RP_Notify.Toast
                     Silent = true,
                 });
 
-            if(songInfo != null)
+            if (songInfo != null)
             {
                 var serializedSongInfo = ObjectSerializer.SerializeToBase64(songInfo);
                 toastContentBuilder.Content.Actions = new ToastActionsCustom()
                 {
                     ContextMenuItems = {
-                    new ToastContextMenuItem("Display song rating tile from Action Center", $"action=RateTileRequested;serializedSongInfo={serializedSongInfo}")
+                    new ToastContextMenuItem("Display song rating tile (use from Action Center)", $"action=RateTileRequested;serializedSongInfo={serializedSongInfo}")
                     }
                 };
             }
 
             var content = toastContentBuilder.GetToastContent();
             var toast = new ToastNotification(content.GetXml());
-            
+
             toast.Group = "RP_Notify";
-            if(songInfo != null)
+            if (songInfo != null)
             {
                 toast.Tag = songInfo.SongId;
             }
@@ -348,7 +348,7 @@ namespace RP_Notify.Toast
 
         internal static ToastContentBuilder AddSongInfoText(this ToastContentBuilder toastContentBuilder, bool withDuration)
         {
-            var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction ();
+            var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction();
 
             string duration = $" ({TimeSpanToMinutes(Int32.Parse(songInfo.Duration))})";
             string title = $"{songInfo.Artist}\n{songInfo.Title}{(withDuration ? duration : null)}";

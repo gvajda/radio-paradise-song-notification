@@ -73,6 +73,11 @@
     </Reference> -->
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Config\ExternalConfig.cs" />
+    <Compile Include="Config\IExternalConfig.cs" />
+    <Compile Include="Config\StaticConfig.cs" />
+    <Compile Include="Helpers\IniFileHelper.cs" />
+    <Compile Include="Config\IStaticConfig.cs" />
     <Compile Include="Helpers\CookieHelper.cs" />
     <Compile Include="RpApi\IRpApiHandler.cs" />
     <Compile Include="Config\RpEvent.cs" />

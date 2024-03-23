@@ -14,33 +14,4 @@ namespace RP_Notify.Config
 
         bool IsRpPlayerTrackingChannel(out int channel);
     }
-
-    public interface IStaticConfig
-    {
-        // Internal values
-        string ConfigBaseFolder { get; }
-        string CookieCachePath { get; }
-        string IconPath { get; }
-        string LogFilePath { get; }
-        string RpApiBaseUrl { get; }
-        string RpImageBaseUrl { get; }
-    }
-
-    public interface IExternalConfig
-    {
-        event EventHandler<RpEvent> ExternalConfigChangeHandler;
-
-        int Channel { get; set; }
-        bool DeleteAllData { get; set; }
-        bool EnableLoggingToFile { get; set; }
-        bool EnableFoobar2000Watcher { get; set; }
-        bool EnableMusicBeeWatcher { get; set; }
-        bool EnableRpOfficialTracking { get; set; }
-        bool LargeAlbumArt { get; set; }
-        bool PromptForRating { get; set; }
-        bool ShowOnNewSong { get; set; }
-        bool ShowSongRating { get; set; }
-
-        void DeleteConfigRootFolder();
-    }
 }
