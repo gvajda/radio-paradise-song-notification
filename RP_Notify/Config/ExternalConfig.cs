@@ -167,7 +167,7 @@ namespace RP_Notify.Config
         public ExternalConfig(bool isUserAuthenticated)
         {
             _IniFileHelper = new IniFileHelper();
-            _iniFileChangeWatcher = new FileSystemWatcher(_IniFileHelper._iniPath);
+            _iniFileChangeWatcher = new FileSystemWatcher(_IniFileHelper._iniFolder, "config.ini");
 
             SyncMemoryConfig();
             PromptForRating = isUserAuthenticated
