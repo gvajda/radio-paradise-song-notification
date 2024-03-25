@@ -14,10 +14,10 @@ namespace RP_Notify.RpApi
     class RpApiHandler : IRpApiHandler
     {
         private readonly RestClient _restClient;
-        private readonly IConfig _config;
+        private readonly IConfigRoot _config;
         private readonly ILog _log;
 
-        public RpApiHandler(IConfig config, ILog log, RestClient restClient)
+        public RpApiHandler(IConfigRoot config, ILog log, RestClient restClient)
         {
             _config = config;
             _restClient = restClient;

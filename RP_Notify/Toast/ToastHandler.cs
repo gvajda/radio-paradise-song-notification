@@ -29,11 +29,11 @@ namespace RP_Notify.Toast
 {
     internal class ToastHandler : IToastHandler
     {
-        private readonly IConfig _config;
+        private readonly IConfigRoot _config;
         private readonly IRpApiHandler _apiHandler;
         private readonly ILog _log;
 
-        public ToastHandler(IConfig config, IRpApiHandler apiHandler, ILog log)
+        public ToastHandler(IConfigRoot config, IRpApiHandler apiHandler, ILog log)
         {
             _config = config;
             _apiHandler = apiHandler;
@@ -367,7 +367,7 @@ namespace RP_Notify.Toast
             return toastContentBuilder;
         }
 
-        internal static ToastContentBuilder AddSongRatingText(this ToastContentBuilder toastContentBuilder, IConfig _config)
+        internal static ToastContentBuilder AddSongRatingText(this ToastContentBuilder toastContentBuilder, IConfigRoot _config)
         {
             var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction();
 
@@ -384,7 +384,7 @@ namespace RP_Notify.Toast
                 : toastContentBuilder;
         }
 
-        internal static ToastContentBuilder AddSongProgressBar(this ToastContentBuilder toastContentBuilder, IConfig _config)
+        internal static ToastContentBuilder AddSongProgressBar(this ToastContentBuilder toastContentBuilder, IConfigRoot _config)
         {
             var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction();
 
@@ -408,7 +408,7 @@ namespace RP_Notify.Toast
                                                       progressStatus);
         }
 
-        internal static ToastContentBuilder AddSongAlbumArt(this ToastContentBuilder toastContentBuilder, IConfig _config, bool optionalLargeAlbumart)
+        internal static ToastContentBuilder AddSongAlbumArt(this ToastContentBuilder toastContentBuilder, IConfigRoot _config, bool optionalLargeAlbumart)
         {
             var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction();
             var albumartFilePath = AlbumartFileHelper.DownloadAlbumartImageIfDoesntExist(_config, songInfo);
@@ -426,7 +426,7 @@ namespace RP_Notify.Toast
                 : toastContentBuilder.AddAppLogoOverride(new Uri(albumartFilePath));
         }
 
-        internal static ToastContentBuilder AddSongFooterText(this ToastContentBuilder toastContentBuilder, IConfig _config)
+        internal static ToastContentBuilder AddSongFooterText(this ToastContentBuilder toastContentBuilder, IConfigRoot _config)
         {
             string chanTitle = _config.State.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.ExternalConfig.Channel).First().Title;
 
@@ -439,7 +439,7 @@ namespace RP_Notify.Toast
             return toastContentBuilder.AddAttributionText(footerText);
         }
 
-        private static string TrackedPlayerAsSuffix(IConfig _config)
+        private static string TrackedPlayerAsSuffix(IConfigRoot _config)
         {
             if (_config.IsRpPlayerTrackingChannel())
             {
@@ -463,7 +463,7 @@ namespace RP_Notify.Toast
             return null;
         }
 
-        internal static ToastContentBuilder AddSongInputActions(this ToastContentBuilder toastContentBuilder, IConfig _config)
+        internal static ToastContentBuilder AddSongInputActions(this ToastContentBuilder toastContentBuilder, IConfigRoot _config)
         {
             var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction();
 

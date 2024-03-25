@@ -7,56 +7,28 @@ using System.Text;
 
 namespace RP_Notify.Helpers
 {
-    internal class IniFileHelper
+    internal static class IniFileHelper
     {
-
-        internal readonly string _iniPath;
-        internal readonly string _iniFolder;
-
-        private const string appCacheFolderName = "RP_Notify_Cache";
-        private const string configFileName = "config.ini";
-
-        internal IniFileHelper()
-        {
-
-            _iniPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                appCacheFolderName,
-                configFileName);
-
-            var exeContainingDirecoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory);
-            var customAppCacheFolderName = Path.Combine(exeContainingDirecoryPath, appCacheFolderName);
-
-            if (Directory.Exists(exeContainingDirecoryPath))
-            {
-                _iniPath = Path.Combine(customAppCacheFolderName, configFileName);
-            }
-
-            if (CheckForCustomIniPath(out string iniPathFromArg))
-            {
-                _iniPath = iniPathFromArg;
-            }
-
-            _iniFolder = Path.GetDirectoryName(_iniPath);
-
-            CreateIniWithDefaultValuesIfNotExists(_iniPath);
-            CheckIniIntegrity();
-        }
-
-        internal IniFile ReadIniFile()
+        internal static IniFile ReadIniFile(string iniPath)
         {
             var iniFile = new IniFile();
-            var iniContent = TryReadIniStringContent();
+            string iniContent = null;
+
+            Retry.Do(() =>
+            {
+                iniContent = File.ReadAllText(iniPath, Encoding.Default);
+            });
+
             iniFile.Load(new StringReader(iniContent));
             return iniFile;
         }
 
-        internal void CheckIniIntegrity()
+        internal static void CheckIniIntegrity(string iniPath)
         {
             var defaultIniFile = new IniFile();
             defaultIniFile.Load(new StringReader(Properties.Resources.config));
 
-            var iniFile = ReadIniFile();
+            var iniFile = ReadIniFile(iniPath);
 
             foreach (var defaultSection in defaultIniFile.Sections)
             {
@@ -78,54 +50,16 @@ namespace RP_Notify.Helpers
                 }
             }
 
-            iniFile.Save(_iniPath);
+            iniFile.Save(iniPath);
         }
 
-        private void CreateIniWithDefaultValuesIfNotExists(string pIniPath)
+        internal static void CreateIniWithDefaultValuesIfNotExists(string iniPath)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(pIniPath));
-            if (!File.Exists(pIniPath))
+            Directory.CreateDirectory(Path.GetDirectoryName(iniPath));
+            if (!File.Exists(iniPath))
             {
-                File.WriteAllText(pIniPath, Properties.Resources.config);
+                File.WriteAllText(iniPath, Properties.Resources.config);
             }
-        }
-
-        private bool CheckForCustomIniPath(out string iniPathFromArg)
-        {
-            iniPathFromArg = null;
-
-            foreach (string arg in Environment.GetCommandLineArgs().Where(arg => arg.EndsWith(".ini")))
-            {
-                if (File.Exists(arg) && !string.IsNullOrEmpty(File.ReadAllText(arg)))
-                {
-                    iniPathFromArg = arg;
-                    return true;
-                }
-
-                try
-                {   // Should run once
-                    CreateIniWithDefaultValuesIfNotExists(arg);
-                    iniPathFromArg = arg;
-                    return true;
-                }
-                catch (Exception)
-                {
-                    continue;
-                }
-            }
-
-            return false;
-        }
-
-        private string TryReadIniStringContent()
-        {
-            return Retry.Do(() =>
-            {
-                string iniContent = null;
-                iniContent = File.ReadAllText(_iniPath, Encoding.Default);
-
-                return iniContent;
-            });
         }
     }
 }

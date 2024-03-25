@@ -2,13 +2,13 @@
 
 namespace RP_Notify.Config
 {
-    public interface IConfig
+    public interface IConfigRoot
     {
-        IStaticConfig StaticConfig { get; set; }
-
         IExternalConfig ExternalConfig { get; set; }
 
         State State { get; set; }
+
+        StaticConfig StaticConfig { get; set; }
 
         bool IsRpPlayerTrackingChannel();
 

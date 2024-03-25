@@ -2,6 +2,7 @@
 using Serilog;
 using Serilog.Core;
 using System;
+using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace RP_Notify.ErrorHandler
@@ -10,7 +11,7 @@ namespace RP_Notify.ErrorHandler
     {
         private Logger Logger { get; set; }
 
-        public Log(IConfig config)
+        public Log(IConfigRoot config)
         {
             Logger = GetLogger(config);
         }
@@ -39,7 +40,7 @@ namespace RP_Notify.ErrorHandler
             Logger.Dispose();
         }
 
-        private Logger GetLogger(IConfig config)
+        private Logger GetLogger(IConfigRoot config)
         {
             if (config.ExternalConfig.EnableLoggingToFile)
             {
@@ -55,6 +56,10 @@ namespace RP_Notify.ErrorHandler
             }
             else
             {
+                if (File.Exists(config.StaticConfig.LogFilePath))
+                {
+                    Directory.Delete(Path.GetDirectoryName(config.StaticConfig.LogFilePath));
+                }
 
                 return new LoggerConfiguration()
                 .WriteTo.Console()

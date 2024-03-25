@@ -4,21 +4,21 @@ using System.Linq;
 
 namespace RP_Notify.Config
 {
-    public class IniConfig : IConfig
+    public class ConfigRoot : IConfigRoot
     {
-        public IStaticConfig StaticConfig { get; set; }
+        public StaticConfig StaticConfig { get; set; }
         public IExternalConfig ExternalConfig { get; set; }
         public State State { get; set; }
 
-        public IniConfig()
+        public ConfigRoot()
         {
             StaticConfig = new StaticConfig();
-            var isUserAuthenticated = File.Exists(StaticConfig.CookieCachePath);
-            ExternalConfig = new ExternalConfig(isUserAuthenticated);
-            State = new State
+            ExternalConfig = new ExternalConfigIni(StaticConfig.ConfigFilePath);
+            State = new State()
             {
-                IsUserAuthenticated = isUserAuthenticated
+                IsUserAuthenticated = File.Exists(StaticConfig.CookieCachePath)
             };
+
         }
 
         public bool IsRpPlayerTrackingChannel()

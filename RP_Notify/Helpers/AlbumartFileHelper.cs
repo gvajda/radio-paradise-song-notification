@@ -15,22 +15,17 @@ namespace RP_Notify.Helpers
 {
     public static class AlbumartFileHelper
     {
-        private const string AlbumArtFolderName = "AlbumArtCache";
-        private const int MaxAgeDays = 3;
-        private const int MaxFileCount = 100;
-
-        public static string DownloadAlbumartImageIfDoesntExist(IConfig _config, PlayListSong overrideSongInfo = null)
+        public static string DownloadAlbumartImageIfDoesntExist(IConfigRoot _config, PlayListSong overrideSongInfo = null)
         {
             var songInfo = overrideSongInfo != null
                 ? overrideSongInfo
                 : _config.State.Playback.SongInfo;
 
-            var albumArtCacheDirectory = Path.Combine(_config.StaticConfig.ConfigBaseFolder, AlbumArtFolderName);
-            var albumartFilePath = Path.Combine(albumArtCacheDirectory, songInfo.SongId + ".jpg");
+            var albumartFilePath = Path.Combine(_config.StaticConfig.AlbumArtCacheFolder, songInfo.SongId + ".jpg");
 
-            if (!Directory.Exists(albumArtCacheDirectory))
+            if (!Directory.Exists(_config.StaticConfig.AlbumArtCacheFolder))
             {
-                Directory.CreateDirectory(albumArtCacheDirectory);
+                Directory.CreateDirectory(_config.StaticConfig.AlbumArtCacheFolder);
             }
 
             if (File.Exists(albumartFilePath))
@@ -53,16 +48,15 @@ namespace RP_Notify.Helpers
             return albumartFilePath;
         }
 
-        public static void DeleteOldAlbumartImageFiles(IConfig _config)
+        public static void DeleteOldAlbumartImageFiles(IConfigRoot _config, int MaxAgeDays = 3, int MaxFileCount = 100)
         {
             try
             {
                 DateTime currentDateTime = DateTime.Now;
                 DateTime minimumDate = currentDateTime.AddDays(-MaxAgeDays);
 
-                var albumArtCacheDirectory = Path.Combine(_config.StaticConfig.ConfigBaseFolder, AlbumArtFolderName);
                 var cachedImageFileInfoList = Directory
-                    .GetFiles(albumArtCacheDirectory)
+                    .GetFiles(_config.StaticConfig.AlbumArtCacheFolder)
                     .Select(p => new FileInfo(p));
 
                 cachedImageFileInfoList

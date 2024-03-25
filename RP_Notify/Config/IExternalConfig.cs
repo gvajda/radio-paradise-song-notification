@@ -16,7 +16,5 @@ namespace RP_Notify.Config
         bool ShowSongRating { get; set; }
 
         event EventHandler<RpEvent> ExternalConfigChangeHandler;
-
-        void DeleteConfigRootFolder();
     }
 }

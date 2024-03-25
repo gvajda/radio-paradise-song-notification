@@ -15,6 +15,21 @@
     <Deterministic>true</Deterministic>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -39,6 +54,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>Resources\rp.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>RP_Notify.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.WindowsAPICodePack">
@@ -73,17 +91,17 @@
     </Reference> -->
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Config\ExternalConfig.cs" />
+    <Compile Include="Helpers\ConfigDirectoryHelper.cs" />
+    <Compile Include="Config\ExternalConfigIni.cs" />
     <Compile Include="Config\IExternalConfig.cs" />
     <Compile Include="Config\StaticConfig.cs" />
     <Compile Include="Helpers\IniFileHelper.cs" />
-    <Compile Include="Config\IStaticConfig.cs" />
     <Compile Include="Helpers\CookieHelper.cs" />
     <Compile Include="RpApi\IRpApiHandler.cs" />
     <Compile Include="Config\RpEvent.cs" />
-    <Compile Include="Config\IConfig.cs" />
+    <Compile Include="Config\IConfigRoot.cs" />
     <Compile Include="RpApi\RpApiResponseModel.cs" />
-    <Compile Include="Config\IniConfig.cs" />
+    <Compile Include="Config\ConfigRoot.cs" />
     <Compile Include="Config\State.cs" />
     <Compile Include="ErrorHandler\ILog.cs" />
     <Compile Include="ErrorHandler\Log.cs" />

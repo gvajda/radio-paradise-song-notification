@@ -12,7 +12,7 @@ namespace RP_Notify.PlayerWatcher.Foobar2000
 {
     class Foobar2000Watcher : IPlayerWatcher
     {
-        private readonly IConfig _config;
+        private readonly IConfigRoot _config;
         private readonly ILog _log;
         private readonly PlayerApi _playerApi;
 
@@ -20,7 +20,7 @@ namespace RP_Notify.PlayerWatcher.Foobar2000
         private Task Foobar2000WatcherTask { get; set; }
         private CancellationTokenSource Foobar2000WatcherTaskCancellationTokenSource { get; set; }
 
-        public Foobar2000Watcher(IConfig config, ILog log, PlayerApi playerApi)
+        public Foobar2000Watcher(IConfigRoot config, ILog log, PlayerApi playerApi)
         {
             _config = config;
             _log = log;

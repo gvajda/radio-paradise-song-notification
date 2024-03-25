@@ -17,7 +17,7 @@ namespace RP_Notify.SongInfoListener
     {
 
         private readonly IRpApiHandler _apiHandler;
-        private readonly IConfig _config;
+        private readonly IConfigRoot _config;
         private readonly ILog _log;
         private readonly IToastHandler _toastHandler;
 
@@ -27,7 +27,7 @@ namespace RP_Notify.SongInfoListener
         private CancellationTokenSource NextSongWaiterCancellationTokenSource { get; set; }
         private CancellationTokenSource listenerCancellationTokenSource { get; }
 
-        public SongInfoListener(IRpApiHandler apiHandler, IConfig config, ILog log, IToastHandler toastHandler)
+        public SongInfoListener(IRpApiHandler apiHandler, IConfigRoot config, ILog log, IToastHandler toastHandler)
         {
             _apiHandler = apiHandler;
             _config = config;
@@ -98,7 +98,7 @@ namespace RP_Notify.SongInfoListener
                                 ? Math.Min(10000, timeLeftFromSongMilliseconds)
                                 : timeLeftFromSongMilliseconds;
 
-                            // when Bill is talking
+                            // While William or ALana talks
                             loopWaitMilliseconds = loopWaitMilliseconds > 0
                                 ? loopWaitMilliseconds
                                 : 5000;

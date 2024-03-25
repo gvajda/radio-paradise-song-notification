@@ -11,12 +11,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using RP_Notify.Helpers;
 
 namespace RP_Notify.TrayIcon
 {
     class RpTrayIcon
     {
-        private readonly IConfig _config;
+        private readonly IConfigRoot _config;
         private readonly ILog _log;
         private readonly IToastHandler _toastHandler;
 
@@ -29,7 +30,7 @@ namespace RP_Notify.TrayIcon
 
         private Task ContextMenuBuilderTask { get; set; }
 
-        public RpTrayIcon(IConfig config, ILog log, IToastHandler toastHandler)
+        public RpTrayIcon(IConfigRoot config, ILog log, IToastHandler toastHandler)
         {
             _config = config;
             _log = log;
@@ -75,6 +76,7 @@ namespace RP_Notify.TrayIcon
             var menuEntryLargeAlbumArt = MenuEntryLargeAlbumArt();
             var menuEntryShowSongRating = MenuEntryShowSongRating();
             var menuEntryPromptForRating = MenuEntryPromptForRating();
+            var menuEntryMigrateCache = MenuEntryMigrateCache();
             var menuEntryReset = MenuEntryReset();
             var menuEntryEnableFoobar2000Watcher = MenuEntryEnableFoobar2000Watcher();
             var menuEntryEnableMusicbeeWatcher = MenuEntryEnableMusicbeeWatcher();
@@ -96,6 +98,7 @@ namespace RP_Notify.TrayIcon
             MenuItem appSettings = new MenuItem("App settings");
             appSettings.MenuItems.Add(menuEntryPromptForRating);
             appSettings.MenuItems.Add("-");
+            appSettings.MenuItems.Add(menuEntryMigrateCache);
             appSettings.MenuItems.Add(menuEntryReset);
             contextMenu.MenuItems.Add(appSettings);
             contextMenu.MenuItems.Add("-");
@@ -205,6 +208,48 @@ namespace RP_Notify.TrayIcon
             };
 
             return reset;
+        }
+
+        private MenuItem MenuEntryMigrateCache()
+        {
+
+
+            string menuName = "Migrate Config folder to ";
+            ConfigLocationOptions startingLocation;
+            ConfigLocationOptions targetLocation;
+            switch (_config.StaticConfig.ConfigBaseFolderOption)
+            {
+                case ConfigLocationOptions.AppData:
+                    menuName += nameof(ConfigLocationOptions.ExeContainingDirectory);
+                    startingLocation = ConfigLocationOptions.AppData;
+                    targetLocation = ConfigLocationOptions.ExeContainingDirectory;
+                    break;
+                case ConfigLocationOptions.ExeContainingDirectory:
+                    menuName += nameof(ConfigLocationOptions.AppData);
+                    startingLocation = ConfigLocationOptions.ExeContainingDirectory;
+                    targetLocation = ConfigLocationOptions.AppData;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            MenuItem migrateCache = new MenuItem(menuName);
+            migrateCache.Click += (sender, e) =>
+            {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _log.Information(LogHelper.GetMethodName(this), $"The application will attempt to move the Config folder from [{ConfigDirectoryHelper.GetLocalPath(startingLocation)}] to [{ConfigDirectoryHelper.GetLocalPath(targetLocation)}]");
+                _log.Information(LogHelper.GetMethodName(this), $@"
+//********************************************************************
+//********************************************************************
+//********************************************************************
+//********************************************************************
+//********************************************************************");
+                _log.Dispose();
+                ConfigDirectoryHelper.MoveConfigToNewLocation(startingLocation, targetLocation);
+                Application.Restart();
+            };
+
+            return migrateCache;
         }
 
         private MenuItem MenuEntryEnableFoobar2000Watcher()

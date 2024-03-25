@@ -7,12 +7,12 @@ using System.Windows.Forms;
 
 namespace RP_Notify.Config
 {
-    public class ExternalConfig : IExternalConfig
+    public class ExternalConfigIni : IExternalConfig
     {
         public event EventHandler<RpEvent> ExternalConfigChangeHandler = delegate { };
 
-        private readonly IniFileHelper _IniFileHelper;
-        private readonly FileSystemWatcher _iniFileChangeWatcher;
+        private readonly FileSystemWatcher _iniFileChangeWatcher = new FileSystemWatcher();
+        private readonly string _iniFilePath;
 
         private int channel;
         private bool deleteAllData;
@@ -164,24 +164,14 @@ namespace RP_Notify.Config
             }
         }
 
-        public ExternalConfig(bool isUserAuthenticated)
-        {
-            _IniFileHelper = new IniFileHelper();
-            _iniFileChangeWatcher = new FileSystemWatcher(_IniFileHelper._iniFolder, "config.ini");
+        public ExternalConfigIni(string iniFilePath)
+        { 
+            _iniFilePath = iniFilePath;
+            IniFileHelper.CreateIniWithDefaultValuesIfNotExists(iniFilePath);
+            IniFileHelper.CheckIniIntegrity(iniFilePath);
 
+            SetupAndStartConfigWatcher();
             SyncMemoryConfig();
-            PromptForRating = isUserAuthenticated
-                ? promptForRating
-                : false;
-
-            // FileWatcher setup
-            StartConfigWatcher();
-            Application.ApplicationExit += (s, e) => _iniFileChangeWatcher.Dispose();
-        }
-
-        public void DeleteConfigRootFolder()
-        {
-            Retry.Do(() => Directory.Delete(_IniFileHelper._iniFolder, true));
         }
 
         private void RaiseFieldChangeEvent(string fieldName, object value)
@@ -192,21 +182,24 @@ namespace RP_Notify.Config
         private void SetIniValue<T>(string section, string key, T value)
         {
             _iniFileChangeWatcher.EnableRaisingEvents = false;
-            var iniFile = _IniFileHelper.ReadIniFile();
+            var iniFile = IniFileHelper.ReadIniFile(_iniFilePath);
             iniFile.Sections[section].Keys[key].TryParseValue(out T sValue);
             if (!EqualityComparer<T>.Default.Equals(value, sValue))
             {
                 iniFile.Sections[section].Keys[key].Value = value.ToString();
-                iniFile.Save(_IniFileHelper._iniPath);
+                iniFile.Save(_iniFilePath);
             }
             _iniFileChangeWatcher.EnableRaisingEvents = true;
         }
 
-        private void StartConfigWatcher()
+        private void SetupAndStartConfigWatcher()
         {
+            _iniFileChangeWatcher.Path = Path.GetDirectoryName(_iniFilePath);
+            _iniFileChangeWatcher.Filter = Path.GetFileName(_iniFilePath);
             _iniFileChangeWatcher.NotifyFilter = NotifyFilters.LastWrite;
             _iniFileChangeWatcher.Changed += HandleExternalConfigChange;
             _iniFileChangeWatcher.EnableRaisingEvents = true;
+            Application.ApplicationExit += (s, e) => _iniFileChangeWatcher.Dispose();
         }
 
         private void HandleExternalConfigChange(object source, EventArgs e)
@@ -216,86 +209,75 @@ namespace RP_Notify.Config
 
         private void SyncMemoryConfig()
         {
-            _IniFileHelper.CheckIniIntegrity();
-            var iniFile = _IniFileHelper.ReadIniFile();
+            var iniFile = IniFileHelper.ReadIniFile(_iniFilePath);
 
-            var _EnableFoobar2000Watcher = EnableFoobar2000Watcher;
             EnableFoobar2000Watcher = iniFile
                 .Sections[AppSettingsIniSectionName]
                 .Keys[nameof(EnableFoobar2000Watcher)]
-                .TryParseValue(out _EnableFoobar2000Watcher)
+                .TryParseValue(out bool _EnableFoobar2000Watcher)
                 ? _EnableFoobar2000Watcher
                 : EnableFoobar2000Watcher;
 
-            var _EnableMusicBeeWatcher = EnableMusicBeeWatcher;
             EnableMusicBeeWatcher = iniFile
                 .Sections[AppSettingsIniSectionName]
                 .Keys[nameof(EnableMusicBeeWatcher)]
-                .TryParseValue(out _EnableMusicBeeWatcher)
+                .TryParseValue(out bool _EnableMusicBeeWatcher)
                 ? _EnableMusicBeeWatcher
                 : EnableMusicBeeWatcher;
 
-            var _EnableRpOfficialTracking = EnableRpOfficialTracking;
             EnableRpOfficialTracking = iniFile
                 .Sections[AppSettingsIniSectionName]
                 .Keys[nameof(EnableRpOfficialTracking)]
-                .TryParseValue(out _EnableRpOfficialTracking)
+                .TryParseValue(out bool _EnableRpOfficialTracking)
                 ? _EnableRpOfficialTracking
                 : EnableRpOfficialTracking;
 
-            var _EnableLoggingToFile = EnableLoggingToFile;
             EnableLoggingToFile = iniFile
                 .Sections[AppSettingsIniSectionName]
                 .Keys[nameof(EnableLoggingToFile)]
-                .TryParseValue(out _EnableLoggingToFile)
+                .TryParseValue(out bool _EnableLoggingToFile)
                 ? _EnableLoggingToFile
                 : EnableLoggingToFile;
 
-            var _PromptForRating = PromptForRating;
             PromptForRating = iniFile
                 .Sections[AppSettingsIniSectionName]
                 .Keys[nameof(PromptForRating)]
-                .TryParseValue(out _PromptForRating)
+                .TryParseValue(out bool _PromptForRating)
                 ? _PromptForRating
                 : PromptForRating;
 
-            var _ShowOnNewSong = ShowOnNewSong;
             ShowOnNewSong = iniFile
                 .Sections[ToastIniSectionName]
                 .Keys[nameof(ShowOnNewSong)]
-                .TryParseValue(out _ShowOnNewSong)
+                .TryParseValue(out bool _ShowOnNewSong)
                 ? _ShowOnNewSong
                 : ShowOnNewSong;
 
-            var _LargeAlbumArt = LargeAlbumArt;
             LargeAlbumArt = iniFile
                 .Sections[ToastIniSectionName]
                 .Keys[nameof(LargeAlbumArt)]
-                .TryParseValue(out _LargeAlbumArt)
+                .TryParseValue(out bool _LargeAlbumArt)
                 ? _LargeAlbumArt
                 : LargeAlbumArt;
 
-            var _ShowSongRating = ShowSongRating;
             ShowSongRating = iniFile
                 .Sections[ToastIniSectionName]
                 .Keys[nameof(ShowSongRating)]
-                .TryParseValue(out _ShowSongRating)
+                .TryParseValue(out bool _ShowSongRating)
                 ? _ShowSongRating
                 : ShowSongRating;
 
-            var _Channel = Channel;
             Channel = iniFile
                 .Sections[ChannelIniSectionName]
                 .Keys[nameof(Channel)]
-                .TryParseValue(out _Channel)
+                .TryParseValue(out int _Channel)
                 ? _Channel
                 : Channel;
 
-            var _DeleteAllDataOnStartup = DeleteAllData;
             DeleteAllData = iniFile
                 .Sections[SpecialSettingsIniSectionName]
                 .Keys[nameof(DeleteAllData)]
-                .TryParseValue(out _DeleteAllDataOnStartup)
+                .TryParseValue(out bool _DeleteAllDataOnStartup)
                 ? _DeleteAllDataOnStartup
                 : DeleteAllData;
         }

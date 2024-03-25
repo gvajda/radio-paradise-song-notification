@@ -25,7 +25,7 @@ namespace RP_Notify
         {
 
             var serviceProvider = new ServiceCollection()
-                .AddSingleton<IConfig, IniConfig>()
+                .AddSingleton<IConfigRoot, ConfigRoot>()
                 .AddSingleton<ILog, Log>()
                 .AddSingleton<RestClient>()
                 .AddSingleton<IRpApiHandler, RpApiHandler>()

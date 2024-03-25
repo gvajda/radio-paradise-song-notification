@@ -23,7 +23,7 @@ namespace RP_Notify
     class RpApplicationCore : ApplicationContext
     {
         private readonly IRpApiHandler _apihandler;
-        private readonly IConfig _config;
+        private readonly IConfigRoot _config;
         private readonly IToastHandler _toastHandler;
         private readonly IPlayerWatcher _foobar2000Watcher;
         private readonly IPlayerWatcher _musicBeeWatcher;
@@ -33,7 +33,7 @@ namespace RP_Notify
 
         private int EventCounter { get; set; }
 
-        public RpApplicationCore(IConfig config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIcon rpTrayIcon)
+        public RpApplicationCore(IConfigRoot config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIcon rpTrayIcon)
         {
             _log = log;
             _apihandler = apiHandler;
@@ -58,9 +58,11 @@ namespace RP_Notify
                 _config.ExternalConfig.Channel = 0;
             }
 
-            _songInfoListener.CheckTrackedRpPlayerStatus();
+            _songInfoListener.CheckTrackedRpPlayerStatus();     // Check if RP player is still tracked (updates State)
+
             if (_config.State.RpTrackingConfig.Players.Any())
             {
+                // if multiple officcial RP player is active then start tracking the first available
                 _config.State.RpTrackingConfig.ActivePlayerId = _config.State.RpTrackingConfig.Players.FirstOrDefault().PlayerId;
             }
 
@@ -394,7 +396,7 @@ namespace RP_Notify
 
             if (_config.ExternalConfig.DeleteAllData)
             {
-                _config.ExternalConfig.DeleteConfigRootFolder();
+                ConfigDirectoryHelper.DeleteConfigDirectory(_config.StaticConfig.ConfigBaseFolderOption);
             }
             else
             {

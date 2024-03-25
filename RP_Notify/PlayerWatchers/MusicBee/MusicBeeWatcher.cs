@@ -11,7 +11,7 @@ namespace RP_Notify.PlayerWatcher.MusicBee
 {
     class MusicBeeWatcher : IPlayerWatcher
     {
-        private readonly IConfig _config;
+        private readonly IConfigRoot _config;
         private readonly ILog _log;
         private readonly MusicBeeIPC _playerApi;
 
@@ -19,7 +19,7 @@ namespace RP_Notify.PlayerWatcher.MusicBee
         private Task MusicBeeWatcherTask { get; set; }
         private CancellationTokenSource MusicBeeWatcherTaskCancellationTokenSource { get; set; }
 
-        public MusicBeeWatcher(IConfig config, ILog log, MusicBeeIPC playerApi)
+        public MusicBeeWatcher(IConfigRoot config, ILog log, MusicBeeIPC playerApi)
         {
             _config = config;
             _log = log;
