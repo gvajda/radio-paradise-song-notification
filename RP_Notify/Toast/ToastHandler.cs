@@ -132,6 +132,42 @@ namespace RP_Notify.Toast
             }
         }
 
+        public void ConfigFolderToast()
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.ConfigFolderToast))
+                    .AddText("You probably opened RP_Notify for the first time")
+                    .AddText("You have a few options where to create the folder (named 'RP_Notify_Cache') where the app may keep its configuration file, logs, etc. You only need to do this once - unless you choose 'clean up")
+                    .AddText("This action will create the 'RP_Notify_Cache' folder")
+                    .AddToastInput(new ToastSelectionBox("configFolder")
+                    {
+                        DefaultSelectionBoxItemId = "localCache",
+                        Items =
+                            {
+                                new ToastSelectionBoxItem("localCache", "Next to the application (RP_Notify.exe)"),
+                                new ToastSelectionBoxItem("appdata", @"C:\users\YOURNAME\.AppData\Roaming\RP_Notify_Cache"),
+                                new ToastSelectionBoxItem("cleanonexit", "Don't keep anything (clean up on exit)")
+                            }
+                    })
+                    .AddButton(new ToastButton()
+                        .SetContent("Choose")
+                        .AddArgument("action", "ChooseFolder"))
+                    .AddButton(new ToastButton()
+                        .SetContent("Exit App")
+                        .AddArgument("action", "exitApp"))
+                    .SetToastDuration(ToastDuration.Long)
+                    .Show();
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(LogHelper.GetMethodName(this), ex);
+                }
+            });
+        }
+
         public void ShowLoginToast()
         {
             Task.Run(() =>
@@ -189,7 +225,7 @@ namespace RP_Notify.Toast
                 {
                     PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.DataEraseToast))
                     .AddText("Application Data Erase Requested")
-                    .AddText("Deleting RP_Notify folder from APPDATA")
+                    .AddText($"Deleting RP_Notify folder from [{_config.StaticConfig.ConfigBaseFolderOption}]")
                     .AddText("Deleting notification handler")
                     .Show();
                 }
@@ -237,61 +273,105 @@ namespace RP_Notify.Toast
                 var formattedArgumentsForLogging = string.Join("&", args.Select(kvp => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}"));
                 _log.Information(LogHelper.GetMethodName(this), " eventArguments: " + formattedArgumentsForLogging);
 
-                if (args["action"] == "LoginRequested")
+                PlayListSong songInfo;
+                ConfigLocationOptions startingLocation;
+                ConfigLocationOptions targetLocation;
+
+                switch (args["action"])
                 {
-                    ShowLoginToast();
-                }
-                else if (args["action"] == "LoginDataSent")
-                {
-                    userInput.TryGetValue("Username", out object usr);
-                    userInput.TryGetValue("Password", out object pwd);
-
-                    var response = _apiHandler.GetAuth((string)usr, (string)pwd);
-
-                    LoginResponseToast(response);
-
-                    if (response.Status == "success")
-                    {
-                        Application.Restart();
-                    }
-                }
-                else if (args["action"] == "RateSubmitted")
-                {
-
-                    var songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(args["serializedSongInfo"]);
-
-                    if (!userInput.TryGetValue("UserRate", out object rawUserRate)) return;
-                    if (!Int32.TryParse((string)rawUserRate, out int userRate)
-                        && 1 <= userRate && userRate <= 10) return;
-
-                    var ratingResponse = _apiHandler.GetRating(songInfo.SongId, userRate);
-                    if (ratingResponse.Status == "success")
-                    {
-                        if (songInfo.SongId == _config.State.Playback.SongInfo.SongId)
+                    case "ChooseFolder":
+                        if (userInput.TryGetValue("configFolder", out object rawFolder))
                         {
-                            _config.State.Playback = new Playback(_apiHandler.GetNowplayingList());
+                            var folder = (string)rawFolder;
+                            if (folder == "localCache" && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.AppData)
+                            {
+                                startingLocation = ConfigLocationOptions.AppData;
+                                targetLocation = ConfigLocationOptions.ExeContainingDirectory;
+                                MoveConfigFolder(startingLocation, targetLocation);
+                            }
+                            else if (folder == "appdata" && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.ExeContainingDirectory)
+                            {
+                                startingLocation = ConfigLocationOptions.ExeContainingDirectory;
+                                targetLocation = ConfigLocationOptions.AppData;
+                                MoveConfigFolder(startingLocation, targetLocation);
+                            }
+                            else if (folder == "cleanonexit")
+                            {
+                                _config.StaticConfig.CleanUpOnExit = true;
+                            }
                         }
-                        else
-                        {
-                            var newRating = _apiHandler.GetInfo(songInfo.SongId).UserRating.ToString();
-                            songInfo.UserRating = newRating;
-                            ShowSongStartToast(true, songInfo);
-                        }
-                    }
+                        break;
+                    case "exitApp":
+                        Application.Exit();
+                        break;
+                    case "LoginRequested":
+                        ShowLoginToast();
+                        break;
+                    case "LoginDataSent":
+                        userInput.TryGetValue("Username", out object usr);
+                        userInput.TryGetValue("Password", out object pwd);
 
-                }
-                else if (args["action"] == "RateTileRequested")
-                {
-                    var songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(args["serializedSongInfo"]);
-                    KeyboardSendKeyHelper.SendWinKeyN();
-                    Task.Delay(200).Wait();
-                    ShowSongRatingToast(songInfo);
-                }
+                        var response = _apiHandler.GetAuth((string)usr, (string)pwd);
+
+                        LoginResponseToast(response);
+
+                        if (response.Status == "success")
+                        {
+                            Application.Restart();
+                        }
+                        break;
+                    case "RateSubmitted":
+                        songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(args["serializedSongInfo"]);
+
+                        if (!userInput.TryGetValue("UserRate", out object rawUserRate)) return;
+                        if (!Int32.TryParse((string)rawUserRate, out int userRate)
+                            && 1 <= userRate && userRate <= 10) return;
+
+                        var ratingResponse = _apiHandler.GetRating(songInfo.SongId, userRate);
+                        if (ratingResponse.Status == "success")
+                        {
+                            if (songInfo.SongId == _config.State.Playback.SongInfo.SongId)
+                            {
+                                _config.State.Playback = new Playback(_apiHandler.GetNowplayingList());
+                            }
+                            else
+                            {
+                                var newRating = _apiHandler.GetInfo(songInfo.SongId).UserRating.ToString();
+                                songInfo.UserRating = newRating;
+                                ShowSongStartToast(true, songInfo);
+                            }
+                        }
+                        break;
+                    case "RateTileRequested":
+                        songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(args["serializedSongInfo"]);
+                        KeyboardSendKeyHelper.SendWinKeyN();
+                        Task.Delay(200).Wait();
+                        ShowSongRatingToast(songInfo);
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }   
+
+
             }
             catch (Exception ex)
             {
                 _log.Error(LogHelper.GetMethodName(this), ex);
             }
+        }
+
+        private void MoveConfigFolder(ConfigLocationOptions startingLocation, ConfigLocationOptions targetLocation)
+        {
+            _log.Information(LogHelper.GetMethodName(this), $"The application will attempt to move the Config folder from [{ConfigDirectoryHelper.GetLocalPath(startingLocation)}] to [{ConfigDirectoryHelper.GetLocalPath(targetLocation)}]");
+            _log.Information(LogHelper.GetMethodName(this), $@"
+//********************************************************************
+//********************************************************************
+//********************************************************************
+//********************************************************************
+//********************************************************************");
+            _log.Dispose();
+            ConfigDirectoryHelper.MoveConfigToNewLocation(startingLocation, targetLocation);
+            Application.Restart();
         }
     }
 

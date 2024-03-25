@@ -14,10 +14,11 @@ namespace RP_Notify.Config
         public string LogFilePath { get; }
         public string RpApiBaseUrl { get; }
         public string RpImageBaseUrl { get; }
+        public bool CleanUpOnExit { get; set; }
 
         public StaticConfig()
         {
-
+            CleanUpOnExit = false;
             ConfigBaseFolderExisted = ConfigDirectoryHelper.TryFindConfigDirectory(out ConfigLocationOptions configBaseFolder);
             ConfigBaseFolderOption = configBaseFolder;
             configBaseFoldepath = ConfigDirectoryHelper.GetLocalPath(configBaseFolder);

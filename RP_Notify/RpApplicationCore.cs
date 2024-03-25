@@ -53,6 +53,7 @@ namespace RP_Notify
         {
             _log.Information(LogHelper.GetMethodName(this), "Started ********************************************************************");
 
+
             if (_config.ExternalConfig.Channel == 99)      // Reset channel if Favourites were tracked at exit
             {
                 _config.ExternalConfig.Channel = 0;
@@ -87,6 +88,12 @@ namespace RP_Notify
 
             // Check queued application data delet request
             CheckQueuedDataDeleteRequest();
+
+            // At the very first run, ask for config folder location
+            if (!_config.StaticConfig.ConfigBaseFolderExisted)
+            {
+                _toastHandler.ConfigFolderToast();
+            }
 
             // Start listen for song changes
             _songInfoListener.Start();
@@ -394,25 +401,20 @@ namespace RP_Notify
 
             _rpTrayIcon.Dispose();
 
-            if (_config.ExternalConfig.DeleteAllData)
-            {
-                ConfigDirectoryHelper.DeleteConfigDirectory(_config.StaticConfig.ConfigBaseFolderOption);
-            }
-            else
-            {
-                AlbumartFileHelper.DeleteOldAlbumartImageFiles(_config);
-                _log.Information(LogHelper.GetMethodName(this), $@"Finished
+            CheckQueuedDataDeleteRequest();
+
+            AlbumartFileHelper.DeleteOldAlbumartImageFiles(_config);
+            _log.Information(LogHelper.GetMethodName(this), $@"Finished
 ********************************************************************
 ********************************************************************
 ********************************************************************
 ********************************************************************
 ********************************************************************");
-            }
         }
 
         private void CheckQueuedDataDeleteRequest()
         {
-            if (_config.ExternalConfig.DeleteAllData)
+            if (_config.ExternalConfig.DeleteAllData || _config.StaticConfig.CleanUpOnExit)
             {
                 _log.Information(LogHelper.GetMethodName(this), "App data delete requested");
                 _log.Dispose();
@@ -420,6 +422,7 @@ namespace RP_Notify
                 Task.Delay(5000).Wait();
                 ToastNotificationManagerCompat.History.Clear();
                 ToastNotificationManagerCompat.Uninstall();
+                ConfigDirectoryHelper.DeleteConfigDirectory(_config.StaticConfig.ConfigBaseFolderOption);
                 Application.Exit();
             }
         }

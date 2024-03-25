@@ -13,5 +13,6 @@ namespace RP_Notify.Toast
         void ErrorToast(Exception exception);
         void DataEraseToast();
         void LoginResponseToast(Auth authResp);
+        void ConfigFolderToast();
     }
 }
