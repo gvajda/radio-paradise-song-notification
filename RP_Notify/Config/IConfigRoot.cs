@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace RP_Notify.Config
+﻿namespace RP_Notify.Config
 {
     public interface IConfigRoot
     {

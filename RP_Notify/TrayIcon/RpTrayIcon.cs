@@ -1,7 +1,8 @@
-﻿using RP_Notify.RpApi.ResponseModel;
-using RP_Notify.Config;
+﻿using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
+using RP_Notify.Helpers;
 using RP_Notify.Properties;
+using RP_Notify.RpApi.ResponseModel;
 using RP_Notify.Toast;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using RP_Notify.Helpers;
 
 namespace RP_Notify.TrayIcon
 {

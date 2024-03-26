@@ -1,14 +1,10 @@
-﻿using RP_Notify.RpApi.ResponseModel;
-using RP_Notify.Config;
+﻿using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
+using RP_Notify.RpApi.ResponseModel;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Path = System.IO.Path;
 
 namespace RP_Notify.Helpers
@@ -32,7 +28,8 @@ namespace RP_Notify.Helpers
             {
                 File.SetLastAccessTime(albumartFilePath, DateTime.Now);
 
-            } else
+            }
+            else
             {
                 var rpImageUrl = new Uri($"{_config.StaticConfig.RpImageBaseUrl}/{songInfo.Cover}");
                 var tempFileName = $"{albumartFilePath}.inprogress";

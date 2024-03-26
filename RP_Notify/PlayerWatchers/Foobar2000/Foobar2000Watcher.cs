@@ -1,6 +1,6 @@
-﻿using Foobar2000.RESTClient.Api;
-using RP_Notify.Config;
+﻿using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
+using RP_Notify.PlayerWatchers.Foobar2000.BeefWebApiClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,17 +14,17 @@ namespace RP_Notify.PlayerWatcher.Foobar2000
     {
         private readonly IConfigRoot _config;
         private readonly ILog _log;
-        private readonly PlayerApi _playerApi;
+        private readonly BeefWebApiClient _beefWebApiClient;
 
         private int CheckDelayMillisecs { get; set; }
         private Task Foobar2000WatcherTask { get; set; }
         private CancellationTokenSource Foobar2000WatcherTaskCancellationTokenSource { get; set; }
 
-        public Foobar2000Watcher(IConfigRoot config, ILog log, PlayerApi playerApi)
+        public Foobar2000Watcher(IConfigRoot config, ILog log, BeefWebApiClient beefWebApiClient)
         {
             _config = config;
             _log = log;
-            _playerApi = playerApi;
+            _beefWebApiClient = beefWebApiClient;
 
             Init();
         }
@@ -161,7 +161,7 @@ namespace RP_Notify.PlayerWatcher.Foobar2000
 
             try
             {
-                var foobarApiResp = _playerApi.GetPlayerStateAsync(columns).Result;
+                var foobarApiResp = _beefWebApiClient.GetPlayerStateAsync(columns).Result;
                 playedFilePath = foobarApiResp.Player.ActiveItem.Columns.First();
                 return true;
             }

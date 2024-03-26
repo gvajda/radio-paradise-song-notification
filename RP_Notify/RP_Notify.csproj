@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0"
-  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -55,6 +54,7 @@
     <Compile Include="Config\StaticConfig.cs" />
     <Compile Include="Helpers\IniFileHelper.cs" />
     <Compile Include="Helpers\CookieHelper.cs" />
+    <Compile Include="PlayerWatchers\Foobar2000\BeefWebApiClient\BeefWebApiClient.cs" />
     <Compile Include="RpApi\IRpApiHandler.cs" />
     <Compile Include="Config\RpEvent.cs" />
     <Compile Include="Config\IConfigRoot.cs" />
@@ -67,39 +67,6 @@
     <Compile Include="Helpers\AlbumartFileHelper.cs" />
     <Compile Include="Helpers\ObjectSerializer.cs" />
     <Compile Include="PlayerWatchers\Foobar2000\Foobar2000Watcher.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Api\ArtworkApi.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Api\BrowserApi.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Api\PlayerApi.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Api\PlaylistsApi.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Api\QueryApi.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Client\ApiClient.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Client\ApiException.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Client\ApiResponse.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Client\Configuration.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Client\ExceptionFactory.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Client\GlobalConfiguration.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Client\IApiAccessor.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Client\IReadableConfiguration.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Client\SwaggerDateConverter.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\AddItemsRequest.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\FileSystemEntry.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\InlineResponse200.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\InlineResponse2001.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\InlineResponse2002.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\InlineResponse2003.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\InlineResponse2004.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\InlineResponse2005.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\ItemIndexesRequest.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\PlaybackState.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\PlayerInfo.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\PlayerState.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\PlayerStateActiveItem.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\PlayerStateVolume.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\PlaylistInfo.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\PlaylistItemInfo.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\PlaylistItemsResult.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\PlaylistsResult.cs" />
-    <Compile Include="PlayerWatchers\Foobar2000\Model\VolumeType.cs" />
     <Compile Include="Config\RpTrackingConfig.cs" />
     <Compile Include="PlayerWatchers\IPlayerWatcher.cs" />
     <Compile Include="PlayerWatchers\MusicBee\MusicBeeWatcher.cs" />
@@ -148,22 +115,20 @@
     <Content Include="Resources\rp.ico" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Costura.Fody" Version="5.7.0" PrivateAssets="All"/>
-    <PackageReference Include="JsonSubTypes" Version="2.0.1"/>
-    <PackageReference Include="MadMilkman.Ini" Version="1.0.6"/>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0"/>
-    <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3"/>
-    <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.22621.3233"/>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
-    <PackageReference Include="QueryString.NET" Version="1.0.0"/>
-    <PackageReference Include="RestSharp" Version="106.15.0"/>
-    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1"/>
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0"/>
-    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0"/>
-    <PackageReference Include="System.Runtime.Serialization.Json" Version="4.3.0"/>
-    <PackageReference Include="System.Runtime.WindowsRuntime" Version="4.7.0"/>
-    <PackageReference Include="System.Runtime.WindowsRuntime.UI.Xaml" Version="4.7.0"/>
-    <PackageReference Include="System.Text.Json" Version="8.0.3"/>
+    <PackageReference Include="Costura.Fody" Version="5.7.0" PrivateAssets="All" />
+    <PackageReference Include="MadMilkman.Ini" Version="1.0.6" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="RestSharp" Version="106.15.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+    <PackageReference Include="System.Runtime.Serialization.Json" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.3" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

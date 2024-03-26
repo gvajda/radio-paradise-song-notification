@@ -1,5 +1,4 @@
-﻿using RP_Notify.ErrorHandler;
-using RP_Notify.Helpers;
+﻿using RP_Notify.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -165,7 +164,7 @@ namespace RP_Notify.Config
         }
 
         public ExternalConfigIni(string iniFilePath)
-        { 
+        {
             _iniFilePath = iniFilePath;
             IniFileHelper.CreateIniWithDefaultValuesIfNotExists(iniFilePath);
             IniFileHelper.CheckIniIntegrity(iniFilePath);

@@ -1,93 +1,93 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace RP_Notify.RpApi.ResponseModel
 {
     public class Info
     {
 
-        [JsonProperty("song_id")]
+        [JsonPropertyName("song_id")]
         public string SongId { get; set; }
 
-        [JsonProperty("artist")]
+        [JsonPropertyName("artist")]
         public string Artist { get; set; }
 
-        [JsonProperty("title")]
+        [JsonPropertyName("title")]
         public string Title { get; set; }
 
-        [JsonProperty("album")]
+        [JsonPropertyName("album")]
         public string Album { get; set; }
 
-        [JsonProperty("asin")]
+        [JsonPropertyName("asin")]
         public string Asin { get; set; }
 
-        [JsonProperty("avg_rating")]
+        [JsonPropertyName("avg_rating")]
         public double AvgRating { get; set; }
 
-        [JsonProperty("num_ratings")]
+        [JsonPropertyName("num_ratings")]
         public string NumRatings { get; set; }
 
-        [JsonProperty("ratings_dist")]
+        [JsonPropertyName("ratings_dist")]
         public string RatingsDist { get; set; }
 
-        [JsonProperty("user_rating")]
+        [JsonPropertyName("user_rating")]
         public int UserRating { get; set; }
 
-        [JsonProperty("web_link")]
+        [JsonPropertyName("web_link")]
         public string WebLink { get; set; }
 
-        [JsonProperty("wiki_link")]
+        [JsonPropertyName("wiki_link")]
         public string WikiLink { get; set; }
 
-        [JsonProperty("itunes_song_link")]
+        [JsonPropertyName("itunes_song_link")]
         public string ItunesSongLink { get; set; }
 
-        [JsonProperty("itunes_album_link")]
+        [JsonPropertyName("itunes_album_link")]
         public string ItunesAlbumLink { get; set; }
 
-        [JsonProperty("itunes_artist_link")]
+        [JsonPropertyName("itunes_artist_link")]
         public string ItunesArtistLink { get; set; }
 
-        [JsonProperty("facebook_link")]
+        [JsonPropertyName("facebook_link")]
         public string FacebookLink { get; set; }
 
-        [JsonProperty("twitter_link")]
+        [JsonPropertyName("twitter_link")]
         public string TwitterLink { get; set; }
 
-        [JsonProperty("rp_web_link")]
+        [JsonPropertyName("rp_web_link")]
         public string RpWebLink { get; set; }
 
-        [JsonProperty("amazon_cd_link")]
+        [JsonPropertyName("amazon_cd_link")]
         public string AmazonCdLink { get; set; }
 
-        [JsonProperty("amazon_mp3_link")]
+        [JsonPropertyName("amazon_mp3_link")]
         public string AmazonMp3Link { get; set; }
 
-        [JsonProperty("amazon_search_link")]
+        [JsonPropertyName("amazon_search_link")]
         public string AmazonSearchLink { get; set; }
 
-        [JsonProperty("release_date")]
+        [JsonPropertyName("release_date")]
         public string ReleaseDate { get; set; }
 
-        [JsonProperty("length")]
+        [JsonPropertyName("length")]
         public string Length { get; set; }
 
-        [JsonProperty("med_cover")]
+        [JsonPropertyName("med_cover")]
         public string MedCover { get; set; }
 
-        [JsonProperty("large_cover")]
+        [JsonPropertyName("large_cover")]
         public string LargeCover { get; set; }
 
-        [JsonProperty("lyrics_avail")]
+        [JsonPropertyName("lyrics_avail")]
         public string LyricsAvail { get; set; }
 
-        [JsonProperty("lyrics")]
+        [JsonPropertyName("lyrics")]
         public string Lyrics { get; set; }
 
-        [JsonProperty("plays_30")]
+        [JsonPropertyName("plays_30")]
         public int Plays30 { get; set; }
 
-        [JsonProperty("slideshow")]
+        [JsonPropertyName("slideshow")]
         public string Slideshow { get; set; }
     }
 
@@ -95,240 +95,240 @@ namespace RP_Notify.RpApi.ResponseModel
     public class NowplayingList
     {
 
-        [JsonProperty("user_id")]
+        [JsonPropertyName("user_id")]
         public string UserId { get; set; }
 
-        [JsonProperty("player_id")]
+        [JsonPropertyName("player_id")]
         public string PlayerId { get; set; }
 
-        [JsonProperty("hist_num")]
+        [JsonPropertyName("hist_num")]
         public int HistNum { get; set; }
 
-        [JsonProperty("song")]
+        [JsonPropertyName("song")]
         public Dictionary<string, PlayListSong> Song { get; set; }
 
-        [JsonProperty("refresh")]
+        [JsonPropertyName("refresh")]
         public int Refresh { get; set; }
     }
 
 
     public class PlayListSong
     {
-        [JsonProperty("event")]
+        [JsonPropertyName("event")]
         public string Event { get; set; }
 
-        [JsonProperty("sched_time")]
+        [JsonPropertyName("sched_time")]
         public string SchedTime { get; set; }
 
-        [JsonProperty("song_id")]
+        [JsonPropertyName("song_id")]
         public string SongId { get; set; }
 
-        [JsonProperty("chan")]
+        [JsonPropertyName("chan")]
         public string Chan { get; set; }
 
-        [JsonProperty("duration")]
+        [JsonPropertyName("duration")]
         public string Duration { get; set; }
 
-        [JsonProperty("artist")]
+        [JsonPropertyName("artist")]
         public string Artist { get; set; }
 
-        [JsonProperty("title")]
+        [JsonPropertyName("title")]
         public string Title { get; set; }
 
-        [JsonProperty("album")]
+        [JsonPropertyName("album")]
         public string Album { get; set; }
 
-        [JsonProperty("year")]
+        [JsonPropertyName("year")]
         public string Year { get; set; }
 
-        [JsonProperty("asin")]
+        [JsonPropertyName("asin")]
         public string Asin { get; set; }
 
-        [JsonProperty("rating")]
+        [JsonPropertyName("rating")]
         public string Rating { get; set; }
 
-        [JsonProperty("slideshow")]
+        [JsonPropertyName("slideshow")]
         public string Slideshow { get; set; }
 
-        [JsonProperty("user_rating")]
+        [JsonPropertyName("user_rating")]
         public string UserRating { get; set; }
 
-        [JsonProperty("cover")]
+        [JsonPropertyName("cover")]
         public string Cover { get; set; }
 
-        [JsonProperty("elapsed")]
+        [JsonPropertyName("elapsed")]
         public int Elapsed { get; set; }
     }
 
     public class NowPlaying
     {
 
-        [JsonProperty("time")]
+        [JsonPropertyName("time")]
         public int Time { get; set; }
 
-        [JsonProperty("artist")]
+        [JsonPropertyName("artist")]
         public string Artist { get; set; }
 
-        [JsonProperty("title")]
+        [JsonPropertyName("title")]
         public string Title { get; set; }
 
-        [JsonProperty("album")]
+        [JsonPropertyName("album")]
         public string Album { get; set; }
 
-        [JsonProperty("year")]
+        [JsonPropertyName("year")]
         public string Year { get; set; }
 
-        [JsonProperty("cover")]
+        [JsonPropertyName("cover")]
         public string Cover { get; set; }
     }
 
     public class Channel
     {
 
-        [JsonProperty("chan")]
+        [JsonPropertyName("chan")]
         public string Chan { get; set; }
 
-        [JsonProperty("title")]
+        [JsonPropertyName("title")]
         public string Title { get; set; }
 
-        [JsonProperty("source")]
+        [JsonPropertyName("source")]
         public string Source { get; set; }
 
-        [JsonProperty("stream_name")]
+        [JsonPropertyName("stream_name")]
         public string StreamName { get; set; }
 
-        [JsonProperty("player_id")]
+        [JsonPropertyName("player_id")]
         public string PlayerId { get; set; }
 
-        [JsonProperty("type")]
+        [JsonPropertyName("type")]
         public string Type { get; set; }
     }
 
     public class GetBlock
     {
 
-        [JsonProperty("event")]
+        [JsonPropertyName("event")]
         public string Event { get; set; }
 
-        [JsonProperty("type")]
+        [JsonPropertyName("type")]
         public string Type { get; set; }
 
-        [JsonProperty("end_event")]
+        [JsonPropertyName("end_event")]
         public string EndEvent { get; set; }
 
-        [JsonProperty("length")]
+        [JsonPropertyName("length")]
         public string Length { get; set; }
 
-        [JsonProperty("url")]
+        [JsonPropertyName("url")]
         public string Url { get; set; }
 
-        [JsonProperty("chan")]
+        [JsonPropertyName("chan")]
         public int Chan { get; set; }
 
-        [JsonProperty("channel")]
+        [JsonPropertyName("channel")]
         public Channel Channel { get; set; }
 
-        [JsonProperty("bitrate")]
+        [JsonPropertyName("bitrate")]
         public string Bitrate { get; set; }
 
-        [JsonProperty("ext")]
+        [JsonPropertyName("ext")]
         public string Ext { get; set; }
 
-        [JsonProperty("cue")]
+        [JsonPropertyName("cue")]
         public int Cue { get; set; }
 
-        [JsonProperty("expiration")]
+        [JsonPropertyName("expiration")]
         public int Expiration { get; set; }
 
-        [JsonProperty("filename")]
+        [JsonPropertyName("filename")]
         public Dictionary<string, string> Filename { get; set; }
 
-        [JsonProperty("image_base")]
+        [JsonPropertyName("image_base")]
         public string ImageBase { get; set; }
 
-        [JsonProperty("song")]
+        [JsonPropertyName("song")]
         public Dictionary<string, PlayListSong> Song { get; set; }
     }
 
     public class Rating
     {
 
-        [JsonProperty("status")]
+        [JsonPropertyName("status")]
         public string Status { get; set; }
 
-        [JsonProperty("song_id")]
+        [JsonPropertyName("song_id")]
         public int SongId { get; set; }
 
-        [JsonProperty("user_id")]
+        [JsonPropertyName("user_id")]
         public string UserId { get; set; }
 
-        [JsonProperty("rating")]
+        [JsonPropertyName("rating")]
         public int UserRating { get; set; }
     }
 
     public class Auth
     {
 
-        [JsonProperty("user_id")]
+        [JsonPropertyName("user_id")]
         public string UserId { get; set; }
 
-        [JsonProperty("post_ok")]
+        [JsonPropertyName("post_ok")]
         public string PostOk { get; set; }
 
-        [JsonProperty("username")]
+        [JsonPropertyName("username")]
         public string Username { get; set; }
 
-        [JsonProperty("level")]
+        [JsonPropertyName("level")]
         public string Level { get; set; }
 
-        [JsonProperty("country_code")]
+        [JsonPropertyName("country_code")]
         public string CountryCode { get; set; }
 
-        [JsonProperty("avatar")]
+        [JsonPropertyName("avatar")]
         public string Avatar { get; set; }
 
-        [JsonProperty("privmsg_new")]
+        [JsonPropertyName("privmsg_new")]
         public bool PrivmsgNew { get; set; }
 
-        [JsonProperty("passwd")]
+        [JsonPropertyName("passwd")]
         public string Passwd { get; set; }
 
-        [JsonProperty("status")]
+        [JsonPropertyName("status")]
         public string Status { get; set; }
     }
 
     public class Sync_v2
     {
 
-        [JsonProperty("sync_id")]
+        [JsonPropertyName("sync_id")]
         public string SyncId { get; set; }
 
-        [JsonProperty("num_players")]
+        [JsonPropertyName("num_players")]
         public int NumPlayers { get; set; }
 
-        [JsonProperty("players")]
+        [JsonPropertyName("players")]
         public IList<Player> Players { get; set; }
 
-        [JsonProperty("channels")]
+        [JsonPropertyName("channels")]
         public IList<Channel> Channels { get; set; }
     }
 
     public class Player
     {
 
-        [JsonProperty("source")]
+        [JsonPropertyName("source")]
         public string Source { get; set; }
 
-        [JsonProperty("player_id")]
+        [JsonPropertyName("player_id")]
         public string PlayerId { get; set; }
 
-        [JsonProperty("user_id")]
+        [JsonPropertyName("user_id")]
         public string UserId { get; set; }
 
-        [JsonProperty("type")]
+        [JsonPropertyName("type")]
         public string Type { get; set; }
 
-        [JsonProperty("chan")]
+        [JsonPropertyName("chan")]
         public string Chan { get; set; }
     }
 

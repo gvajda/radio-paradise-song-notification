@@ -1,29 +1,17 @@
-﻿using Microsoft.QueryStringDotNET;
-using Microsoft.Toolkit.Uwp.Notifications;
-using Newtonsoft.Json;
-using RP_Notify.RpApi;
-using RP_Notify.RpApi.ResponseModel;
+﻿using Microsoft.Toolkit.Uwp.Notifications;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
-using Serilog;
+using RP_Notify.Helpers;
+using RP_Notify.RpApi;
+using RP_Notify.RpApi.ResponseModel;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Security;
-using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using System.Windows.Forms;
-using Windows.ApplicationModel.Activation;
 using Windows.Foundation.Collections;
 using Windows.UI.Notifications;
-using RP_Notify.Helpers;
-using System.Web.UI.WebControls;
-using System.Globalization;
-using RestSharp;
-using System.Web;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace RP_Notify.Toast
 {
@@ -350,7 +338,7 @@ namespace RP_Notify.Toast
                         break;
                     default:
                         throw new NotImplementedException();
-                }   
+                }
 
 
             }

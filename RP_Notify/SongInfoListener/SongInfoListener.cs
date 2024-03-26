@@ -1,12 +1,10 @@
-﻿using RP_Notify.RpApi;
-using RP_Notify.RpApi.ResponseModel;
-using RP_Notify.Config;
+﻿using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
+using RP_Notify.RpApi;
+using RP_Notify.RpApi.ResponseModel;
 using RP_Notify.Toast;
 using System;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
