@@ -10,28 +10,10 @@
     <RootNamespace>RP_Notify</RootNamespace>
     <AssemblyName>RP_Notify</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <!-- <TargetPlatformVersion>10.0.17763.0</TargetPlatformVersion> -->
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkProfile />
+    <FodyGenerateXsd>false</FodyGenerateXsd>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -42,7 +24,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -52,7 +33,6 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <LangVersion>7.2</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>Resources\rp.ico</ApplicationIcon>
@@ -61,36 +41,12 @@
     <StartupObject>RP_Notify.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.WindowsAPICodePack">
-      <HintPath>Resources\Microsoft.WindowsAPICodePack.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.WindowsAPICodePack.Shell">
-      <HintPath>Resources\Microsoft.WindowsAPICodePack.Shell.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.InteropServices.WindowsRuntime" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="windows">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.17763.0\Facade\windows.winmd</HintPath>
-    </Reference>
-    <Reference Include="Windows.Foundation.FoundationContract">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Windows Kits\10\References\10.0.17763.0\Windows.Foundation.FoundationContract\3.0.0.0\Windows.Foundation.FoundationContract.winmd</HintPath>
-    </Reference>
-    <Reference Include="Windows.Foundation.UniversalApiContract">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Windows Kits\10\References\10.0.17763.0\Windows.Foundation.UniversalApiContract\7.0.0.0\Windows.Foundation.UniversalApiContract.winmd</HintPath>
-    </Reference>
-    <!-- <Reference Include="Windows.Data">
-      <HintPath>..\..\..\..\..\..\Windows\Sysnative\WinMetadata\Windows.Data.winmd</HintPath>
-    </Reference>
-    <Reference Include="Windows.UI">
-      <HintPath>..\..\..\..\..\..\Windows\Sysnative\WinMetadata\Windows.UI.winmd</HintPath>
-    </Reference>
-    <Reference Include="Windows">
-      <HintPath>$(MSBuildProgramFiles32)\Windows Kits\10\UnionMetadata\10.0.17763.0\Windows.winmd</HintPath>
-    </Reference> -->
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Helpers\ConfigDirectoryHelper.cs" />
@@ -192,52 +148,22 @@
     <Content Include="Resources\rp.ico" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Costura.Fody" Version="5.7.0">
-    </PackageReference>
-    <PackageReference Include="JsonSubTypes" Version="2.0.1">
-    </PackageReference>
-    <PackageReference Include="MadMilkman.Ini" Version="1.0.6">
-    </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0">
-    </PackageReference>
-    <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications">
-      <Version>7.1.3</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.22621.3233">
-    </PackageReference>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3">
-    </PackageReference>
-    <PackageReference Include="QueryString.NET" Version="1.0.0">
-    </PackageReference>
-    <PackageReference Include="RestSharp" Version="106.15.0">
-    </PackageReference>
-    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1">
-    </PackageReference>
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0">
-    </PackageReference>
-    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0">
-    </PackageReference>
-    <PackageReference Include="System.Runtime.Serialization.Json" Version="4.3.0">
-    </PackageReference>
-    <PackageReference Include="System.Runtime.WindowsRuntime" Version="4.7.0">
-    </PackageReference>
-    <PackageReference Include="System.Runtime.WindowsRuntime.UI.Xaml" Version="4.7.0">
-    </PackageReference>
-    <PackageReference Include="System.Text.Json">
-      <Version>8.0.3</Version>
-    </PackageReference>
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4.6.1 %28x86 and x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
+    <PackageReference Include="Costura.Fody" Version="5.7.0" PrivateAssets="All"/>
+    <PackageReference Include="JsonSubTypes" Version="2.0.1"/>
+    <PackageReference Include="MadMilkman.Ini" Version="1.0.6"/>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0"/>
+    <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3"/>
+    <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.22621.3233"/>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+    <PackageReference Include="QueryString.NET" Version="1.0.0"/>
+    <PackageReference Include="RestSharp" Version="106.15.0"/>
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1"/>
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0"/>
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0"/>
+    <PackageReference Include="System.Runtime.Serialization.Json" Version="4.3.0"/>
+    <PackageReference Include="System.Runtime.WindowsRuntime" Version="4.7.0"/>
+    <PackageReference Include="System.Runtime.WindowsRuntime.UI.Xaml" Version="4.7.0"/>
+    <PackageReference Include="System.Text.Json" Version="8.0.3"/>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
