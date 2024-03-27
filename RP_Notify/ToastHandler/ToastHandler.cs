@@ -13,7 +13,7 @@ using System.Windows.Forms;
 using Windows.Foundation.Collections;
 using Windows.UI.Notifications;
 
-namespace RP_Notify.Toast
+namespace RP_Notify.ToastHandler
 {
     internal class ToastHandler : IToastHandler
     {

@@ -3,7 +3,7 @@ using RP_Notify.ErrorHandler;
 using RP_Notify.Helpers;
 using RP_Notify.Properties;
 using RP_Notify.RpApi.ResponseModel;
-using RP_Notify.Toast;
+using RP_Notify.ToastHandler;
 using System;
 using System.Collections.Generic;
 using System.Globalization;

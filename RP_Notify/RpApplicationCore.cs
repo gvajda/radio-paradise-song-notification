@@ -9,7 +9,7 @@ using RP_Notify.PlayerWatcher.MusicBee;
 using RP_Notify.RpApi;
 using RP_Notify.RpApi.ResponseModel;
 using RP_Notify.SongInfoListener;
-using RP_Notify.Toast;
+using RP_Notify.ToastHandler;
 using RP_Notify.TrayIcon;
 using System;
 using System.Collections.Generic;

@@ -2,7 +2,7 @@
 using RP_Notify.ErrorHandler;
 using RP_Notify.RpApi;
 using RP_Notify.RpApi.ResponseModel;
-using RP_Notify.Toast;
+using RP_Notify.ToastHandler;
 using System;
 using System.Linq;
 using System.Threading;

@@ -1,7 +1,7 @@
 ﻿using RP_Notify.RpApi.ResponseModel;
 using System;
 
-namespace RP_Notify.Toast
+namespace RP_Notify.ToastHandler
 {
     public interface IToastHandler
     {
