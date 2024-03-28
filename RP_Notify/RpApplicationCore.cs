@@ -10,7 +10,7 @@ using RP_Notify.RpApi;
 using RP_Notify.RpApi.ResponseModel;
 using RP_Notify.SongInfoListener;
 using RP_Notify.ToastHandler;
-using RP_Notify.TrayIcon;
+using RP_Notify.TrayIconMenu;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,11 +28,11 @@ namespace RP_Notify
         private readonly IPlayerWatcher _musicBeeWatcher;
         private readonly ISongInfoListener _songInfoListener;
         private readonly ILog _log;
-        private readonly RpTrayIcon _rpTrayIcon;
+        private readonly RpTrayIconMenu _rpTrayIcon;
 
         private int EventCounter { get; set; }
 
-        public RpApplicationCore(IConfigRoot config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIcon rpTrayIcon)
+        public RpApplicationCore(IConfigRoot config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIconMenu rpTrayIcon)
         {
             _log = log;
             _apihandler = apiHandler;

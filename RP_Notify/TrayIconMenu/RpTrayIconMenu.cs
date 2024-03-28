@@ -13,9 +13,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RP_Notify.TrayIcon
+namespace RP_Notify.TrayIconMenu
 {
-    class RpTrayIcon
+    class RpTrayIconMenu
     {
         private readonly IConfigRoot _config;
         private readonly ILog _log;
@@ -30,7 +30,7 @@ namespace RP_Notify.TrayIcon
 
         private Task ContextMenuBuilderTask { get; set; }
 
-        public RpTrayIcon(IConfigRoot config, ILog log, IToastHandler toastHandler)
+        public RpTrayIconMenu(IConfigRoot config, ILog log, IToastHandler toastHandler)
         {
             _config = config;
             _log = log;

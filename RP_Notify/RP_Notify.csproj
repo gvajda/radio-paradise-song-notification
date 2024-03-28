@@ -85,7 +85,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RpApi\RpApiHandler.cs" />
-    <Compile Include="TrayIcon\RpTrayIcon.cs" />
+    <Compile Include="TrayIconMenu\RpTrayIconMenu.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
