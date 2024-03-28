@@ -1,5 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using RP_Notify.Helpers;
+using System;
 using System.Linq;
 
 namespace RP_Notify.Config
@@ -14,11 +14,18 @@ namespace RP_Notify.Config
         {
             StaticConfig = new StaticConfig();
             ExternalConfig = new ExternalConfigIni(StaticConfig.ConfigFilePath);
-            State = new State()
+            State = new State(StaticConfig.CookieCachePath)
             {
-                IsUserAuthenticated = File.Exists(StaticConfig.CookieCachePath)
+                RpCookieContainer = CookieHelper.TryGetCookieFromCache(StaticConfig.CookieCachePath, out var rpCookie)
+                ? rpCookie
+                : null
             };
 
+        }
+
+        public bool IsUserAuthenticated()
+        {
+            return State.RpCookieContainer != null && DateTime.Now < State.RpCookieContainer.GetCookies(new Uri(StaticConfig.RpApiBaseUrl))[0].Expires;
         }
 
         public bool IsRpPlayerTrackingChannel()

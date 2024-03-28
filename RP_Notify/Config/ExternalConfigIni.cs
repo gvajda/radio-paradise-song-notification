@@ -20,6 +20,7 @@ namespace RP_Notify.Config
         private bool enableMusicBeeWatcher;
         private bool enableRpOfficialTracking;
         private bool largeAlbumArt;
+        private bool channelBannerOnDetail;
         private bool promptForRating;
         private bool showOnNewSong;
         private bool showSongRating;
@@ -52,6 +53,19 @@ namespace RP_Notify.Config
                     largeAlbumArt = value;
                     RaiseFieldChangeEvent(nameof(LargeAlbumArt), value);
                     SetIniValue(ToastIniSectionName, nameof(LargeAlbumArt), value);
+                }
+            }
+        }
+        public bool ChannelBannerOnDetail
+        {
+            get => channelBannerOnDetail;
+            set
+            {
+                if (channelBannerOnDetail != value)
+                {
+                    channelBannerOnDetail = value;
+                    RaiseFieldChangeEvent(nameof(ChannelBannerOnDetail), value);
+                    SetIniValue(ToastIniSectionName, nameof(ChannelBannerOnDetail), value);
                 }
             }
         }
@@ -258,6 +272,13 @@ namespace RP_Notify.Config
                 .TryParseValue(out bool _LargeAlbumArt)
                 ? _LargeAlbumArt
                 : LargeAlbumArt;
+
+            ChannelBannerOnDetail = iniFile
+                .Sections[ToastIniSectionName]
+                .Keys[nameof(ChannelBannerOnDetail)]
+                .TryParseValue(out bool _ChannelBannerOnDetail)
+                ? _ChannelBannerOnDetail
+                : ChannelBannerOnDetail;
 
             ShowSongRating = iniFile
                 .Sections[ToastIniSectionName]

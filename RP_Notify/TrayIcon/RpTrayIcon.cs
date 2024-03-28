@@ -74,6 +74,7 @@ namespace RP_Notify.TrayIcon
 
             var menuEntryShowOnNewSong = MenuEntryShowOnNewSong();
             var menuEntryLargeAlbumArt = MenuEntryLargeAlbumArt();
+            var menuEntryChannelBannerOnDetail = MenuEntryChannelBannerOnDetail();
             var menuEntryShowSongRating = MenuEntryShowSongRating();
             var menuEntryPromptForRating = MenuEntryPromptForRating();
             var menuEntryMigrateCache = MenuEntryMigrateCache();
@@ -93,6 +94,7 @@ namespace RP_Notify.TrayIcon
             contextMenu.MenuItems.Add("-");
             MenuItem toastFormat = new MenuItem("Toast format");
             toastFormat.MenuItems.Add(menuEntryLargeAlbumArt);
+            toastFormat.MenuItems.Add(menuEntryChannelBannerOnDetail);
             toastFormat.MenuItems.Add(menuEntryShowSongRating);
             contextMenu.MenuItems.Add(toastFormat);
             MenuItem appSettings = new MenuItem("App settings");
@@ -159,6 +161,24 @@ namespace RP_Notify.TrayIcon
             return largeAlbumArt;
         }
 
+        private MenuItem MenuEntryChannelBannerOnDetail()
+        {
+            var menuName = "Display channel banner on detail toast";
+
+            MenuItem channelBannerOnDetail = new MenuItem(menuName)
+            {
+                Checked = _config.ExternalConfig.ChannelBannerOnDetail
+            };
+
+            channelBannerOnDetail.Click += (sender, e) =>
+            {
+                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _config.ExternalConfig.ChannelBannerOnDetail = !_config.ExternalConfig.ChannelBannerOnDetail;
+            };
+
+            return channelBannerOnDetail;
+        }
+
         private MenuItem MenuEntryShowSongRating()
         {
             var menuName = "Show song rating";
@@ -184,7 +204,7 @@ namespace RP_Notify.TrayIcon
             MenuItem promptForRating = new MenuItem(menuName)
             {
                 Checked = _config.ExternalConfig.PromptForRating,
-                Enabled = _config.State.IsUserAuthenticated
+                Enabled = _config.IsUserAuthenticated()
             };
 
             promptForRating.Click += (sender, e) =>
@@ -396,7 +416,7 @@ namespace RP_Notify.TrayIcon
 
         private MenuItem MenuEntryLogIn()
         {
-            var menuName = _config.State.IsUserAuthenticated
+            var menuName = _config.IsUserAuthenticated()
                 ? "Log Out"
                 : "Log In";
 
@@ -405,7 +425,7 @@ namespace RP_Notify.TrayIcon
             {
                 _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
 
-                if (_config.State.IsUserAuthenticated)
+                if (_config.IsUserAuthenticated())
                 {
                     Retry.Do(() => { File.Delete(_config.StaticConfig.CookieCachePath); });
                     _log.Information(LogHelper.GetMethodName(this), "Cookie cache deleted - Restart");

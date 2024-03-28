@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using RestSharp;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using RP_Notify.PlayerWatcher.Foobar2000;
@@ -21,10 +20,10 @@ namespace RP_Notify
         static void Main()
         {
             var serviceCollection = new ServiceCollection()
-                .AddHttpClient<BeefWebApiClient>().Services
+                .AddHttpClient()
+                .AddTransient<BeefWebApiClient>()
                 .AddSingleton<IConfigRoot, ConfigRoot>()
                 .AddSingleton<ILog, Log>()
-                .AddSingleton<RestClient>()
                 .AddSingleton<IRpApiHandler, RpApiHandler>()
                 .AddScoped<IToastHandler, ToastHandler.ToastHandler>()
                 .AddSingleton<Foobar2000Watcher>()

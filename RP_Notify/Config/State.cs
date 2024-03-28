@@ -1,29 +1,36 @@
-﻿using RP_Notify.RpApi.ResponseModel;
+﻿using RP_Notify.Helpers;
+using RP_Notify.RpApi.ResponseModel;
 using System;
 using System.Collections.Generic;
+using System.Net;
 
 namespace RP_Notify.Config
 {
     public class State
     {
+        private readonly string _cookieFilePath;
+
         public event EventHandler<RpEvent> StateChangeHandler = delegate { };
 
-        private bool isUserAuthenticated;
+        private CookieContainer rpCookieContainer;
         private List<Channel> channelList;
         private Playback playback;
         private string tooltipText;
         private bool foobar2000IsPlayingRP;
         private bool musicBeeIsPlayingRP;
 
-        public bool IsUserAuthenticated
+
+
+        public CookieContainer RpCookieContainer
         {
-            get => isUserAuthenticated;
+            get => rpCookieContainer;
             set
             {
-                if (isUserAuthenticated != value)
+                if (rpCookieContainer != value)
                 {
-                    isUserAuthenticated = value;
-                    RaiseFieldChangeEvent(nameof(IsUserAuthenticated), value);
+                    rpCookieContainer = value;
+                    CookieHelper.TryWriteCookieToDisk(_cookieFilePath, value);
+                    RaiseFieldChangeEvent(nameof(RpCookieContainer), value);
                 }
             }
         }
@@ -109,12 +116,13 @@ namespace RP_Notify.Config
 
         public RpTrackingConfig RpTrackingConfig { get; set; }
 
-        public State()
+        public State(string cookieFilePath)
         {
-            IsUserAuthenticated = false;
-            ChannelList = null;
-            TooltipText = null;
-            Foobar2000IsPlayingRP = false;
+            _cookieFilePath = cookieFilePath;
+            CookieHelper.TryGetCookieFromCache(cookieFilePath, out rpCookieContainer);
+            channelList = null;
+            tooltipText = null;
+            foobar2000IsPlayingRP = false;
             RpTrackingConfig = new RpTrackingConfig();
         }
 

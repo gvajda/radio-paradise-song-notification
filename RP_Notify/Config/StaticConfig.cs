@@ -24,7 +24,7 @@ namespace RP_Notify.Config
             configBaseFoldepath = ConfigDirectoryHelper.GetLocalPath(configBaseFolder);
 
             ConfigFilePath = Path.Combine(configBaseFoldepath, "rp_config.ini");
-            CookieCachePath = Path.Combine(configBaseFoldepath, "rp_cookieCache");
+            CookieCachePath = Path.Combine(configBaseFoldepath, "rp_cookieContainer");
             AlbumArtCacheFolder = Path.Combine(configBaseFoldepath, "AlbumArtCache");
             LogFilePath = Path.Combine(configBaseFoldepath, "ApplicationLogs", "rpnotify.log");
             RpApiBaseUrl = "https://api.radioparadise.com";

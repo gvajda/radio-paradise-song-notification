@@ -1,27 +1,28 @@
-﻿using RestSharp;
-using RP_Notify.Config;
+﻿using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
-using RP_Notify.Helpers;
 using RP_Notify.RpApi.ResponseModel;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace RP_Notify.RpApi
 {
     class RpApiHandler : IRpApiHandler
     {
-        private readonly RestClient _restClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfigRoot _config;
         private readonly ILog _log;
 
-        public RpApiHandler(IConfigRoot config, ILog log, RestClient restClient)
+        public RpApiHandler(IConfigRoot config, ILog log, IHttpClientFactory httpClientFactory)
         {
             _config = config;
-            _restClient = restClient;
             _log = log;
+
+            _httpClientFactory = httpClientFactory;
 
             Init();
         }
@@ -30,172 +31,176 @@ namespace RP_Notify.RpApi
         {
             _log.Information(LogHelper.GetMethodName(this), $"Initialization started - Checking for cookie cache and fetch RP channel list");
 
-            _restClient.BaseUrl = new Uri(_config.StaticConfig.RpApiBaseUrl);
-
-            ReadAndValidateCookieFromCache();
-
             _log.Information(LogHelper.GetMethodName(this), $"Get channel list");
-            _config.State.ChannelList = GetChannelList();
+            //_config.State.ChannelList = GetChannelList();
             _log.Information(LogHelper.GetMethodName(this), "Initialization finished - Channel list: {@ChannelList}", _config.State.ChannelList);
         }
 
         public NowplayingList GetNowplayingList(int list_num = 1)
         {
-            var request = new RestRequest("api/nowplaying_list", Method.GET);
+            var requestPath = "api/nowplaying_list";
 
-            request.AddParameter("chan", _config.ExternalConfig.Channel);
-            request.AddParameter("list_num", list_num);
-
+            var parameters = new Dictionary<string, string>();
+            parameters.Add("chan", _config.ExternalConfig.Channel.ToString());
+            parameters.Add("list_num", list_num.ToString());
             if (!string.IsNullOrEmpty(_config.State.RpTrackingConfig.ActivePlayerId))
             {
-                request.AddParameter("player_id", _config.State.RpTrackingConfig.ActivePlayerId);
+                parameters.Add("player_id", _config.State.RpTrackingConfig.ActivePlayerId);
             }
 
-            var response = Task.Run(async () => await RestApiCallAsync<NowplayingList>(request)).Result;
+
+            var response = RestApiCallAsync<NowplayingList>(requestPath, parameters, HttpMethod.Get).Result;
             return response;
         }
 
         public NowPlaying GetNowPlaying(string channel = "0")
         {
-            var request = new RestRequest("api/nowplaying", Method.GET);
-            request.AddParameter("chan", channel);
+            var requestPath = "api/nowplaying";
 
-            var response = Task.Run(async () => await RestApiCallAsync<NowPlaying>(request)).Result;
+            var parameters = new Dictionary<string, string>();
+            parameters.Add("chan", channel);
+
+            var response = RestApiCallAsync<NowPlaying>(requestPath, parameters, HttpMethod.Get).Result;
+
             return response;
         }
 
         public GetBlock GetGetBlock(string channel = "0", string info = "true", string bitrate = "4")
         {
-            var request = new RestRequest("api/get_block", Method.GET);
-            request.AddParameter("chan", channel);
-            request.AddParameter("info", info);
-            request.AddParameter("bitrate", bitrate);
+            var requestPath = "api/get_block";
 
-            var response = Task.Run(async () => await RestApiCallAsync<GetBlock>(request)).Result;
+            var parameters = new Dictionary<string, string>();
+            parameters.Add("chan", channel);
+            parameters.Add("info", info);
+            parameters.Add("bitrate", bitrate);
+
+            var response = RestApiCallAsync<GetBlock>(requestPath, parameters, HttpMethod.Get).Result;
+
             return response;
         }
 
         public Info GetInfo(string songId = null)
         {
-            var request = new RestRequest("api/info", Method.GET);
-            if (songId != null)
-            {
-                request.AddParameter("song_id", songId);
-            }
+            var requestPath = "api/info";
 
-            var response = Task.Run(async () => await RestApiCallAsync<Info>(request)).Result;
+            var parameters = new Dictionary<string, string>();
+            parameters.Add("song_id", songId);
+
+            var response = RestApiCallAsync<Info>(requestPath, parameters, HttpMethod.Get).Result;
+
             return response;
         }
 
         public Rating GetRating(string songId, int rating)
         {
-            var request = new RestRequest("api/rating", Method.GET);
-            request.AddParameter("song_id", songId);
-            request.AddParameter("rating", rating);
+            var requestPath = "api/rating";
 
-            var response = Task.Run(async () => await RestApiCallAsync<Rating>(request)).Result;
+            var parameters = new Dictionary<string, string>();
+            parameters.Add("song_id", songId);
+            parameters.Add("rating", rating.ToString());
+
+            var response = RestApiCallAsync<Rating>(requestPath, parameters, HttpMethod.Get).Result;
+
             return response;
         }
 
         public List<Channel> GetChannelList()
         {
-            var request = new RestRequest("api/list_chan", Method.GET);
+            var requestPath = "api/list_chan";
 
-            var response = Task.Run(async () => await RestApiCallAsync<List<Channel>>(request)).Result;
+            var response = RestApiCallAsync<List<Channel>>(requestPath, null, HttpMethod.Get).Result;
+
             return response;
         }
 
         public Auth GetAuth(string username = null, string passwd = null)
         {
-            var request = new RestRequest("api/auth", Method.GET);
-            request.AddParameter("username", username);
-            request.AddParameter("passwd", passwd);
+            var requestPath = "api/auth";
 
-            var response = Task.Run(async () => await RestApiCallAsync<Auth>(request)).Result;
+            var parameters = new Dictionary<string, string>();
+            parameters.Add("username", username);
+            parameters.Add("passwd", passwd);
+
+            var response = RestApiCallAsync<Auth>(requestPath, parameters, HttpMethod.Get).Result;
+
             return response;
         }
 
         public Sync_v2 GetSync_v2()
         {
-            var request = new RestRequest("api/sync_v2", Method.GET);
-            request.AddParameter("mode", "track");
+            var requestPath = "api/sync_v2";
 
-            var response = Task.Run(async () => await RestApiCallAsync<Sync_v2>(request)).Result;
+            var parameters = new Dictionary<string, string>();
+            parameters.Add("mode", "track");
+
+            var response = RestApiCallAsync<Sync_v2>(requestPath, parameters, HttpMethod.Get).Result;
+
             return response;
         }
 
-        private Task<T> RestApiCallAsync<T>(RestRequest request) where T : new()
+        private async Task<T> RestApiCallAsync<T>(string requestPath, Dictionary<string, string> parameters, HttpMethod method) where T : new()
         {
             try
             {
-                _log.Information(LogHelper.GetMethodName(this), "Invoked - URL resource path: {Resource} - Authenticated: {IsUserAuthenticated}", request.Resource, _config.State.IsUserAuthenticated);
+                _log.Information(LogHelper.GetMethodName(this), "Invoked - URL resource path: {Resource} - Authenticated: {IsUserAuthenticated}", requestPath, _config.IsUserAuthenticated());
 
-                var taskCompletionSource = new TaskCompletionSource<T>();
+                var rpBaseAddressUri = new Uri(_config.StaticConfig.RpApiBaseUrl);
 
-                _restClient.ExecuteAsync<T>(request, (response) =>
+                var client = _httpClientFactory.CreateClient();
+                client.BaseAddress = rpBaseAddressUri;
+
+                var requestFullPath = requestPath;
+
+                if (parameters != null)
                 {
-                    if (request.Resource.Contains("auth")) { RefreshCookieCache(response.Cookies); }
-                    taskCompletionSource.SetResult(response.Data);
-                });
+                    var queryParamString = string.Join("&", parameters.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                    requestFullPath = requestPath + "?" + queryParamString;
+                }
 
-                _log.Information(LogHelper.GetMethodName(this), "Returned - Result type: {ResultType}", taskCompletionSource.Task.Result.GetType());
+                var request = new HttpRequestMessage(method, requestFullPath);
 
-                return taskCompletionSource.Task;
+                if (_config.IsUserAuthenticated())
+                {
+                    request.Headers.Add("Cookie", _config.State.RpCookieContainer.GetCookieHeader(rpBaseAddressUri));
+                }
+
+                var response = await client.SendAsync(request);
+
+                client.Dispose();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<T>(responseContent);
+
+                    _log.Information(LogHelper.GetMethodName(this), "Returned - Result type: {ResultType}", result.GetType());
+
+                    if (requestPath == "api/auth" && response.Headers.TryGetValues("Set-Cookie", out var responeCookies))
+                    {
+                        var cookieContainer = new CookieContainer();
+
+                        foreach (var cookie in responeCookies)
+                        {
+                            cookieContainer.SetCookies(rpBaseAddressUri, cookie);
+                        }
+
+                        _config.State.RpCookieContainer = cookieContainer;
+                    }
+
+                    return result;
+                }
+                else
+                {
+                    _log.Error(LogHelper.GetMethodName(this), "HTTP request failed - Status code: {StatusCode} - Reason: {Reason}", response.StatusCode, response.ReasonPhrase);
+                    return default;
+                }
+
+
             }
             catch (Exception ex)
             {
                 _log.Error(LogHelper.GetMethodName(this), ex);
-                return null;
-            }
-        }
-
-        private void RefreshCookieCache(IList<RestResponseCookie> cookies)
-        {
-            if (cookies.Count > 0)
-            {
-                CookieContainer cookieJar = new CookieContainer();
-
-                foreach (var cookie in cookies)
-                {
-                    cookieJar.Add(new Cookie(cookie.Name, cookie.Value, cookie.Path, cookie.Domain));
-                }
-
-                _restClient.CookieContainer = cookieJar;
-                _config.State.IsUserAuthenticated = true;
-
-                if (CookieHelper.TryWriteCookieToDisk(_config.StaticConfig.CookieCachePath, cookieJar))
-                {
-                    _log.Information(LogHelper.GetMethodName(this), "Cookie saved to cache");
-                }
-                else
-                {
-                    _log.Error(LogHelper.GetMethodName(this), "Can't save cookie");
-                }
-            }
-        }
-
-        private void ReadAndValidateCookieFromCache()
-        {
-            if (CookieHelper.TryGetCookieFromCache(_config.StaticConfig.CookieCachePath, out var cookieCache))
-            {
-                _restClient.CookieContainer = cookieCache;
-                _config.State.IsUserAuthenticated = true;
-
-                if (GetAuth().Status == "success")
-                {
-                    _log.Information(LogHelper.GetMethodName(this), "Cookie validation Success");
-                }
-                else
-                {
-                    _config.State.IsUserAuthenticated = false;
-                    Retry.Do(() => File.Delete(_config.StaticConfig.CookieCachePath));
-                    _log.Information(LogHelper.GetMethodName(this), $"Invalid cookie found - DELETED");
-                }
-            }
-            else
-            {
-                _config.State.IsUserAuthenticated = false;
-                _log.Information(LogHelper.GetMethodName(this), "No cached cookie found");
+                throw;
             }
         }
     }

@@ -58,6 +58,17 @@ namespace RP_Notify
                 _config.ExternalConfig.Channel = 0;
             }
 
+            // Refresh cookies
+            if (_config.IsUserAuthenticated())
+            {
+                _apihandler.GetAuth();
+            }
+
+            _config.State.ChannelList = _apihandler.GetChannelList();
+            AlbumartFileHelper.DownloadChanelBannerImagesIfDontExist(_config);
+
+            _log.Information(LogHelper.GetMethodName(this), "Channel banner images downloaded");
+
             _songInfoListener.CheckTrackedRpPlayerStatus();     // Check if RP player is still tracked (updates State)
 
             if (_config.State.RpTrackingConfig.Players.Any())
@@ -148,6 +159,9 @@ namespace RP_Notify
                         case nameof(_config.ExternalConfig.LargeAlbumArt):
                             OnLargeAlbumArtChange();
                             break;
+                        case nameof(_config.ExternalConfig.ChannelBannerOnDetail):
+                            OnChannelBannerOnDetailChange();
+                            break;
                         case nameof(_config.ExternalConfig.ShowSongRating):
                             OnShowSongRatingChange();
                             break;
@@ -166,8 +180,8 @@ namespace RP_Notify
                         case nameof(_config.State.MusicBeeIsPlayingRP):
                             OnMusicBeeIsPlayingRPChange();
                             break;
-                        case nameof(_config.State.IsUserAuthenticated):
-                            OnIsUserAuthenticatedChange();
+                        case nameof(_config.State.RpCookieContainer):
+                            OnIsCookieChange();
                             break;
                         case nameof(_config.State.Playback):
                             OnPlaybackChange();
@@ -243,6 +257,13 @@ namespace RP_Notify
             _toastHandler.ShowSongDetailToast();
         }
 
+        private void OnChannelBannerOnDetailChange()
+        {
+            // USER - menu button demonstration
+
+            _toastHandler.ShowSongDetailToast();
+        }
+
         private void OnShowSongRatingChange()
         {
             // USER - menu button demonstration
@@ -312,7 +333,7 @@ namespace RP_Notify
             _rpTrayIcon.NotifyIcon.Text = _config.State.TooltipText;
         }
 
-        private void OnIsUserAuthenticatedChange()
+        private void OnIsCookieChange()
         {
             // APP - when user logs in
 

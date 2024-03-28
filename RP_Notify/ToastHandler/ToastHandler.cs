@@ -445,7 +445,7 @@ namespace RP_Notify.ToastHandler
                     ? $" - User rating: {songInfo.UserRating}"
                     : " - Not rated";
 
-            string fullRatingText = $@"★ {songInfo.Rating}{(_config.State.IsUserAuthenticated ? userRatingElement : null)}";
+            string fullRatingText = $@"★ {songInfo.Rating}{(_config.IsUserAuthenticated() ? userRatingElement : null)}";
 
             return _config.ExternalConfig.ShowSongRating || userRated
                 ? toastContentBuilder.AddText(fullRatingText)
@@ -476,10 +476,18 @@ namespace RP_Notify.ToastHandler
                                                       progressStatus);
         }
 
-        internal static ToastContentBuilder AddSongAlbumArt(this ToastContentBuilder toastContentBuilder, IConfigRoot _config, bool optionalLargeAlbumart)
+        internal static ToastContentBuilder AddSongAlbumArt(this ToastContentBuilder toastContentBuilder, IConfigRoot _config, bool isSongDetailToast)
         {
             var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction();
             var albumartFilePath = AlbumartFileHelper.DownloadAlbumartImageIfDoesntExist(_config, songInfo);
+
+            var channelBannerFileName = _config.State.ChannelList
+                .Where(c => c.Chan == songInfo.Chan)
+                .Select(c => c.StreamName)
+                .FirstOrDefault();
+
+
+            var channelBannerFilePath = Path.Combine(_config.StaticConfig.AlbumArtCacheFolder, channelBannerFileName + ".jpg");
 
             Retry.Do(() =>
             {
@@ -489,9 +497,28 @@ namespace RP_Notify.ToastHandler
                 }
             }, 1000, 15);
 
-            return optionalLargeAlbumart && _config.ExternalConfig.LargeAlbumArt
-                ? toastContentBuilder.AddInlineImage(new Uri(albumartFilePath))
-                : toastContentBuilder.AddAppLogoOverride(new Uri(albumartFilePath));
+            if (isSongDetailToast && _config.ExternalConfig.LargeAlbumArt)
+            {
+                if (_config.ExternalConfig.LargeAlbumArt)
+                {
+                    toastContentBuilder.AddInlineImage(new Uri(albumartFilePath));
+                }
+                else
+                {
+                    return toastContentBuilder.AddAppLogoOverride(new Uri(albumartFilePath));
+                }
+
+                if (_config.ExternalConfig.ChannelBannerOnDetail && File.Exists(channelBannerFilePath))
+                {
+                    toastContentBuilder.AddHeroImage(new Uri(channelBannerFilePath));
+                }
+
+                return toastContentBuilder;
+            }
+            else
+            {
+                return toastContentBuilder.AddAppLogoOverride(new Uri(albumartFilePath));
+            }
         }
 
         internal static ToastContentBuilder AddSongFooterText(this ToastContentBuilder toastContentBuilder, IConfigRoot _config)
@@ -544,7 +571,7 @@ namespace RP_Notify.ToastHandler
                                 : "Update")
                         + " rating";
 
-            return _config.State.IsUserAuthenticated
+            return _config.IsUserAuthenticated()
                 ? toastContentBuilder
                     .AddInputTextBox("UserRate", ratingHintText)
                     .AddArgument("action", "RateSubmitted")

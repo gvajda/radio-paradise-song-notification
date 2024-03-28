@@ -8,6 +8,8 @@
 
         StaticConfig StaticConfig { get; set; }
 
+        bool IsUserAuthenticated();
+
         bool IsRpPlayerTrackingChannel();
 
         bool IsRpPlayerTrackingChannel(out int channel);

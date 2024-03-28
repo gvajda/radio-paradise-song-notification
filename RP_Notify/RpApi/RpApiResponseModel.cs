@@ -96,7 +96,8 @@ namespace RP_Notify.RpApi.ResponseModel
     {
 
         [JsonPropertyName("user_id")]
-        public string UserId { get; set; }
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+        public int UserId { get; set; }
 
         [JsonPropertyName("player_id")]
         public string PlayerId { get; set; }
@@ -188,20 +189,20 @@ namespace RP_Notify.RpApi.ResponseModel
         [JsonPropertyName("chan")]
         public string Chan { get; set; }
 
+        [JsonPropertyName("banner_url")]
+        public string BannerUrl { get; set; }
+
         [JsonPropertyName("title")]
         public string Title { get; set; }
-
-        [JsonPropertyName("source")]
-        public string Source { get; set; }
 
         [JsonPropertyName("stream_name")]
         public string StreamName { get; set; }
 
-        [JsonPropertyName("player_id")]
-        public string PlayerId { get; set; }
+        [JsonPropertyName("slug")]
+        public string Slug { get; set; }
 
-        [JsonPropertyName("type")]
-        public string Type { get; set; }
+        [JsonPropertyName("image")]
+        public string Image { get; set; }
     }
 
     public class GetBlock
