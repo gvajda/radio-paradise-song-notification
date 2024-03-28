@@ -23,7 +23,7 @@ namespace RP_Notify.SongInfoListener
 
         private Task SongInfoListenerTask { get; set; }
         private CancellationTokenSource NextSongWaiterCancellationTokenSource { get; set; }
-        private CancellationTokenSource listenerCancellationTokenSource { get; }
+        private CancellationTokenSource ListenerCancellationTokenSource { get; }
 
         public SongInfoListener(IRpApiHandler apiHandler, IConfigRoot config, ILog log, IToastHandler toastHandler)
         {
@@ -33,9 +33,9 @@ namespace RP_Notify.SongInfoListener
             _toastHandler = toastHandler;
 
             NextSongWaiterCancellationTokenSource = new CancellationTokenSource();
-            listenerCancellationTokenSource = new CancellationTokenSource();
+            ListenerCancellationTokenSource = new CancellationTokenSource();
 
-            Application.ApplicationExit += (sender, e) => listenerCancellationTokenSource.Cancel();
+            Application.ApplicationExit += (sender, e) => ListenerCancellationTokenSource.Cancel();
         }
 
         public void ResetListenerLoop()
@@ -62,7 +62,7 @@ namespace RP_Notify.SongInfoListener
 
             SongInfoListenerTask = Task.Run(async () =>
             {
-                while (!listenerCancellationTokenSource.Token.IsCancellationRequested)     // keep getting new song info
+                while (!ListenerCancellationTokenSource.Token.IsCancellationRequested)     // keep getting new song info
                 {
                     _log.Information(LogHelper.GetMethodName(this), "Start loop *****************");
 
@@ -126,7 +126,7 @@ namespace RP_Notify.SongInfoListener
                         Application.Exit();
                     }
                 }
-            }, listenerCancellationTokenSource.Token);
+            }, ListenerCancellationTokenSource.Token);
 
             _log.Information(LogHelper.GetMethodName(this), "Running in background");
         }
