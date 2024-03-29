@@ -22,6 +22,7 @@ namespace RP_Notify
             var serviceCollection = new ServiceCollection()
                 .AddHttpClient()
                 .AddTransient<BeefWebApiClient>()
+                .AddSingleton<LoginForm.LoginForm>()
                 .AddSingleton<IConfigRoot, ConfigRoot>()
                 .AddSingleton<ILog, Log>()
                 .AddSingleton<IRpApiHandler, RpApiHandler>()
@@ -35,6 +36,8 @@ namespace RP_Notify
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(serviceProvider.GetService<RpApplicationCore>());
         }
     }

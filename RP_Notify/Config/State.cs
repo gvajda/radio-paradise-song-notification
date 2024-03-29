@@ -10,7 +10,7 @@ namespace RP_Notify.Config
     {
         private readonly string _cookieFilePath;
 
-        public event EventHandler<RpEvent> StateChangeHandler = delegate { };
+        public event EventHandler<RpConfigurationChangeEvent> StateChangeHandler = delegate { };
 
         private CookieContainer rpCookieContainer;
         private List<Channel> channelList;
@@ -128,7 +128,7 @@ namespace RP_Notify.Config
 
         private void RaiseFieldChangeEvent(string fieldName, object value)
         {
-            StateChangeHandler.Invoke(this, new RpEvent(RpEvent.EventType.StateChange, fieldName, value));
+            StateChangeHandler.Invoke(this, new RpConfigurationChangeEvent(RpConfigurationChangeEvent.EventType.StateChange, fieldName, value));
         }
     }
 

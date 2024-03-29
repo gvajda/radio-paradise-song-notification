@@ -16,6 +16,6 @@ namespace RP_Notify.Config
         bool ShowOnNewSong { get; set; }
         bool ShowSongRating { get; set; }
 
-        event EventHandler<RpEvent> ExternalConfigChangeHandler;
+        event EventHandler<RpConfigurationChangeEvent> ExternalConfigChangeHandler;
     }
 }

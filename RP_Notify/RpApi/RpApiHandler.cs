@@ -153,7 +153,10 @@ namespace RP_Notify.RpApi
 
                 if (parameters != null)
                 {
-                    var queryParamString = string.Join("&", parameters.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                    var queryParamString = string
+                        .Join("&", parameters
+                            .Where(p => !string.IsNullOrEmpty(p.Key) && !string.IsNullOrEmpty(p.Value))
+                            .Select(kvp => $"{kvp.Key}={kvp.Value}"));
                     requestFullPath = requestPath + "?" + queryParamString;
                 }
 
@@ -164,7 +167,7 @@ namespace RP_Notify.RpApi
                     request.Headers.Add("Cookie", _config.State.RpCookieContainer.GetCookieHeader(rpBaseAddressUri));
                 }
 
-                var response = await client.SendAsync(request);
+                var response = client.SendAsync(request).Result;
 
                 client.Dispose();
 

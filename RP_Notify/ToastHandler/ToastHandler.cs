@@ -8,9 +8,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Web;
-using System.Windows.Forms;
-using Windows.Foundation.Collections;
 using Windows.UI.Notifications;
 
 namespace RP_Notify.ToastHandler
@@ -21,13 +18,13 @@ namespace RP_Notify.ToastHandler
         private readonly IRpApiHandler _apiHandler;
         private readonly ILog _log;
 
+        public event EventHandler ToastActionHandler = delegate { };
+
         public ToastHandler(IConfigRoot config, IRpApiHandler apiHandler, ILog log)
         {
             _config = config;
             _apiHandler = apiHandler;
             _log = log;
-
-            ToastNotificationManagerCompat.OnActivated += toastArgs => HandleToastActivatedEvent(toastArgs);
         }
 
         public void ShowSongStartToast(bool force = false, PlayListSong songInfo = null)
@@ -246,120 +243,6 @@ namespace RP_Notify.ToastHandler
                     _log.Error(LogHelper.GetMethodName(this), ex);
                 }
             });
-        }
-
-        private void HandleToastActivatedEvent(ToastNotificationActivatedEventArgsCompat toastArgs)
-        {
-            try
-            {
-                // Obtain the arguments from the notification
-                ToastArguments args = ToastArguments.Parse(toastArgs.Argument);
-
-                // Obtain any user input (text boxes, menu selections) from the notification
-                ValueSet userInput = toastArgs.UserInput;
-
-                var formattedArgumentsForLogging = string.Join("&", args.Select(kvp => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}"));
-                _log.Information(LogHelper.GetMethodName(this), " eventArguments: " + formattedArgumentsForLogging);
-
-                PlayListSong songInfo;
-                ConfigLocationOptions startingLocation;
-                ConfigLocationOptions targetLocation;
-
-                switch (args["action"])
-                {
-                    case "ChooseFolder":
-                        if (userInput.TryGetValue("configFolder", out object rawFolder))
-                        {
-                            var folder = (string)rawFolder;
-                            if (folder == "localCache" && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.AppData)
-                            {
-                                startingLocation = ConfigLocationOptions.AppData;
-                                targetLocation = ConfigLocationOptions.ExeContainingDirectory;
-                                MoveConfigFolder(startingLocation, targetLocation);
-                            }
-                            else if (folder == "appdata" && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.ExeContainingDirectory)
-                            {
-                                startingLocation = ConfigLocationOptions.ExeContainingDirectory;
-                                targetLocation = ConfigLocationOptions.AppData;
-                                MoveConfigFolder(startingLocation, targetLocation);
-                            }
-                            else if (folder == "cleanonexit")
-                            {
-                                _config.StaticConfig.CleanUpOnExit = true;
-                            }
-                        }
-                        break;
-                    case "exitApp":
-                        Application.Exit();
-                        break;
-                    case "LoginRequested":
-                        ShowLoginToast();
-                        break;
-                    case "LoginDataSent":
-                        userInput.TryGetValue("Username", out object usr);
-                        userInput.TryGetValue("Password", out object pwd);
-
-                        var response = _apiHandler.GetAuth((string)usr, (string)pwd);
-
-                        LoginResponseToast(response);
-
-                        if (response.Status == "success")
-                        {
-                            Application.Restart();
-                        }
-                        break;
-                    case "RateSubmitted":
-                        songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(args["serializedSongInfo"]);
-
-                        if (!userInput.TryGetValue("UserRate", out object rawUserRate)) return;
-                        if (!Int32.TryParse((string)rawUserRate, out int userRate)
-                            && 1 <= userRate && userRate <= 10) return;
-
-                        var ratingResponse = _apiHandler.GetRating(songInfo.SongId, userRate);
-                        if (ratingResponse.Status == "success")
-                        {
-                            if (songInfo.SongId == _config.State.Playback.SongInfo.SongId)
-                            {
-                                _config.State.Playback = new Playback(_apiHandler.GetNowplayingList());
-                            }
-                            else
-                            {
-                                var newRating = _apiHandler.GetInfo(songInfo.SongId).UserRating.ToString();
-                                songInfo.UserRating = newRating;
-                                ShowSongStartToast(true, songInfo);
-                            }
-                        }
-                        break;
-                    case "RateTileRequested":
-                        songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(args["serializedSongInfo"]);
-                        KeyboardSendKeyHelper.SendWinKeyN();
-                        Task.Delay(200).Wait();
-                        ShowSongRatingToast(songInfo);
-                        break;
-                    default:
-                        throw new NotImplementedException();
-                }
-
-
-            }
-            catch (Exception ex)
-            {
-                _log.Error(LogHelper.GetMethodName(this), ex);
-            }
-        }
-
-        private void MoveConfigFolder(ConfigLocationOptions startingLocation, ConfigLocationOptions targetLocation)
-        {
-            _log.Information(LogHelper.GetMethodName(this), $"The application will attempt to move the Config folder from [{ConfigDirectoryHelper.GetLocalPath(startingLocation)}] to [{ConfigDirectoryHelper.GetLocalPath(targetLocation)}]");
-            _log.Information(LogHelper.GetMethodName(this), $@"
-//********************************************************************
-//********************************************************************
-//********************************************************************
-//********************************************************************
-//********************************************************************");
-            _log.Dispose();
-            ConfigDirectoryHelper.MoveConfigToNewLocation(startingLocation, targetLocation);
-            Application.Restart();
         }
     }
 

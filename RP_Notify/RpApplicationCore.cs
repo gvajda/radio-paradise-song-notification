@@ -3,6 +3,7 @@ using Microsoft.Win32;
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using RP_Notify.Helpers;
+using RP_Notify.LoginForm;
 using RP_Notify.PlayerWatcher;
 using RP_Notify.PlayerWatcher.Foobar2000;
 using RP_Notify.PlayerWatcher.MusicBee;
@@ -15,7 +16,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using System.Windows.Forms;
+using Windows.Foundation.Collections;
 
 namespace RP_Notify
 {
@@ -29,10 +32,11 @@ namespace RP_Notify
         private readonly ISongInfoListener _songInfoListener;
         private readonly ILog _log;
         private readonly RpTrayIconMenu _rpTrayIcon;
+        private readonly LoginForm.LoginForm _loginForm;
 
         private int EventCounter { get; set; }
 
-        public RpApplicationCore(IConfigRoot config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIconMenu rpTrayIcon)
+        public RpApplicationCore(IConfigRoot config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIconMenu rpTrayIcon, LoginForm.LoginForm loginForm)
         {
             _log = log;
             _apihandler = apiHandler;
@@ -42,6 +46,7 @@ namespace RP_Notify
             _foobar2000Watcher = foobar2000Watcher;
             _musicBeeWatcher = musicBeeWatcher;
             _rpTrayIcon = rpTrayIcon;
+            _loginForm = loginForm;
 
             EventCounter = 0;
 
@@ -90,11 +95,14 @@ namespace RP_Notify
 
             // Set up event handlers
             _log.Information(LogHelper.GetMethodName(this), "Create event listeners");
-            _config.ExternalConfig.ExternalConfigChangeHandler += OnChange;
-            _config.State.StateChangeHandler += OnChange;
-            _config.State.RpTrackingConfig.RpTrackingConfigChangeHandler += OnChange;
+            _config.ExternalConfig.ExternalConfigChangeHandler += OnConfigChangeEvent;
+            _config.State.StateChangeHandler += OnConfigChangeEvent;
+            _config.State.RpTrackingConfig.RpTrackingConfigChangeHandler += OnConfigChangeEvent;
             Application.ApplicationExit += this.ApplicationExitHandler;
             SystemEvents.PowerModeChanged += WakeUpHandler;
+            ToastNotificationManagerCompat.OnActivated += toastArgs => OnToastActivatedEvent(toastArgs);
+            _loginForm.LoginInputEventHandler += OnLoginInputSubmitted;
+
 
             // Check queued application data delet request
             CheckQueuedDataDeleteRequest();
@@ -122,7 +130,9 @@ namespace RP_Notify
 
         }
 
-        private void OnChange(object sender, RpEvent e)
+        #region Config change event handlers
+
+        private void OnConfigChangeEvent(object sender, RpConfigurationChangeEvent e)
         {
             if (e.ChangedFieldName.Equals(nameof(_config.State.TooltipText)))
             {
@@ -404,6 +414,125 @@ namespace RP_Notify
             }
         }
 
+        #endregion
+
+        #region Toas action event handlers
+
+        private void OnToastActivatedEvent(ToastNotificationActivatedEventArgsCompat toastArgs)
+        {
+            try
+            {
+                // Obtain the arguments from the notification
+                ToastArguments args = ToastArguments.Parse(toastArgs.Argument);
+
+                // Obtain any user input (text boxes, menu selections) from the notification
+                ValueSet userInput = toastArgs.UserInput;
+
+
+                var formattedArgumentsForLogging = string.Join("&", args.Select(kvp => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}"));
+                _log.Information(LogHelper.GetMethodName(this), " eventArguments: " + formattedArgumentsForLogging);
+
+                PlayListSong songInfo;
+                ConfigLocationOptions startingLocation;
+                ConfigLocationOptions targetLocation;
+
+                switch (args["action"])
+                {
+                    case "ChooseFolder":
+                        if (userInput.TryGetValue("configFolder", out object rawFolder))
+                        {
+                            var folder = (string)rawFolder;
+                            if (folder == "localCache" && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.AppData)
+                            {
+                                startingLocation = ConfigLocationOptions.AppData;
+                                targetLocation = ConfigLocationOptions.ExeContainingDirectory;
+                                MoveConfigFolder(startingLocation, targetLocation);
+                            }
+                            else if (folder == "appdata" && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.ExeContainingDirectory)
+                            {
+                                startingLocation = ConfigLocationOptions.ExeContainingDirectory;
+                                targetLocation = ConfigLocationOptions.AppData;
+                                MoveConfigFolder(startingLocation, targetLocation);
+                            }
+                            else if (folder == "cleanonexit")
+                            {
+                                _config.StaticConfig.CleanUpOnExit = true;
+                            }
+                        }
+                        break;
+                    case "exitApp":
+                        Application.Exit();
+                        break;
+                    case "LoginRequested":
+                        _loginForm.ShowDialog();
+                        break;
+                    case "LoginDataSent":
+                        userInput.TryGetValue("Username", out object usr);
+                        userInput.TryGetValue("Password", out object pwd);
+
+                        var response = _apihandler.GetAuth((string)usr, (string)pwd);
+
+                        _toastHandler.LoginResponseToast(response);
+
+                        if (response.Status == "success")
+                        {
+                            Application.Restart();
+                        }
+                        break;
+                    case "RateSubmitted":
+                        songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(args["serializedSongInfo"]);
+
+                        if (!userInput.TryGetValue("UserRate", out object rawUserRate)) return;
+                        if (!Int32.TryParse((string)rawUserRate, out int userRate)
+                            && 1 <= userRate && userRate <= 10) return;
+
+                        var ratingResponse = _apihandler.GetRating(songInfo.SongId, userRate);
+                        if (ratingResponse.Status == "success")
+                        {
+                            if (songInfo.SongId == _config.State.Playback.SongInfo.SongId)
+                            {
+                                _config.State.Playback = new Playback(_apihandler.GetNowplayingList());
+                            }
+                            else
+                            {
+                                var newRating = _apihandler.GetInfo(songInfo.SongId).UserRating.ToString();
+                                songInfo.UserRating = newRating;
+                                _toastHandler.ShowSongStartToast(true, songInfo);
+                            }
+                        }
+                        break;
+                    case "RateTileRequested":
+                        songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(args["serializedSongInfo"]);
+                        KeyboardSendKeyHelper.SendWinKeyN();
+                        Task.Delay(200).Wait();
+                        _toastHandler.ShowSongRatingToast(songInfo);
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                _log.Error(LogHelper.GetMethodName(this), ex);
+            }
+        }
+
+        private void MoveConfigFolder(ConfigLocationOptions startingLocation, ConfigLocationOptions targetLocation)
+        {
+            _log.Information(LogHelper.GetMethodName(this), $"The application will attempt to move the Config folder from [{ConfigDirectoryHelper.GetLocalPath(startingLocation)}] to [{ConfigDirectoryHelper.GetLocalPath(targetLocation)}]");
+            _log.Information(LogHelper.GetMethodName(this), $@"
+//********************************************************************
+//********************************************************************
+//********************************************************************
+//********************************************************************
+//********************************************************************");
+            _log.Dispose();
+            ConfigDirectoryHelper.MoveConfigToNewLocation(startingLocation, targetLocation);
+            Application.Restart();
+        }
+
         private void WakeUpHandler(object sender, PowerModeChangedEventArgs e)
         {
             // clean up potentially stuck threads / reinitiate app
@@ -414,6 +543,16 @@ namespace RP_Notify
                 Application.Restart();
             }
         }
+
+        #endregion
+
+        private void OnLoginInputSubmitted(object sender, LoginInputEvent loginInputEvent)
+        {
+            _log.Information(LogHelper.GetMethodName(this), $"Login input submitted for user [{loginInputEvent.UserName}]");
+
+            _apihandler.GetAuth(loginInputEvent.UserName, loginInputEvent.Password);
+        }
+
 
         private void ApplicationExitHandler(object sender, EventArgs e)
         {

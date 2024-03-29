@@ -9,7 +9,7 @@ namespace RP_Notify.Config
 {
     public class RpTrackingConfig
     {
-        public event EventHandler<RpEvent> RpTrackingConfigChangeHandler = delegate { };
+        public event EventHandler<RpConfigurationChangeEvent> RpTrackingConfigChangeHandler = delegate { };
 
         private string activePlayerId;
         private IList<Player> players;
@@ -52,7 +52,7 @@ namespace RP_Notify.Config
                 ? flexibleValue[0]
                 : "null";
 
-            RpTrackingConfigChangeHandler.Invoke(this, new RpEvent(RpEvent.EventType.RpTrackingConfigChange, fieldName, value));
+            RpTrackingConfigChangeHandler.Invoke(this, new RpConfigurationChangeEvent(RpConfigurationChangeEvent.EventType.RpTrackingConfigChange, fieldName, value));
         }
 
         private bool ComparePlayerList(IList<Player> oldPlayerList, IList<Player> newPlayerList)

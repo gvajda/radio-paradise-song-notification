@@ -126,6 +126,7 @@ namespace RP_Notify.TrayIconMenu
                 DefaultItem = _config.ExternalConfig.ShowOnNewSong && !trackingActive
 
             };
+            ;
 
             showOnNewSong.Click += (sender, e) =>
             {
@@ -211,7 +212,7 @@ namespace RP_Notify.TrayIconMenu
 
         private MenuItem MenuEntryReset()
         {
-            var menuName = "Delete app data";
+            var menuName = "Delete app data (including login info)";
 
             MenuItem reset = new MenuItem(menuName);
             reset.Click += (sender, e) =>

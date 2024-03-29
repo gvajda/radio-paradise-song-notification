@@ -8,7 +8,7 @@ namespace RP_Notify.Config
 {
     public class ExternalConfigIni : IExternalConfig
     {
-        public event EventHandler<RpEvent> ExternalConfigChangeHandler = delegate { };
+        public event EventHandler<RpConfigurationChangeEvent> ExternalConfigChangeHandler = delegate { };
 
         private readonly FileSystemWatcher _iniFileChangeWatcher = new FileSystemWatcher();
         private readonly string _iniFilePath;
@@ -189,7 +189,7 @@ namespace RP_Notify.Config
 
         private void RaiseFieldChangeEvent(string fieldName, object value)
         {
-            ExternalConfigChangeHandler.Invoke(this, new RpEvent(RpEvent.EventType.ConfigChange, fieldName, value));
+            ExternalConfigChangeHandler.Invoke(this, new RpConfigurationChangeEvent(RpConfigurationChangeEvent.EventType.ConfigChange, fieldName, value));
         }
 
         private void SetIniValue<T>(string section, string key, T value)

@@ -2,7 +2,7 @@
 
 namespace RP_Notify.Config
 {
-    public class RpEvent : EventArgs
+    public class RpConfigurationChangeEvent : EventArgs
     {
         public enum EventType
         {
@@ -15,7 +15,7 @@ namespace RP_Notify.Config
         public string ChangedFieldName { get; set; }
         public object Content { get; set; }
 
-        public RpEvent(EventType eventType, string changedFieldName, object content)
+        public RpConfigurationChangeEvent(EventType eventType, string changedFieldName, object content)
         {
             SentEventType = eventType;
             ChangedFieldName = changedFieldName;
