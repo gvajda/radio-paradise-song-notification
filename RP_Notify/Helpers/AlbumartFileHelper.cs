@@ -44,32 +44,6 @@ namespace RP_Notify.Helpers
 
             return albumartFilePath;
         }
-        public static void DownloadChanelBannerImagesIfDontExist(IConfigRoot _config)
-        {
-            if (!Directory.Exists(_config.StaticConfig.AlbumArtCacheFolder))
-            {
-                Directory.CreateDirectory(_config.StaticConfig.AlbumArtCacheFolder);
-            }
-
-            foreach (var channel in _config.State.ChannelList.Where(c => !string.IsNullOrEmpty(c.BannerUrl)))
-            {
-                var channelBannerFilePath = Path.Combine(_config.StaticConfig.AlbumArtCacheFolder, channel.StreamName + ".jpg");
-
-
-                if (!File.Exists(channelBannerFilePath))
-                {
-                    var rpImageUrl = new Uri(channel.BannerUrl);
-                    var tempFileName = $"{channelBannerFilePath}.inprogress";
-
-                    using (WebClient client = new WebClient())
-                    {
-                        Retry.Do(() => { client.DownloadFile(rpImageUrl, tempFileName); }, 500, 5);
-                    }
-
-                    File.Move(tempFileName, channelBannerFilePath);
-                }
-            }
-        }
 
         public static void DeleteOldAlbumartImageFiles(IConfigRoot _config, int MaxAgeDays = 3, int MaxFileCount = 100)
         {

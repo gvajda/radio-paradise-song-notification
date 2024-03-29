@@ -9,8 +9,6 @@ namespace RP_Notify.LoginForm
     {
         private readonly Label userNoticeHeader;
         private readonly Label userNotice;
-        private readonly Label labelUsername;
-        private readonly Label labelPassword;
         private readonly TextBox textBoxUsername;
         private readonly TextBox textBoxPassword;
         private readonly Button buttonLogin;
@@ -74,9 +72,7 @@ namespace RP_Notify.LoginForm
             Controls.Add(new TextBox() { Location = new Point(1000, 1000) });      // Fake textbox to take promptfocus
             Controls.Add(userNoticeHeader);
             Controls.Add(userNotice);
-            Controls.Add(labelUsername);
             Controls.Add(textBoxUsername);
-            Controls.Add(labelPassword);
             Controls.Add(textBoxPassword);
             Controls.Add(buttonLogin);
 

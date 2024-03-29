@@ -364,14 +364,6 @@ namespace RP_Notify.ToastHandler
             var songInfo = toastContentBuilder.ExtractSonginfoObjectFromContextAction();
             var albumartFilePath = AlbumartFileHelper.DownloadAlbumartImageIfDoesntExist(_config, songInfo);
 
-            var channelBannerFileName = _config.State.ChannelList
-                .Where(c => c.Chan == songInfo.Chan)
-                .Select(c => c.StreamName)
-                .FirstOrDefault();
-
-
-            var channelBannerFilePath = Path.Combine(_config.StaticConfig.AlbumArtCacheFolder, channelBannerFileName + ".jpg");
-
             Retry.Do(() =>
             {
                 if (!File.Exists(albumartFilePath))
@@ -380,7 +372,7 @@ namespace RP_Notify.ToastHandler
                 }
             }, 1000, 15);
 
-            if (isSongDetailToast && _config.ExternalConfig.LargeAlbumArt)
+            if (isSongDetailToast)
             {
                 if (_config.ExternalConfig.LargeAlbumArt)
                 {
@@ -391,9 +383,14 @@ namespace RP_Notify.ToastHandler
                     return toastContentBuilder.AddAppLogoOverride(new Uri(albumartFilePath));
                 }
 
-                if (_config.ExternalConfig.ChannelBannerOnDetail && File.Exists(channelBannerFilePath))
+                if (_config.ExternalConfig.RpBannerOnDetail)
                 {
-                    toastContentBuilder.AddHeroImage(new Uri(channelBannerFilePath));
+                    var rpLogoPath = Path.Combine(_config.StaticConfig.AlbumArtCacheFolder, "RP_logo.jpg");
+                    if (!File.Exists(rpLogoPath))
+                    {
+                        Properties.Resources.RP_logo.Save(rpLogoPath);
+                    }
+                    toastContentBuilder.AddHeroImage(new Uri(rpLogoPath));
                 }
 
                 return toastContentBuilder;

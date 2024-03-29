@@ -67,7 +67,7 @@ namespace RP_Notify.TrayIconMenu
 
             var menuEntryShowOnNewSong = MenuEntryShowOnNewSong();
             var menuEntryLargeAlbumArt = MenuEntryLargeAlbumArt();
-            var menuEntryChannelBannerOnDetail = MenuEntryChannelBannerOnDetail();
+            var menuEntryRpBannerOnDetail = MenuEntryRpBannerOnDetail();
             var menuEntryShowSongRating = MenuEntryShowSongRating();
             var menuEntryPromptForRating = MenuEntryPromptForRating();
             var menuEntryMigrateCache = MenuEntryMigrateCache();
@@ -87,7 +87,7 @@ namespace RP_Notify.TrayIconMenu
             contextMenu.MenuItems.Add("-");
             MenuItem toastFormat = new MenuItem("Toast format");
             toastFormat.MenuItems.Add(menuEntryLargeAlbumArt);
-            toastFormat.MenuItems.Add(menuEntryChannelBannerOnDetail);
+            toastFormat.MenuItems.Add(menuEntryRpBannerOnDetail);
             toastFormat.MenuItems.Add(menuEntryShowSongRating);
             contextMenu.MenuItems.Add(toastFormat);
             MenuItem appSettings = new MenuItem("App settings");
@@ -155,22 +155,23 @@ namespace RP_Notify.TrayIconMenu
             return largeAlbumArt;
         }
 
-        private MenuItem MenuEntryChannelBannerOnDetail()
+        private MenuItem MenuEntryRpBannerOnDetail()
         {
-            var menuName = "Display channel banner on detail toast";
+            var menuName = "Display RP banner on detail toast";
 
-            MenuItem channelBannerOnDetail = new MenuItem(menuName)
+            MenuItem rpBannerOnDetail = new MenuItem(menuName)
             {
-                Checked = _config.ExternalConfig.ChannelBannerOnDetail
+                Checked = _config.ExternalConfig.RpBannerOnDetail,
+                Enabled = _config.ExternalConfig.LargeAlbumArt
             };
 
-            channelBannerOnDetail.Click += (sender, e) =>
+            rpBannerOnDetail.Click += (sender, e) =>
             {
                 _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
-                _config.ExternalConfig.ChannelBannerOnDetail = !_config.ExternalConfig.ChannelBannerOnDetail;
+                _config.ExternalConfig.RpBannerOnDetail = !_config.ExternalConfig.RpBannerOnDetail;
             };
 
-            return channelBannerOnDetail;
+            return rpBannerOnDetail;
         }
 
         private MenuItem MenuEntryShowSongRating()

@@ -11,7 +11,7 @@ namespace RP_Notify.Config
         bool EnableMusicBeeWatcher { get; set; }
         bool EnableRpOfficialTracking { get; set; }
         bool LargeAlbumArt { get; set; }
-        bool ChannelBannerOnDetail { get; set; }
+        bool RpBannerOnDetail { get; set; }
         bool PromptForRating { get; set; }
         bool ShowOnNewSong { get; set; }
         bool ShowSongRating { get; set; }

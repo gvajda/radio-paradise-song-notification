@@ -64,7 +64,7 @@ namespace RP_Notify.Properties {
         ///   Looks up a localized string similar to [Toast]
         ///ShowOnNewSong=true
         ///LargeAlbumArt=true
-        ///ChannelBannerOnDetail=true
+        ///RpBannerOnDetail=true
         ///ShowSongRating=true
         ///[AppSettings]
         ///EnableFoobar2000Watcher=false

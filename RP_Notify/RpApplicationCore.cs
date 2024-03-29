@@ -70,7 +70,6 @@ namespace RP_Notify
             }
 
             _config.State.ChannelList = _apihandler.GetChannelList();
-            AlbumartFileHelper.DownloadChanelBannerImagesIfDontExist(_config);
 
             _log.Information(LogHelper.GetMethodName(this), "Channel banner images downloaded");
 
@@ -169,8 +168,8 @@ namespace RP_Notify
                         case nameof(_config.ExternalConfig.LargeAlbumArt):
                             OnLargeAlbumArtChange();
                             break;
-                        case nameof(_config.ExternalConfig.ChannelBannerOnDetail):
-                            OnChannelBannerOnDetailChange();
+                        case nameof(_config.ExternalConfig.RpBannerOnDetail):
+                            OnRpBannerOnDetailChange();
                             break;
                         case nameof(_config.ExternalConfig.ShowSongRating):
                             OnShowSongRatingChange();
@@ -267,7 +266,7 @@ namespace RP_Notify
             _toastHandler.ShowSongDetailToast();
         }
 
-        private void OnChannelBannerOnDetailChange()
+        private void OnRpBannerOnDetailChange()
         {
             // USER - menu button demonstration
 
