@@ -142,7 +142,7 @@ namespace RP_Notify.ToastHandler
                         .AddArgument("action", "ChooseFolder"))
                     .AddButton(new ToastButton()
                         .SetContent("Exit App")
-                        .AddArgument("action", "exitApp"))
+                        .AddArgument("action", "ExitApp"))
                     .SetToastDuration(ToastDuration.Long)
                     .Show();
                 }

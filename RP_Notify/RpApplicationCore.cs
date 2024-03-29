@@ -122,12 +122,25 @@ namespace RP_Notify
         }
 
 
+        //
+        //
+        // Event handlers
+        //
+        //
+
+
         private void TrayIconDoubleClickHandler(object sender, MouseEventArgs e)
         {
             _log.Information(LogHelper.GetMethodName(this), "Invoked - Sender: {Sender}", sender.GetType());
             _toastHandler.ShowSongDetailToast();
 
         }
+
+        /** The following methods are event handlers for the configuration change events.
+         ** They are triggered by the event handlers in the Config class.
+         ** The methods are responsible for updating the application state based on the configuration changes.
+         ** The methods are also responsible for updating the UI based on the configuration changes.
+         **/
 
         #region Config change event handlers
 
@@ -415,6 +428,11 @@ namespace RP_Notify
 
         #endregion
 
+        /** The following methods are event handlers for the toast action events.
+         ** They are triggered by the event handlers in the ToastHandler class.
+         ** The methods are responsible for handling the user input from the toast notifications.
+         **/
+
         #region Toas action event handlers
 
         private void OnToastActivatedEvent(ToastNotificationActivatedEventArgsCompat toastArgs)
@@ -422,99 +440,66 @@ namespace RP_Notify
             try
             {
                 // Obtain the arguments from the notification
-                ToastArguments args = ToastArguments.Parse(toastArgs.Argument);
+                ToastArguments toastArguments = ToastArguments.Parse(toastArgs.Argument);
 
                 // Obtain any user input (text boxes, menu selections) from the notification
                 ValueSet userInput = toastArgs.UserInput;
 
 
-                var formattedArgumentsForLogging = string.Join("&", args.Select(kvp => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}"));
+                var formattedArgumentsForLogging = string.Join("&", toastArguments.Select(kvp => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}"));
                 _log.Information(LogHelper.GetMethodName(this), " eventArguments: " + formattedArgumentsForLogging);
 
-                PlayListSong songInfo;
-                ConfigLocationOptions startingLocation;
-                ConfigLocationOptions targetLocation;
-
-                switch (args["action"])
+                switch (toastArguments["action"])
                 {
-                    case "ChooseFolder":
-                        if (userInput.TryGetValue("configFolder", out object rawFolder))
-                        {
-                            var folder = (string)rawFolder;
-                            if (folder == "localCache" && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.AppData)
-                            {
-                                startingLocation = ConfigLocationOptions.AppData;
-                                targetLocation = ConfigLocationOptions.ExeContainingDirectory;
-                                MoveConfigFolder(startingLocation, targetLocation);
-                            }
-                            else if (folder == "appdata" && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.ExeContainingDirectory)
-                            {
-                                startingLocation = ConfigLocationOptions.ExeContainingDirectory;
-                                targetLocation = ConfigLocationOptions.AppData;
-                                MoveConfigFolder(startingLocation, targetLocation);
-                            }
-                            else if (folder == "cleanonexit")
-                            {
-                                _config.StaticConfig.CleanUpOnExit = true;
-                            }
-                        }
-                        break;
-                    case "exitApp":
-                        Application.Exit();
-                        break;
                     case "LoginRequested":
                         _loginForm.ShowDialog();
                         break;
-                    case "LoginDataSent":
-                        userInput.TryGetValue("Username", out object usr);
-                        userInput.TryGetValue("Password", out object pwd);
-
-                        var response = _apihandler.GetAuth((string)usr, (string)pwd);
-
-                        _toastHandler.LoginResponseToast(response);
-
-                        if (response.Status == "success")
-                        {
-                            Application.Restart();
-                        }
+                    case "ExitApp":
+                        Application.Exit();
+                        break;
+                    case "ChooseFolder":
+                        ChooseFolderToastActionHandler(userInput);
                         break;
                     case "RateSubmitted":
-                        songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(args["serializedSongInfo"]);
-
-                        if (!userInput.TryGetValue("UserRate", out object rawUserRate)) return;
-                        if (!Int32.TryParse((string)rawUserRate, out int userRate)
-                            && 1 <= userRate && userRate <= 10) return;
-
-                        var ratingResponse = _apihandler.GetRating(songInfo.SongId, userRate);
-                        if (ratingResponse.Status == "success")
-                        {
-                            if (songInfo.SongId == _config.State.Playback.SongInfo.SongId)
-                            {
-                                _config.State.Playback = new Playback(_apihandler.GetNowplayingList());
-                            }
-                            else
-                            {
-                                var newRating = _apihandler.GetInfo(songInfo.SongId).UserRating.ToString();
-                                songInfo.UserRating = newRating;
-                                _toastHandler.ShowSongStartToast(true, songInfo);
-                            }
-                        }
+                        RateSubmittedToastActionHandler(userInput, toastArguments);
                         break;
                     case "RateTileRequested":
-                        songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(args["serializedSongInfo"]);
-                        KeyboardSendKeyHelper.SendWinKeyN();
-                        Task.Delay(200).Wait();
-                        _toastHandler.ShowSongRatingToast(songInfo);
+                        RateTileRequestedActionHandler(toastArguments);
                         break;
                     default:
                         throw new NotImplementedException();
                 }
-
-
             }
             catch (Exception ex)
             {
                 _log.Error(LogHelper.GetMethodName(this), ex);
+            }
+        }
+
+        private void ChooseFolderToastActionHandler(ValueSet userInput)
+        {
+            ConfigLocationOptions startingLocation;
+            ConfigLocationOptions targetLocation;
+
+            if (userInput.TryGetValue("configFolder", out object rawFolder))
+            {
+                var folder = (string)rawFolder;
+                if (folder == "localCache" && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.AppData)
+                {
+                    startingLocation = ConfigLocationOptions.AppData;
+                    targetLocation = ConfigLocationOptions.ExeContainingDirectory;
+                    MoveConfigFolder(startingLocation, targetLocation);
+                }
+                else if (folder == "appdata" && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.ExeContainingDirectory)
+                {
+                    startingLocation = ConfigLocationOptions.ExeContainingDirectory;
+                    targetLocation = ConfigLocationOptions.AppData;
+                    MoveConfigFolder(startingLocation, targetLocation);
+                }
+                else if (folder == "cleanonexit")
+                {
+                    _config.StaticConfig.CleanUpOnExit = true;
+                }
             }
         }
 
@@ -532,6 +517,48 @@ namespace RP_Notify
             Application.Restart();
         }
 
+        private void RateSubmittedToastActionHandler(ValueSet userInput, ToastArguments toastArguments)
+        {
+            var songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(toastArguments["serializedSongInfo"]);
+
+            if (!userInput.TryGetValue("UserRate", out object rawUserRate)) return;
+            if (!Int32.TryParse((string)rawUserRate, out int userRate)
+                && 1 <= userRate && userRate <= 10) return;
+
+            var ratingResponse = _apihandler.GetRating(songInfo.SongId, userRate);
+            if (ratingResponse.Status == "success")
+            {
+                if (songInfo.SongId == _config.State.Playback.SongInfo.SongId)
+                {
+                    _config.State.Playback = new Playback(_apihandler.GetNowplayingList());
+                }
+                else
+                {
+                    var newRating = _apihandler.GetInfo(songInfo.SongId).UserRating.ToString();
+                    songInfo.UserRating = newRating;
+                    _toastHandler.ShowSongStartToast(true, songInfo);
+                }
+            }
+        }
+
+        private void RateTileRequestedActionHandler(ToastArguments toastArguments)
+        {
+            var songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(toastArguments["serializedSongInfo"]);
+            KeyboardSendKeyHelper.SendWinKeyN();
+            Task.Delay(200).Wait();
+            _toastHandler.ShowSongRatingToast(songInfo);
+        }
+
+        #endregion
+
+        private void OnLoginInputSubmitted(object sender, LoginInputEvent loginInputEvent)
+        {
+            _log.Information(LogHelper.GetMethodName(this), $"Login input submitted for user [{loginInputEvent.UserName}]");
+
+            var loginRespponse = _apihandler.GetAuth(loginInputEvent.UserName, loginInputEvent.Password);
+            _toastHandler.LoginResponseToast(loginRespponse);
+        }
+
         private void WakeUpHandler(object sender, PowerModeChangedEventArgs e)
         {
             // clean up potentially stuck threads / reinitiate app
@@ -542,16 +569,6 @@ namespace RP_Notify
                 Application.Restart();
             }
         }
-
-        #endregion
-
-        private void OnLoginInputSubmitted(object sender, LoginInputEvent loginInputEvent)
-        {
-            _log.Information(LogHelper.GetMethodName(this), $"Login input submitted for user [{loginInputEvent.UserName}]");
-
-            _apihandler.GetAuth(loginInputEvent.UserName, loginInputEvent.Password);
-        }
-
 
         private void ApplicationExitHandler(object sender, EventArgs e)
         {
