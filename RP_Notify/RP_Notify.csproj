@@ -99,11 +99,14 @@
     <Compile Include="SongInfoListener\SongInfoListener.cs" />
     <Compile Include="Helpers\KeyboardSendKeyHelper.cs" />
     <Compile Include="ToastHandler\IToastHandler.cs" />
+    <Compile Include="ToastHandler\IToastHandlerFactory.cs" />
     <Compile Include="ToastHandler\ToastHandler.cs" />
     <Compile Include="RpApplicationCore.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RpApi\RpApiClient.cs" />
+    <Compile Include="ToastHandler\ToastHandlerFactory.cs" />
+    <Compile Include="ToastHandler\ToastHandlerFactoryExtensions.cs" />
     <Compile Include="TrayIconMenu\RpTrayIconMenu.cs" />
     <EmbeddedResource Include="LoginForm\LoginForm.resx">
       <DependentUpon>LoginForm.cs</DependentUpon>

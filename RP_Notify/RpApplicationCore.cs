@@ -26,7 +26,7 @@ namespace RP_Notify
     {
         private readonly IRpApiClientFactory _rpApiClientFactory;
         private readonly IConfigRoot _config;
-        private readonly IToastHandler _toastHandler;
+        private readonly IToastHandlerFactory _toastHandlerFactory;
         private readonly IPlayerWatcher _foobar2000Watcher;
         private readonly IPlayerWatcher _musicBeeWatcher;
         private readonly ISongInfoListener _songInfoListener;
@@ -36,12 +36,12 @@ namespace RP_Notify
 
         private int EventCounter { get; set; }
 
-        public RpApplicationCore(IConfigRoot config, IRpApiClientFactory rpApiClientFactory, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIconMenu rpTrayIcon, LoginForm.LoginForm loginForm)
+        public RpApplicationCore(IConfigRoot config, IRpApiClientFactory rpApiClientFactory, IToastHandlerFactory toastHandlerFactory, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIconMenu rpTrayIcon, LoginForm.LoginForm loginForm)
         {
             _log = log;
             _config = config;
             _rpApiClientFactory = rpApiClientFactory;
-            _toastHandler = toastHandler;
+            _toastHandlerFactory = toastHandlerFactory;
             _songInfoListener = songInfoListener;
             _foobar2000Watcher = foobar2000Watcher;
             _musicBeeWatcher = musicBeeWatcher;
@@ -66,7 +66,7 @@ namespace RP_Notify
             // Refresh cookies
             if (_config.IsUserAuthenticated())
             {
-                _rpApiClientFactory.Create().GetAuth();
+                // _rpApiClientFactory.Create().GetAuth();
             }
 
             _config.State.ChannelList = _rpApiClientFactory.Create().GetChannelList();
@@ -106,7 +106,7 @@ namespace RP_Notify
             // At the very first run, ask for config folder location
             if (!_config.StaticConfig.ConfigBaseFolderExisted)
             {
-                _toastHandler.ConfigFolderToast();
+                _toastHandlerFactory.Create().ConfigFolderToast();
             }
 
             // Start listen for song changes
@@ -129,7 +129,7 @@ namespace RP_Notify
         private void TrayIconDoubleClickHandler(object sender, MouseEventArgs e)
         {
             _log.Information(LogHelper.GetMethodName(this), "Invoked - Sender: {Sender}", sender.GetType());
-            _toastHandler.ShowSongDetailToast();
+            _toastHandlerFactory.Create().ShowSongDetailToast();
 
         }
 
@@ -222,7 +222,7 @@ namespace RP_Notify
                 catch (Exception ex)
                 {
                     _log.Error(LogHelper.GetMethodName(this), ex);
-                    _toastHandler.ErrorToast(ex);
+                    _toastHandlerFactory.Create().ErrorToast(ex);
                     Task.Delay(10000).Wait();
                     Application.Exit();
                 }
@@ -237,7 +237,7 @@ namespace RP_Notify
 
             if (_config.ExternalConfig.ShowOnNewSong)
             {
-                _toastHandler.ShowSongStartToast(true);
+                _toastHandlerFactory.Create().ShowSongStartToast(true);
             }
         }
 
@@ -273,21 +273,21 @@ namespace RP_Notify
         {
             // USER - menu button demonstration
 
-            _toastHandler.ShowSongDetailToast();
+            _toastHandlerFactory.Create().ShowSongDetailToast();
         }
 
         private void OnRpBannerOnDetailChange()
         {
             // USER - menu button demonstration
 
-            _toastHandler.ShowSongDetailToast();
+            _toastHandlerFactory.Create().ShowSongDetailToast();
         }
 
         private void OnShowSongRatingChange()
         {
             // USER - menu button demonstration
 
-            _toastHandler.ShowSongStartToast(true);
+            _toastHandlerFactory.Create().ShowSongStartToast(true);
         }
 
         private void OnPromptForRatingChange()
@@ -296,7 +296,7 @@ namespace RP_Notify
 
             if (_config.ExternalConfig.PromptForRating)
             {
-                _toastHandler.ShowSongRatingToast();
+                _toastHandlerFactory.Create().ShowSongRatingToast();
             }
         }
 
@@ -327,7 +327,7 @@ namespace RP_Notify
                 && _foobar2000Watcher.CheckPlayerState(out bool channelChange)
                 && !channelChange)
             {
-                _toastHandler.ShowSongStartToast();
+                _toastHandlerFactory.Create().ShowSongStartToast();
             }
         }
 
@@ -341,7 +341,7 @@ namespace RP_Notify
                 && _musicBeeWatcher.CheckPlayerState(out bool channelChange)
                 && !channelChange)
             {
-                _toastHandler.ShowSongStartToast();
+                _toastHandlerFactory.Create().ShowSongStartToast();
             }
         }
 
@@ -362,7 +362,7 @@ namespace RP_Notify
         private void OnPlaybackChange()
         {
             // APP - song is updated in State
-            _toastHandler.ShowSongStartToast();
+            _toastHandlerFactory.Create().ShowSongStartToast();
         }
 
         private void OnActivePlayerIdChange()
@@ -533,7 +533,7 @@ namespace RP_Notify
                 {
                     var newRating = _rpApiClientFactory.Create().GetInfo(songInfo.SongId).UserRating.ToString();
                     songInfo.UserRating = newRating;
-                    _toastHandler.ShowSongStartToast(true, songInfo);
+                    _toastHandlerFactory.Create().ShowSongStartToast(true, songInfo);
                 }
             }
         }
@@ -543,7 +543,7 @@ namespace RP_Notify
             var songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(toastArguments["serializedSongInfo"]);
             KeyboardSendKeyHelper.SendWinKeyN();
             Task.Delay(200).Wait();
-            _toastHandler.ShowSongRatingToast(songInfo);
+            _toastHandlerFactory.Create().ShowSongRatingToast(songInfo);
         }
 
         #endregion
@@ -553,7 +553,7 @@ namespace RP_Notify
             _log.Information(LogHelper.GetMethodName(this), $"Login input submitted for user [{loginInputEvent.UserName}]");
 
             var loginRespponse = _rpApiClientFactory.Create().GetAuth(loginInputEvent.UserName, loginInputEvent.Password);
-            _toastHandler.LoginResponseToast(loginRespponse);
+            _toastHandlerFactory.Create().LoginResponseToast(loginRespponse);
         }
 
         private void WakeUpHandler(object sender, PowerModeChangedEventArgs e)
@@ -590,7 +590,7 @@ namespace RP_Notify
             {
                 _log.Information(LogHelper.GetMethodName(this), "App data delete requested");
                 _log.Dispose();
-                _toastHandler.DataEraseToast();
+                _toastHandlerFactory.Create().DataEraseToast();
                 Task.Delay(5000).Wait();
                 ToastNotificationManagerCompat.History.Clear();
                 ToastNotificationManagerCompat.Uninstall();

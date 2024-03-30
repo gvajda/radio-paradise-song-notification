@@ -134,8 +134,6 @@ namespace RP_Notify.RpApi
 
                 var rpBaseAddressUri = new Uri(_config.StaticConfig.RpApiBaseUrl);
 
-                var client = _httpClientFactory.CreateClient();
-                client.BaseAddress = rpBaseAddressUri;
 
                 var requestFullPath = requestPath;
 
@@ -145,14 +143,21 @@ namespace RP_Notify.RpApi
                         .Join("&", parameters
                             .Where(p => !string.IsNullOrEmpty(p.Key) && !string.IsNullOrEmpty(p.Value))
                             .Select(kvp => $"{kvp.Key}={kvp.Value}"));
-                    requestFullPath = requestPath + "?" + queryParamString;
+
+                    requestFullPath = !string.IsNullOrEmpty(queryParamString)
+                        ? requestFullPath + "?" + queryParamString
+                        : requestFullPath;
                 }
 
                 var request = new HttpRequestMessage(method, requestFullPath);
 
+                var client = _httpClientFactory.CreateClient();
+                client.BaseAddress = rpBaseAddressUri;
                 if (_config.IsUserAuthenticated())
                 {
-                    request.Headers.Add("Cookie", _config.State.RpCookieContainer.GetCookieHeader(rpBaseAddressUri));
+                    var cookieHeaderVlue = _config.State.RpCookieContainer.GetCookieHeader(rpBaseAddressUri);
+                    // client.DefaultRequestHeaders.Add("Cookie", cookieHeaderVlue);
+                    request.Headers.Add("Cookie", cookieHeaderVlue);
                 }
 
                 var response = client.SendAsync(request).Result;

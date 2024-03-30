@@ -17,18 +17,18 @@ namespace RP_Notify.TrayIconMenu
     {
         private readonly IConfigRoot _config;
         private readonly ILog _log;
-        private readonly IToastHandler _toastHandler;
+        private readonly IToastHandlerFactory _toastHandlerFactory;
 
 
         private readonly ContextMenu contextMenu;
 
         public NotifyIcon NotifyIcon { get; }
 
-        public RpTrayIconMenu(IConfigRoot config, ILog log, IToastHandler toastHandler)
+        public RpTrayIconMenu(IConfigRoot config, ILog log, IToastHandlerFactory toastHandlerFactory)
         {
             _config = config;
             _log = log;
-            _toastHandler = toastHandler;
+            _toastHandlerFactory = toastHandlerFactory;
 
             contextMenu = new ContextMenu();
             NotifyIcon = new NotifyIcon();
@@ -428,7 +428,7 @@ namespace RP_Notify.TrayIconMenu
                 }
                 else
                 {
-                    _toastHandler.ShowLoginToast();
+                    _toastHandlerFactory.Create().ShowLoginToast();
                 }
             };
 

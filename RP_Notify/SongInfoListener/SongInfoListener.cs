@@ -16,7 +16,7 @@ namespace RP_Notify.SongInfoListener
         private readonly IRpApiClientFactory _rpApiClientFactory;
         private readonly IConfigRoot _config;
         private readonly ILog _log;
-        private readonly IToastHandler _toastHandler;
+        private readonly IToastHandlerFactory _toastHandlerFactory;
 
         private const int secondsBeforeSongEndsToPromptRating = 20;
 
@@ -24,12 +24,12 @@ namespace RP_Notify.SongInfoListener
         private CancellationTokenSource NextSongWaiterCancellationTokenSource { get; set; }
         private CancellationTokenSource ListenerCancellationTokenSource { get; }
 
-        public SongInfoListener(IRpApiClientFactory rpApiClientFactory, IConfigRoot config, ILog log, IToastHandler toastHandler)
+        public SongInfoListener(IRpApiClientFactory rpApiClientFactory, IConfigRoot config, ILog log, IToastHandlerFactory toastHandlerFactory)
         {
             _rpApiClientFactory = rpApiClientFactory;
             _config = config;
             _log = log;
-            _toastHandler = toastHandler;
+            _toastHandlerFactory = toastHandlerFactory;
 
             NextSongWaiterCancellationTokenSource = new CancellationTokenSource();
             ListenerCancellationTokenSource = new CancellationTokenSource();
@@ -118,7 +118,7 @@ namespace RP_Notify.SongInfoListener
                     catch (Exception ex)
                     {
                         _log.Error(LogHelper.GetMethodName(this), ex);
-                        _toastHandler.ErrorToast(ex);
+                        _toastHandlerFactory.Create().ErrorToast(ex);
                         Task.Delay(10000).Wait();
                         Application.Exit();
                     }
@@ -171,7 +171,7 @@ namespace RP_Notify.SongInfoListener
                 {
                     return;
                 }
-                _toastHandler.ShowSongRatingToast();
+                _toastHandlerFactory.Create().ShowSongRatingToast();
             }
         }
 
