@@ -5,8 +5,6 @@ namespace RP_Notify.ToastHandler
 {
     public interface IToastHandler
     {
-
-        event EventHandler ToastActionHandler;
         void ShowSongStartToast(bool force = false, PlayListSong songInfo = null);
         void ShowSongRatingToast(PlayListSong songInfo = null);
         void ShowSongDetailToast();

@@ -1,6 +1,7 @@
 ﻿using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using RP_Notify.PlayerWatcher.MusicBee.API;
+using RP_Notify.PlayerWatchers.MusicBee.API;
 using System;
 using System.Linq;
 using System.Threading;
@@ -13,17 +14,17 @@ namespace RP_Notify.PlayerWatcher.MusicBee
     {
         private readonly IConfigRoot _config;
         private readonly ILog _log;
-        private readonly MusicBeeIPC _playerApi;
+        private readonly IMusicBeeIPCFactory _musicBeeIPCFactory;
 
         private int CheckDelayMillisecs { get; set; }
         private Task MusicBeeWatcherTask { get; set; }
         private CancellationTokenSource MusicBeeWatcherTaskCancellationTokenSource { get; set; }
 
-        public MusicBeeWatcher(IConfigRoot config, ILog log, MusicBeeIPC playerApi)
+        public MusicBeeWatcher(IConfigRoot config, ILog log, IMusicBeeIPCFactory musicBeeIPCFactory)
         {
             _config = config;
             _log = log;
-            _playerApi = playerApi;
+            _musicBeeIPCFactory = musicBeeIPCFactory;
 
             Init();
         }
@@ -135,7 +136,7 @@ namespace RP_Notify.PlayerWatcher.MusicBee
         {
             if (TryGetPlayedFilePath(out string playedFilePath)
                 && playedFilePath.Contains("radioparadise")
-                && _playerApi.GetPlayState() == MusicBeeIPC.PlayState.Playing)
+                && _musicBeeIPCFactory.GetClient().GetPlayState() == MusicBeeIPC.PlayState.Playing)
             {
                 matchingChannel = Int32.Parse(
                     _config.State.ChannelList
@@ -161,12 +162,12 @@ namespace RP_Notify.PlayerWatcher.MusicBee
 
             try
             {
-                if (!_playerApi.Probe())
+                if (!_musicBeeIPCFactory.GetClient().Probe())
                 {
                     return false;
                 }
 
-                playedFilePath = _playerApi.GetFileUrl();
+                playedFilePath = _musicBeeIPCFactory.GetClient().GetFileUrl();
                 return true;
             }
             catch

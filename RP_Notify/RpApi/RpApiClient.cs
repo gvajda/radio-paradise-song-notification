@@ -21,7 +21,6 @@ namespace RP_Notify.RpApi
         {
             _config = config;
             _log = log;
-
             _httpClientFactory = httpClientFactory;
         }
 

@@ -3,8 +3,8 @@ using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using RP_Notify.PlayerWatcher.Foobar2000;
 using RP_Notify.PlayerWatcher.MusicBee;
-using RP_Notify.PlayerWatcher.MusicBee.API;
 using RP_Notify.PlayerWatchers.Foobar2000.BeefWebApiClient;
+using RP_Notify.PlayerWatchers.MusicBee.API;
 using RP_Notify.RpApi;
 using RP_Notify.SongInfoListener;
 using RP_Notify.ToastHandler;
@@ -20,15 +20,14 @@ namespace RP_Notify
         static void Main()
         {
             var serviceCollection = new ServiceCollection()
-                .AddHttpClient()
                 .AddSingleton<IConfigRoot, ConfigRoot>()
                 .AddSingleton<ILog, Log>()
                 .AddRpApiClient()
-                .AddTransient<BeefWebApiClient>()
+                .AddBeefWebApiClient()
+                .AddMusicBeeIPCClient()
                 .AddSingleton<LoginForm.LoginForm>()
                 .AddScoped<IToastHandler, ToastHandler.ToastHandler>()
                 .AddSingleton<Foobar2000Watcher>()
-                .AddSingleton<MusicBeeIPC>()
                 .AddSingleton<MusicBeeWatcher>()
                 .AddSingleton<ISongInfoListener, SongInfoListener.SongInfoListener>()
                 .AddSingleton<RpTrayIconMenu>()
