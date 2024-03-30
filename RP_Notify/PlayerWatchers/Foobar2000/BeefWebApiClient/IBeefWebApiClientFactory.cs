@@ -2,6 +2,6 @@
 {
     internal interface IBeefWebApiClientFactory
     {
-        IBeefWebApiClient GetClient();
+        IBeefWebApiClient Create();
     }
 }

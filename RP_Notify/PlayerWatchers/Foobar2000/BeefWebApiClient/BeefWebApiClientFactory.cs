@@ -11,7 +11,7 @@ namespace RP_Notify.PlayerWatchers.Foobar2000.BeefWebApiClient
             _beefWebApiClientCreator = beefWebApiClientCreator;
         }
 
-        public IBeefWebApiClient GetClient()
+        public IBeefWebApiClient Create()
         {
             return _beefWebApiClientCreator();
         }

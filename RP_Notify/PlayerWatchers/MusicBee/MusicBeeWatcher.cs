@@ -136,7 +136,7 @@ namespace RP_Notify.PlayerWatcher.MusicBee
         {
             if (TryGetPlayedFilePath(out string playedFilePath)
                 && playedFilePath.Contains("radioparadise")
-                && _musicBeeIPCFactory.GetClient().GetPlayState() == MusicBeeIPC.PlayState.Playing)
+                && _musicBeeIPCFactory.Create().GetPlayState() == MusicBeeIPC.PlayState.Playing)
             {
                 matchingChannel = Int32.Parse(
                     _config.State.ChannelList
@@ -162,12 +162,12 @@ namespace RP_Notify.PlayerWatcher.MusicBee
 
             try
             {
-                if (!_musicBeeIPCFactory.GetClient().Probe())
+                if (!_musicBeeIPCFactory.Create().Probe())
                 {
                     return false;
                 }
 
-                playedFilePath = _musicBeeIPCFactory.GetClient().GetFileUrl();
+                playedFilePath = _musicBeeIPCFactory.Create().GetFileUrl();
                 return true;
             }
             catch

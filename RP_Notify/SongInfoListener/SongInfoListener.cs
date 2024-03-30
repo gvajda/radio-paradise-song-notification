@@ -135,7 +135,7 @@ namespace RP_Notify.SongInfoListener
             {
                 _log.Information(LogHelper.GetMethodName(this), "Refresh available players");
 
-                _config.State.RpTrackingConfig.Players = _rpApiClientFactory.GetClient().GetSync_v2().Players;
+                _config.State.RpTrackingConfig.Players = _rpApiClientFactory.Create().GetSync_v2().Players;
 
                 if (_config.IsRpPlayerTrackingChannel(out int trackedChannel) && _config.ExternalConfig.Channel != trackedChannel)
                 {
@@ -209,7 +209,7 @@ namespace RP_Notify.SongInfoListener
             _log.Information(LogHelper.GetMethodName(this), $"Invoked - Get song info for {logMessageDetail}");
 
             var oldPlayback = _config.State.Playback;
-            var nowPlayingList = _rpApiClientFactory.GetClient().GetNowplayingList();
+            var nowPlayingList = _rpApiClientFactory.Create().GetNowplayingList();
 
             if (_config.ExternalConfig.Channel == 2050 &&
                 (nowPlayingList.Song == null

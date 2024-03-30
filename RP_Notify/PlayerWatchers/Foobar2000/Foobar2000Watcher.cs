@@ -161,7 +161,7 @@ namespace RP_Notify.PlayerWatcher.Foobar2000
 
             try
             {
-                var foobarApiResp = _beefWebApiClientFactory.GetClient().GetPlayerStateAsync(columns).Result;
+                var foobarApiResp = _beefWebApiClientFactory.Create().GetPlayerStateAsync(columns).Result;
                 playedFilePath = foobarApiResp.Player.ActiveItem.Columns.First();
                 return true;
             }

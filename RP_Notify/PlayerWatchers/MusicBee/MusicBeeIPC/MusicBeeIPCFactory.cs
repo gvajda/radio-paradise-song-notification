@@ -12,7 +12,7 @@ namespace RP_Notify.PlayerWatchers.MusicBee.API
             _musicBeeIPCClientCreator = musicBeeIPCClientCreator;
         }
 
-        public IMusicBeeIPC GetClient()
+        public IMusicBeeIPC Create()
         {
             return _musicBeeIPCClientCreator();
         }

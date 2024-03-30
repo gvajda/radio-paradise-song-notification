@@ -2,6 +2,6 @@
 {
     internal interface IRpApiClientFactory
     {
-        IRpApiClient GetClient();
+        IRpApiClient Create();
     }
 }

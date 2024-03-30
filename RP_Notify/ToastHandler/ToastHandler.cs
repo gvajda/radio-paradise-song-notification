@@ -2,7 +2,6 @@
 using RP_Notify.Config;
 using RP_Notify.ErrorHandler;
 using RP_Notify.Helpers;
-using RP_Notify.RpApi;
 using RP_Notify.RpApi.ResponseModel;
 using System;
 using System.IO;
@@ -17,9 +16,7 @@ namespace RP_Notify.ToastHandler
         private readonly IConfigRoot _config;
         private readonly ILog _log;
 
-        public event EventHandler ToastActionHandler = delegate { };
-
-        public ToastHandler(IConfigRoot config, IRpApiClientFactory rpApiClientFactory, ILog log)
+        public ToastHandler(IConfigRoot config, ILog log)
         {
             _config = config;
             _log = log;

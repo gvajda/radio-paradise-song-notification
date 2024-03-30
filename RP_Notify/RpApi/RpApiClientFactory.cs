@@ -11,7 +11,7 @@ namespace RP_Notify.RpApi
             _rpApiClientCreator = rpApiClientCreator;
         }
 
-        public IRpApiClient GetClient()
+        public IRpApiClient Create()
         {
             return _rpApiClientCreator();
         }

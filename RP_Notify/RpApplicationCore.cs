@@ -66,10 +66,10 @@ namespace RP_Notify
             // Refresh cookies
             if (_config.IsUserAuthenticated())
             {
-                _rpApiClientFactory.GetClient().GetAuth();
+                _rpApiClientFactory.Create().GetAuth();
             }
 
-            _config.State.ChannelList = _rpApiClientFactory.GetClient().GetChannelList();
+            _config.State.ChannelList = _rpApiClientFactory.Create().GetChannelList();
             _songInfoListener.CheckTrackedRpPlayerStatus();     // Check if RP player is still tracked (updates State)
 
             if (_config.State.RpTrackingConfig.Players.Any())
@@ -392,7 +392,7 @@ namespace RP_Notify
 
             if (_config.ExternalConfig.EnableRpOfficialTracking)
             {
-                _config.State.RpTrackingConfig.Players = _rpApiClientFactory.GetClient().GetSync_v2().Players;
+                _config.State.RpTrackingConfig.Players = _rpApiClientFactory.Create().GetSync_v2().Players;
             }
             else
             {
@@ -403,7 +403,7 @@ namespace RP_Notify
                     _config.ExternalConfig.Channel = 0;
                 }
 
-                _config.State.RpTrackingConfig.Players = _rpApiClientFactory.GetClient().GetSync_v2().Players;
+                _config.State.RpTrackingConfig.Players = _rpApiClientFactory.Create().GetSync_v2().Players;
                 _config.State.RpTrackingConfig.ActivePlayerId = null;
                 _config.State.RpTrackingConfig.Players = new List<Player>();
             }
@@ -522,16 +522,16 @@ namespace RP_Notify
             if (!Int32.TryParse((string)rawUserRate, out int userRate)
                 && 1 <= userRate && userRate <= 10) return;
 
-            var ratingResponse = _rpApiClientFactory.GetClient().GetRating(songInfo.SongId, userRate);
+            var ratingResponse = _rpApiClientFactory.Create().GetRating(songInfo.SongId, userRate);
             if (ratingResponse.Status == "success")
             {
                 if (songInfo.SongId == _config.State.Playback.SongInfo.SongId)
                 {
-                    _config.State.Playback = new Playback(_rpApiClientFactory.GetClient().GetNowplayingList());
+                    _config.State.Playback = new Playback(_rpApiClientFactory.Create().GetNowplayingList());
                 }
                 else
                 {
-                    var newRating = _rpApiClientFactory.GetClient().GetInfo(songInfo.SongId).UserRating.ToString();
+                    var newRating = _rpApiClientFactory.Create().GetInfo(songInfo.SongId).UserRating.ToString();
                     songInfo.UserRating = newRating;
                     _toastHandler.ShowSongStartToast(true, songInfo);
                 }
@@ -552,7 +552,7 @@ namespace RP_Notify
         {
             _log.Information(LogHelper.GetMethodName(this), $"Login input submitted for user [{loginInputEvent.UserName}]");
 
-            var loginRespponse = _rpApiClientFactory.GetClient().GetAuth(loginInputEvent.UserName, loginInputEvent.Password);
+            var loginRespponse = _rpApiClientFactory.Create().GetAuth(loginInputEvent.UserName, loginInputEvent.Password);
             _toastHandler.LoginResponseToast(loginRespponse);
         }
 
