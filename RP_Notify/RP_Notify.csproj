@@ -65,9 +65,12 @@
     </Compile>
     <Compile Include="LoginForm\LoginInputEvent.cs" />
     <Compile Include="PlayerWatchers\Foobar2000\BeefWebApiClient\BeefWebApiClient.cs" />
-    <Compile Include="RpApi\IRpApiHandler.cs" />
+    <Compile Include="RpApi\IRpApiClient.cs" />
     <Compile Include="Config\RpConfigurationChangeEvent.cs" />
     <Compile Include="Config\IConfigRoot.cs" />
+    <Compile Include="RpApi\IRpApiClientFactory.cs" />
+    <Compile Include="RpApi\RpApiClientFactory.cs" />
+    <Compile Include="RpApi\RpApiClientFactoryExtensions.cs" />
     <Compile Include="RpApi\RpApiResponseModel.cs" />
     <Compile Include="Config\ConfigRoot.cs" />
     <Compile Include="Config\State.cs" />
@@ -93,7 +96,7 @@
     <Compile Include="RpApplicationCore.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RpApi\RpApiHandler.cs" />
+    <Compile Include="RpApi\RpApiClient.cs" />
     <Compile Include="TrayIconMenu\RpTrayIconMenu.cs" />
     <EmbeddedResource Include="LoginForm\LoginForm.resx">
       <DependentUpon>LoginForm.cs</DependentUpon>

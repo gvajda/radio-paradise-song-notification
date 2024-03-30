@@ -13,8 +13,7 @@ namespace RP_Notify.SongInfoListener
 {
     class SongInfoListener : ISongInfoListener
     {
-
-        private readonly IRpApiHandler _apiHandler;
+        private readonly IRpApiClientFactory _rpApiClientFactory;
         private readonly IConfigRoot _config;
         private readonly ILog _log;
         private readonly IToastHandler _toastHandler;
@@ -25,9 +24,9 @@ namespace RP_Notify.SongInfoListener
         private CancellationTokenSource NextSongWaiterCancellationTokenSource { get; set; }
         private CancellationTokenSource ListenerCancellationTokenSource { get; }
 
-        public SongInfoListener(IRpApiHandler apiHandler, IConfigRoot config, ILog log, IToastHandler toastHandler)
+        public SongInfoListener(IRpApiClientFactory rpApiClientFactory, IConfigRoot config, ILog log, IToastHandler toastHandler)
         {
-            _apiHandler = apiHandler;
+            _rpApiClientFactory = rpApiClientFactory;
             _config = config;
             _log = log;
             _toastHandler = toastHandler;
@@ -136,7 +135,7 @@ namespace RP_Notify.SongInfoListener
             {
                 _log.Information(LogHelper.GetMethodName(this), "Refresh available players");
 
-                _config.State.RpTrackingConfig.Players = _apiHandler.GetSync_v2().Players;
+                _config.State.RpTrackingConfig.Players = _rpApiClientFactory.GetClient().GetSync_v2().Players;
 
                 if (_config.IsRpPlayerTrackingChannel(out int trackedChannel) && _config.ExternalConfig.Channel != trackedChannel)
                 {
@@ -210,7 +209,7 @@ namespace RP_Notify.SongInfoListener
             _log.Information(LogHelper.GetMethodName(this), $"Invoked - Get song info for {logMessageDetail}");
 
             var oldPlayback = _config.State.Playback;
-            var nowPlayingList = _apiHandler.GetNowplayingList();
+            var nowPlayingList = _rpApiClientFactory.GetClient().GetNowplayingList();
 
             if (_config.ExternalConfig.Channel == 2050 &&
                 (nowPlayingList.Song == null

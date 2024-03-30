@@ -24,7 +24,7 @@ namespace RP_Notify
 {
     class RpApplicationCore : ApplicationContext
     {
-        private readonly IRpApiHandler _apihandler;
+        private readonly IRpApiClientFactory _rpApiClientFactory;
         private readonly IConfigRoot _config;
         private readonly IToastHandler _toastHandler;
         private readonly IPlayerWatcher _foobar2000Watcher;
@@ -36,11 +36,11 @@ namespace RP_Notify
 
         private int EventCounter { get; set; }
 
-        public RpApplicationCore(IConfigRoot config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIconMenu rpTrayIcon, LoginForm.LoginForm loginForm)
+        public RpApplicationCore(IConfigRoot config, IRpApiClientFactory rpApiClientFactory, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIconMenu rpTrayIcon, LoginForm.LoginForm loginForm)
         {
             _log = log;
-            _apihandler = apiHandler;
             _config = config;
+            _rpApiClientFactory = rpApiClientFactory;
             _toastHandler = toastHandler;
             _songInfoListener = songInfoListener;
             _foobar2000Watcher = foobar2000Watcher;
@@ -66,10 +66,10 @@ namespace RP_Notify
             // Refresh cookies
             if (_config.IsUserAuthenticated())
             {
-                _apihandler.GetAuth();
+                _rpApiClientFactory.GetClient().GetAuth();
             }
 
-            _config.State.ChannelList = _apihandler.GetChannelList();
+            _config.State.ChannelList = _rpApiClientFactory.GetClient().GetChannelList();
             _songInfoListener.CheckTrackedRpPlayerStatus();     // Check if RP player is still tracked (updates State)
 
             if (_config.State.RpTrackingConfig.Players.Any())
@@ -392,7 +392,7 @@ namespace RP_Notify
 
             if (_config.ExternalConfig.EnableRpOfficialTracking)
             {
-                _config.State.RpTrackingConfig.Players = _apihandler.GetSync_v2().Players;
+                _config.State.RpTrackingConfig.Players = _rpApiClientFactory.GetClient().GetSync_v2().Players;
             }
             else
             {
@@ -403,7 +403,7 @@ namespace RP_Notify
                     _config.ExternalConfig.Channel = 0;
                 }
 
-                _config.State.RpTrackingConfig.Players = _apihandler.GetSync_v2().Players;
+                _config.State.RpTrackingConfig.Players = _rpApiClientFactory.GetClient().GetSync_v2().Players;
                 _config.State.RpTrackingConfig.ActivePlayerId = null;
                 _config.State.RpTrackingConfig.Players = new List<Player>();
             }
@@ -522,16 +522,16 @@ namespace RP_Notify
             if (!Int32.TryParse((string)rawUserRate, out int userRate)
                 && 1 <= userRate && userRate <= 10) return;
 
-            var ratingResponse = _apihandler.GetRating(songInfo.SongId, userRate);
+            var ratingResponse = _rpApiClientFactory.GetClient().GetRating(songInfo.SongId, userRate);
             if (ratingResponse.Status == "success")
             {
                 if (songInfo.SongId == _config.State.Playback.SongInfo.SongId)
                 {
-                    _config.State.Playback = new Playback(_apihandler.GetNowplayingList());
+                    _config.State.Playback = new Playback(_rpApiClientFactory.GetClient().GetNowplayingList());
                 }
                 else
                 {
-                    var newRating = _apihandler.GetInfo(songInfo.SongId).UserRating.ToString();
+                    var newRating = _rpApiClientFactory.GetClient().GetInfo(songInfo.SongId).UserRating.ToString();
                     songInfo.UserRating = newRating;
                     _toastHandler.ShowSongStartToast(true, songInfo);
                 }
@@ -552,7 +552,7 @@ namespace RP_Notify
         {
             _log.Information(LogHelper.GetMethodName(this), $"Login input submitted for user [{loginInputEvent.UserName}]");
 
-            var loginRespponse = _apihandler.GetAuth(loginInputEvent.UserName, loginInputEvent.Password);
+            var loginRespponse = _rpApiClientFactory.GetClient().GetAuth(loginInputEvent.UserName, loginInputEvent.Password);
             _toastHandler.LoginResponseToast(loginRespponse);
         }
 

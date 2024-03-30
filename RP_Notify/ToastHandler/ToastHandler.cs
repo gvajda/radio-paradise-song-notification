@@ -15,15 +15,13 @@ namespace RP_Notify.ToastHandler
     internal class ToastHandler : IToastHandler
     {
         private readonly IConfigRoot _config;
-        private readonly IRpApiHandler _apiHandler;
         private readonly ILog _log;
 
         public event EventHandler ToastActionHandler = delegate { };
 
-        public ToastHandler(IConfigRoot config, IRpApiHandler apiHandler, ILog log)
+        public ToastHandler(IConfigRoot config, IRpApiClientFactory rpApiClientFactory, ILog log)
         {
             _config = config;
-            _apiHandler = apiHandler;
             _log = log;
         }
 

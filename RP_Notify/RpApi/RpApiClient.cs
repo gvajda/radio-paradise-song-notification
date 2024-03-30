@@ -11,13 +11,13 @@ using System.Threading.Tasks;
 
 namespace RP_Notify.RpApi
 {
-    class RpApiHandler : IRpApiHandler
+    class RpApiClient : IRpApiClient
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfigRoot _config;
         private readonly ILog _log;
 
-        public RpApiHandler(IConfigRoot config, ILog log, IHttpClientFactory httpClientFactory)
+        public RpApiClient(IConfigRoot config, ILog log, IHttpClientFactory httpClientFactory)
         {
             _config = config;
             _log = log;
@@ -157,8 +157,6 @@ namespace RP_Notify.RpApi
                 }
 
                 var response = client.SendAsync(request).Result;
-
-                client.Dispose();
 
                 if (response.IsSuccessStatusCode)
                 {

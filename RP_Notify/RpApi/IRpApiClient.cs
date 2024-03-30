@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace RP_Notify.RpApi
 {
-    public interface IRpApiHandler
+    public interface IRpApiClient
     {
         NowplayingList GetNowplayingList(int list_num = 1);
         NowPlaying GetNowPlaying(string channel = "0");
