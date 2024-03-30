@@ -23,17 +23,6 @@ namespace RP_Notify.RpApi
             _log = log;
 
             _httpClientFactory = httpClientFactory;
-
-            Init();
-        }
-
-        private void Init()
-        {
-            _log.Information(LogHelper.GetMethodName(this), $"Initialization started - Checking for cookie cache and fetch RP channel list");
-
-            _log.Information(LogHelper.GetMethodName(this), $"Get channel list");
-            //_config.State.ChannelList = GetChannelList();
-            _log.Information(LogHelper.GetMethodName(this), "Initialization finished - Channel list: {@ChannelList}", _config.State.ChannelList);
         }
 
         public NowplayingList GetNowplayingList(int list_num = 1)

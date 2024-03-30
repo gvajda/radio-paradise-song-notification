@@ -352,6 +352,11 @@ namespace RP_Notify.ToastHandler
 
             var oldreturn = $"<progress value = '{progressValue}' title = '{TimeSpanToMinutes(songDuration)}' status = '{TimeSpanToMinutes(elapsedMillisecs)}' valueStringOverride = '-{TimeSpanToMinutes(mSecsLeftFromSong)}'/> ";
 
+            if (IsPodcastDiscussion(_config))
+            {
+                return toastContentBuilder;
+            }
+
             return toastContentBuilder.AddProgressBar(progressTitle,
                                                       progressValue,
                                                       progressIsIndeterminate,
@@ -451,6 +456,11 @@ namespace RP_Notify.ToastHandler
                                 : "Update")
                         + " rating";
 
+            if (IsPodcastDiscussion(_config))
+            {
+                return toastContentBuilder;
+            }
+
             return _config.IsUserAuthenticated()
                 ? toastContentBuilder
                     .AddInputTextBox("UserRate", ratingHintText)
@@ -471,6 +481,11 @@ namespace RP_Notify.ToastHandler
                 ? TimeSpan.FromSeconds(timeLength)
                 : TimeSpan.FromMilliseconds(timeLength);
             return time.ToString(@"m\:ss");
+        }
+
+        private static bool IsPodcastDiscussion(IConfigRoot _config)
+        {
+            return _config.ExternalConfig.Channel == 2050 && _config.State.Playback.SongInfoExpiration <= DateTime.Now;
         }
     }
 }

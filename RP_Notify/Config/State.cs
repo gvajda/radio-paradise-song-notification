@@ -1,4 +1,4 @@
-﻿using RP_Notify.Helpers;
+using RP_Notify.Helpers;
 using RP_Notify.RpApi.ResponseModel;
 using System;
 using System.Collections.Generic;
@@ -54,6 +54,7 @@ namespace RP_Notify.Config
             set
             {
                 if (playback == null
+                    || playback.SongInfo == null
                     || string.IsNullOrEmpty(playback.SongInfo.SongId)
                     || playback.SongInfo.SongId != value.SongInfo.SongId
                     || playback.SongInfo.Event != value.SongInfo.Event)
@@ -151,7 +152,7 @@ namespace RP_Notify.Config
         {
             this.NowplayingList = NowplayingList;
 
-            if (NowplayingList.Song.TryGetValue("0", out var nowPlayingSong))
+            if (NowplayingList.Song != null && NowplayingList.Song.TryGetValue("0", out var nowPlayingSong))
             {
                 SongInfo = nowPlayingSong;
                 SongInfoExpiration = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(nowPlayingSong.SchedTime + "000") + long.Parse(nowPlayingSong.Duration)).LocalDateTime;

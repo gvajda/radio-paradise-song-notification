@@ -103,6 +103,7 @@ namespace RP_Notify.RpApi.ResponseModel
         public string PlayerId { get; set; }
 
         [JsonPropertyName("hist_num")]
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int HistNum { get; set; }
 
         [JsonPropertyName("song")]

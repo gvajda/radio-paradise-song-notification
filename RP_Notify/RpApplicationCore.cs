@@ -70,9 +70,6 @@ namespace RP_Notify
             }
 
             _config.State.ChannelList = _apihandler.GetChannelList();
-
-            _log.Information(LogHelper.GetMethodName(this), "Channel banner images downloaded");
-
             _songInfoListener.CheckTrackedRpPlayerStatus();     // Check if RP player is still tracked (updates State)
 
             if (_config.State.RpTrackingConfig.Players.Any())
