@@ -7,7 +7,8 @@ namespace RP_Notify.RpApi.ResponseModel
     {
 
         [JsonPropertyName("song_id")]
-        public string SongId { get; set; }
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+        public int SongId { get; set; }
 
         [JsonPropertyName("artist")]
         public string Artist { get; set; }

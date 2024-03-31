@@ -151,14 +151,8 @@ namespace RP_Notify.RpApi
 
                 var request = new HttpRequestMessage(method, requestFullPath);
 
-                var client = _httpClientFactory.CreateClient();
+                var client = _httpClientFactory.CreateClient(this.GetType().Name);
                 client.BaseAddress = rpBaseAddressUri;
-                if (_config.IsUserAuthenticated())
-                {
-                    var cookieHeaderVlue = _config.State.RpCookieContainer.GetCookieHeader(rpBaseAddressUri);
-                    // client.DefaultRequestHeaders.Add("Cookie", cookieHeaderVlue);
-                    request.Headers.Add("Cookie", cookieHeaderVlue);
-                }
 
                 var response = client.SendAsync(request).Result;
 
@@ -171,6 +165,17 @@ namespace RP_Notify.RpApi
 
                     if (requestPath == "api/auth" && response.Headers.TryGetValues("Set-Cookie", out var responeCookies))
                     {
+                        if (responeCookies.Any(c =>
+                            c.Contains("C_username=anonymous")
+                            || c.Contains("C_passwd=deleted")
+                            || c.Contains("C_validated=deleted")
+                            )
+                        )
+                        {
+                            _log.Error(LogHelper.GetMethodName(this), "Authentication failed - the returned cookie is invalid");
+                            return result;
+                        }
+
                         var cookieContainer = new CookieContainer();
 
                         foreach (var cookie in responeCookies)
@@ -188,8 +193,6 @@ namespace RP_Notify.RpApi
                     _log.Error(LogHelper.GetMethodName(this), "HTTP request failed - Status code: {StatusCode} - Reason: {Reason}", response.StatusCode, response.ReasonPhrase);
                     return default;
                 }
-
-
             }
             catch (Exception ex)
             {

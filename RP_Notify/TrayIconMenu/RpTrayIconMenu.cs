@@ -3,7 +3,6 @@ using RP_Notify.ErrorHandler;
 using RP_Notify.Helpers;
 using RP_Notify.Properties;
 using RP_Notify.RpApi.ResponseModel;
-using RP_Notify.ToastHandler;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -17,21 +16,21 @@ namespace RP_Notify.TrayIconMenu
     {
         private readonly IConfigRoot _config;
         private readonly ILog _log;
-        private readonly IToastHandlerFactory _toastHandlerFactory;
+        private readonly LoginForm.LoginForm _loginForm;
 
 
         private readonly ContextMenu contextMenu;
 
         public NotifyIcon NotifyIcon { get; }
 
-        public RpTrayIconMenu(IConfigRoot config, ILog log, IToastHandlerFactory toastHandlerFactory)
+        public RpTrayIconMenu(IConfigRoot config, ILog log, LoginForm.LoginForm loginForm)
         {
             _config = config;
             _log = log;
-            _toastHandlerFactory = toastHandlerFactory;
 
             contextMenu = new ContextMenu();
             NotifyIcon = new NotifyIcon();
+            _loginForm = loginForm;
         }
 
         public void Init()
@@ -428,7 +427,7 @@ namespace RP_Notify.TrayIconMenu
                 }
                 else
                 {
-                    _toastHandlerFactory.Create().ShowLoginToast();
+                    _loginForm.ShowDialog();
                 }
             };
 

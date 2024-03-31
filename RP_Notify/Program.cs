@@ -19,10 +19,12 @@ namespace RP_Notify
         [STAThread]
         static void Main()
         {
+            var rpConfig = new ConfigRoot();
+
             var serviceCollection = new ServiceCollection()
-                .AddSingleton<IConfigRoot, ConfigRoot>()
+                .AddSingleton<IConfigRoot>(rpConfig)
                 .AddSingleton<ILog, Log>()
-                .AddRpApiClient()
+                .AddRpApiClient(rpConfig.State.RpCookieContainer)
                 .AddBeefWebApiClient()
                 .AddMusicBeeIPCClient()
                 .AddToastHandler()

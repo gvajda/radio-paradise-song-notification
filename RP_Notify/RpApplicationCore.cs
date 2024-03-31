@@ -66,7 +66,7 @@ namespace RP_Notify
             // Refresh cookies
             if (_config.IsUserAuthenticated())
             {
-                // _rpApiClientFactory.Create().GetAuth();
+                _rpApiClientFactory.Create().GetAuth();
             }
 
             _config.State.ChannelList = _rpApiClientFactory.Create().GetChannelList();
