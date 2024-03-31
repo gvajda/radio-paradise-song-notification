@@ -9,9 +9,9 @@ namespace RP_Notify.Helpers
 {
     public static class CookieHelper
     {
-        public static bool TryGetCookieFromCache(string filePath, out CookieContainer cookie)
+        public static bool TryGetCookieFromCache(string filePath, out CookieContainer cookieContainer)
         {
-            cookie = null;
+            cookieContainer = new CookieContainer();
 
             if (!File.Exists(filePath) || !(File.ReadAllText(filePath).Length > 0))
             {
@@ -20,7 +20,7 @@ namespace RP_Notify.Helpers
 
             try
             {
-                cookie = Retry.Do(() => ReadCookieFromDisk(filePath));
+                cookieContainer = Retry.Do(() => ReadCookieFromDisk(filePath));
                 return true;
             }
             catch (Exception)

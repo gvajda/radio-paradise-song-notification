@@ -14,7 +14,7 @@ namespace RP_Notify.Config
         {
             StaticConfig = new StaticConfig();
             ExternalConfig = new ExternalConfigIni(StaticConfig.ConfigFilePath);
-            State = new State(StaticConfig.CookieCachePath)
+            State = new State(StaticConfig.CookieCachePath, new Uri(StaticConfig.RpApiBaseUrl))
             {
                 RpCookieContainer = CookieHelper.TryGetCookieFromCache(StaticConfig.CookieCachePath, out var rpCookie)
                 ? rpCookie
@@ -25,7 +25,9 @@ namespace RP_Notify.Config
 
         public bool IsUserAuthenticated()
         {
-            return State.RpCookieContainer != null && DateTime.Now < State.RpCookieContainer.GetCookies(new Uri(StaticConfig.RpApiBaseUrl))[0].Expires;
+            return State.RpCookieContainer != null
+                && State.RpCookieContainer.GetCookies(new Uri(StaticConfig.RpApiBaseUrl)).Count >= 2
+                && !State.RpCookieContainer.GetCookies(new Uri(StaticConfig.RpApiBaseUrl))[0].Expired;
         }
 
         public bool IsRpPlayerTrackingChannel()

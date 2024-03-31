@@ -96,7 +96,7 @@ namespace RP_Notify.SongInfoListener
 
                             loopDurationMilliseconds = loopDurationMilliseconds > 0             // If the song is not over
                                 ? loopDurationMilliseconds                                      // then wait until the end
-                                : 5000;                                                         // otherwise csheck again in 5 seconds if William or ALanna is still talking
+                                : 10000;                                                         // otherwise csheck again in 10 seconds if William or ALanna is still talking
 
                             var waitForNextSongTask = Task.Delay(loopDurationMilliseconds, loopCancellationToken);
 

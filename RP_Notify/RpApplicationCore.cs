@@ -434,25 +434,33 @@ namespace RP_Notify
 
         private void OnToastActivatedEvent(ToastNotificationActivatedEventArgsCompat toastArgs)
         {
+            // Obtain the arguments from the notification
+            ToastArguments toastArguments = ToastArguments.Parse(toastArgs.Argument);
+
+            // Obtain any user input (text boxes, menu selections) from the notification
+            ValueSet userInput = toastArgs.UserInput;
+
+            string action;
+            try
+            {
+                action = toastArguments["action"];
+            }
+            catch
+            {
+                return;     // Skip if no action is defined
+            }
 
             EventCounter++;
 
             Task.Run(() =>
             {
-                // Obtain the arguments from the notification
-                ToastArguments toastArguments = ToastArguments.Parse(toastArgs.Argument);
-
-                // Obtain any user input (text boxes, menu selections) from the notification
-                ValueSet userInput = toastArgs.UserInput;
-
-
                 var formattedArgumentsForLogging = string.Join("&", toastArguments.Select(kvp => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}"));
 
                 _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Toast event - eventArguments: {formattedArgumentsForLogging}");
 
                 try
                 {
-                    switch (toastArguments["action"])
+                    switch (action)
                     {
                         case "LoginRequested":
                             _loginForm.ShowDialog();
