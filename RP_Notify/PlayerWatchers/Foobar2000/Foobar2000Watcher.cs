@@ -74,7 +74,7 @@ namespace RP_Notify.PlayerWatcher.Foobar2000
                 {
                     try
                     {
-                        CheckPlayerState(out bool notUsedHere);
+                        CheckPlayerState(out bool _);
 
                         await Task.Delay(CheckDelayMillisecs);
                     }

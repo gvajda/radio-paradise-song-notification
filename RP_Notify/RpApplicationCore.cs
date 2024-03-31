@@ -80,12 +80,12 @@ namespace RP_Notify
 
             if (_config.ExternalConfig.EnableFoobar2000Watcher)
             {
-                _foobar2000Watcher.CheckPlayerState(out bool notUsedHere);
+                _foobar2000Watcher.CheckPlayerState(out bool _);
                 _foobar2000Watcher.Start();
             }
             else if (_config.ExternalConfig.EnableMusicBeeWatcher)
             {
-                _musicBeeWatcher.CheckPlayerState(out bool notUsedHere);
+                _musicBeeWatcher.CheckPlayerState(out bool _);
                 _musicBeeWatcher.Start();
             }
 
