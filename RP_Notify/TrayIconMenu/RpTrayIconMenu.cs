@@ -258,7 +258,6 @@ namespace RP_Notify.TrayIconMenu
 //********************************************************************
 //********************************************************************
 //********************************************************************");
-                _log.Dispose();
                 ConfigDirectoryHelper.MoveConfigToNewLocation(startingLocation, targetLocation);
                 Application.Restart();
             };

@@ -9,35 +9,37 @@ namespace RP_Notify.ErrorHandler
 {
     public class Log : ILog
     {
-        private Logger Logger { get; set; }
+        private readonly IConfigRoot _config;
 
         public Log(IConfigRoot config)
         {
-            Logger = GetLogger(config);
+            _config = config;
         }
 
         public void Information(string sender, string message, params object[] propertyValues)
         {
-            Logger.Information($"{sender} - {message}", propertyValues);
+            var logger = GetLogger(_config);
+            logger.Information($"{sender} - {message}", propertyValues);
+            logger.Dispose();
+
         }
 
         public void Error(string sender, string message, params object[] propertyValues)
         {
-            Logger.Error($"{sender} - ERROR - {message}", propertyValues);
+            var logger = GetLogger(_config);
+            logger.Error($"{sender} - ERROR - {message}", propertyValues);
+            logger.Dispose();
         }
 
         public void Error(string sender, Exception ex)
         {
-            Logger.Error($"{sender} - ERROR - {ex.Message}\n{ex.StackTrace}");
+            var logger = GetLogger(_config);
+            logger.Error($"{sender} - ERROR - {ex.Message}\n{ex.StackTrace}");
             if (ex.InnerException != null)
             {
-                Logger.Error($"{sender} - INNEREXCEPTION - {ex.InnerException.Message}\n{ex.InnerException.StackTrace}");
+                logger.Error($"{sender} - INNEREXCEPTION - {ex.InnerException.Message}\n{ex.InnerException.StackTrace}");
             }
-        }
-
-        public void Dispose()
-        {
-            Logger.Dispose();
+            logger.Dispose();
         }
 
         private Logger GetLogger(IConfigRoot config)

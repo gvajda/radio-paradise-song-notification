@@ -434,7 +434,10 @@ namespace RP_Notify
 
         private void OnToastActivatedEvent(ToastNotificationActivatedEventArgsCompat toastArgs)
         {
-            try
+
+            EventCounter++;
+
+            Task.Run(() =>
             {
                 // Obtain the arguments from the notification
                 ToastArguments toastArguments = ToastArguments.Parse(toastArgs.Argument);
@@ -444,33 +447,43 @@ namespace RP_Notify
 
 
                 var formattedArgumentsForLogging = string.Join("&", toastArguments.Select(kvp => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}"));
-                _log.Information(LogHelper.GetMethodName(this), " eventArguments: " + formattedArgumentsForLogging);
 
-                switch (toastArguments["action"])
+                _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Toast event - eventArguments: {formattedArgumentsForLogging}");
+
+                try
                 {
-                    case "LoginRequested":
-                        _loginForm.ShowDialog();
-                        break;
-                    case "ExitApp":
-                        Application.Exit();
-                        break;
-                    case "ChooseFolder":
-                        ChooseFolderToastActionHandler(userInput);
-                        break;
-                    case "RateSubmitted":
-                        RateSubmittedToastActionHandler(userInput, toastArguments);
-                        break;
-                    case "RateTileRequested":
-                        RateTileRequestedActionHandler(toastArguments);
-                        break;
-                    default:
-                        throw new NotImplementedException();
+                    switch (toastArguments["action"])
+                    {
+                        case "LoginRequested":
+                            _loginForm.ShowDialog();
+                            break;
+                        case "ExitApp":
+                            Application.Exit();
+                            break;
+                        case "ChooseFolder":
+                            ChooseFolderToastActionHandler(userInput);
+                            break;
+                        case "RateSubmitted":
+                            RateSubmittedToastActionHandler(userInput, toastArguments);
+                            break;
+                        case "RateTileRequested":
+                            RateTileRequestedActionHandler(toastArguments);
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                _log.Error(LogHelper.GetMethodName(this), ex);
-            }
+                catch (Exception ex)
+                {
+                    _log.Error(LogHelper.GetMethodName(this), ex);
+                    _toastHandlerFactory.Create().ErrorToast(ex);
+                    Task.Delay(10000).Wait();
+                    Application.Exit();
+                }
+
+                _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Toast event Finished");
+            }).Wait();
+
         }
 
         private void ChooseFolderToastActionHandler(ValueSet userInput)
@@ -509,7 +522,6 @@ namespace RP_Notify
 //********************************************************************
 //********************************************************************
 //********************************************************************");
-            _log.Dispose();
             ConfigDirectoryHelper.MoveConfigToNewLocation(startingLocation, targetLocation);
             Application.Restart();
         }
@@ -589,7 +601,6 @@ namespace RP_Notify
             if (_config.ExternalConfig.DeleteAllData || _config.StaticConfig.CleanUpOnExit)
             {
                 _log.Information(LogHelper.GetMethodName(this), "App data delete requested");
-                _log.Dispose();
                 _toastHandlerFactory.Create().DataEraseToast();
                 Task.Delay(5000).Wait();
                 ToastNotificationManagerCompat.History.Clear();
