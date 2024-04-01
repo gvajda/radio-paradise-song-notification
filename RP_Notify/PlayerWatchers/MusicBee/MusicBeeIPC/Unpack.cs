@@ -13,7 +13,7 @@ using System.Runtime.InteropServices;
 
 
 
-namespace RP_Notify.PlayerWatcher.MusicBee.API
+namespace RP_Notify.PlayerWatchers.MusicBee.API
 {
 
     [System.Security.Permissions.PermissionSet(System.Security.Permissions.SecurityAction.Demand, Name = "FullTrust")]

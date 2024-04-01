@@ -1,6 +1,6 @@
 ﻿using RP_Notify.Config;
-using RP_Notify.ErrorHandler;
-using RP_Notify.PlayerWatcher.MusicBee.API;
+using RP_Notify.Helpers;
+using RP_Notify.Logger;
 using RP_Notify.PlayerWatchers.MusicBee.API;
 using System;
 using System.Linq;
@@ -8,19 +8,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RP_Notify.PlayerWatcher.MusicBee
+namespace RP_Notify.PlayerWatchers.MusicBee
 {
     class MusicBeeWatcher : IPlayerWatcher
     {
         private readonly IConfigRoot _config;
-        private readonly ILog _log;
+        private readonly ILoggerWrapper _log;
         private readonly IMusicBeeIPCFactory _musicBeeIPCFactory;
 
         private int CheckDelayMillisecs { get; set; }
         private Task MusicBeeWatcherTask { get; set; }
         private CancellationTokenSource MusicBeeWatcherTaskCancellationTokenSource { get; set; }
+        public RegisteredPlayer PlayerWatcherType { get => RegisteredPlayer.MusicBee; }
 
-        public MusicBeeWatcher(IConfigRoot config, ILog log, IMusicBeeIPCFactory musicBeeIPCFactory)
+        public MusicBeeWatcher(IConfigRoot config, ILoggerWrapper log, IMusicBeeIPCFactory musicBeeIPCFactory)
         {
             _config = config;
             _log = log;

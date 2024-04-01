@@ -1,6 +1,6 @@
 ﻿using RP_Notify.Config;
-using RP_Notify.ErrorHandler;
 using RP_Notify.Helpers;
+using RP_Notify.Logger;
 using RP_Notify.Properties;
 using RP_Notify.RpApi.ResponseModel;
 using System;
@@ -15,7 +15,7 @@ namespace RP_Notify.TrayIconMenu
     class RpTrayIconMenu
     {
         private readonly IConfigRoot _config;
-        private readonly ILog _log;
+        private readonly ILoggerWrapper _log;
         private readonly LoginForm.LoginForm _loginForm;
 
 
@@ -23,7 +23,7 @@ namespace RP_Notify.TrayIconMenu
 
         public NotifyIcon NotifyIcon { get; }
 
-        public RpTrayIconMenu(IConfigRoot config, ILog log, LoginForm.LoginForm loginForm)
+        public RpTrayIconMenu(IConfigRoot config, ILoggerWrapper log, LoginForm.LoginForm loginForm)
         {
             _config = config;
             _log = log;

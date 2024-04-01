@@ -1,5 +1,5 @@
 ﻿using MadMilkman.Ini;
-using RP_Notify.ErrorHandler;
+using RP_Notify.Logger;
 using System.IO;
 using System.Linq;
 using System.Text;

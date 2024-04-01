@@ -1,5 +1,6 @@
 ﻿using RP_Notify.Config;
-using RP_Notify.ErrorHandler;
+using RP_Notify.Helpers;
+using RP_Notify.Logger;
 using RP_Notify.RpApi.ResponseModel;
 using System;
 using System.Collections.Generic;
@@ -15,9 +16,9 @@ namespace RP_Notify.RpApi
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfigRoot _config;
-        private readonly ILog _log;
+        private readonly ILoggerWrapper _log;
 
-        public RpApiClient(IConfigRoot config, ILog log, IHttpClientFactory httpClientFactory)
+        public RpApiClient(IConfigRoot config, ILoggerWrapper log, IHttpClientFactory httpClientFactory)
         {
             _config = config;
             _log = log;

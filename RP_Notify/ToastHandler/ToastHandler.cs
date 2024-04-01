@@ -1,7 +1,7 @@
 ﻿using Microsoft.Toolkit.Uwp.Notifications;
 using RP_Notify.Config;
-using RP_Notify.ErrorHandler;
 using RP_Notify.Helpers;
+using RP_Notify.Logger;
 using RP_Notify.RpApi.ResponseModel;
 using System;
 using System.IO;
@@ -14,9 +14,9 @@ namespace RP_Notify.ToastHandler
     internal class ToastHandler : IToastHandler
     {
         private readonly IConfigRoot _config;
-        private readonly ILog _log;
+        private readonly ILoggerWrapper _log;
 
-        public ToastHandler(IConfigRoot config, ILog log)
+        public ToastHandler(IConfigRoot config, ILoggerWrapper log)
         {
             _config = config;
             _log = log;
@@ -50,7 +50,7 @@ namespace RP_Notify.ToastHandler
             {
                 try
                 {
-                    PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowSongStartToast), displaySongInfo)
+                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowSongStartToast), displaySongInfo)
                     .AddSongInfoText(true)
                     .AddSongAlbumText()
                     .AddSongRatingText(_config)
@@ -76,7 +76,7 @@ namespace RP_Notify.ToastHandler
             {
                 try
                 {
-                    PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowSongRatingToast), displaySongInfo)
+                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowSongRatingToast), displaySongInfo)
                     .AddSongInfoText(true)
                     .AddSongAlbumText()
                     .AddSongRatingText(_config)
@@ -96,7 +96,7 @@ namespace RP_Notify.ToastHandler
         {
             try
             {
-                PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowSongDetailToast), _config.State.Playback.SongInfo)
+                ToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowSongDetailToast), _config.State.Playback.SongInfo)
                 .AddSongInfoText(true)
                 .AddSongAlbumText()
                 .AddSongRatingText(_config)
@@ -118,7 +118,7 @@ namespace RP_Notify.ToastHandler
             {
                 try
                 {
-                    PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.ConfigFolderToast))
+                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.ConfigFolderToast))
                     .AddText("You probably opened RP_Notify for the first time")
                     .AddText("You have a few options where to create the folder (named 'RP_Notify_Cache') where the app may keep its configuration file, logs, etc. You only need to do this once - unless you choose 'clean up")
                     .AddText("This action will create the 'RP_Notify_Cache' folder")
@@ -154,7 +154,7 @@ namespace RP_Notify.ToastHandler
             {
                 try
                 {
-                    PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowLoginToast))
+                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowLoginToast))
                     .AddText("User authentication")
                     .AddText("Note: the applet doesn't save your password, only the same cookie as your browser")
                     .AddInputTextBox("Username", "Username")
@@ -185,7 +185,7 @@ namespace RP_Notify.ToastHandler
             {
                 try
                 {
-                    PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.LoginResponseToast))
+                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.LoginResponseToast))
                     .AddText(formattedStatusMessage)
                     .AddText(authMessage)
                     .Show();
@@ -203,7 +203,7 @@ namespace RP_Notify.ToastHandler
             {
                 try
                 {
-                    PackagedToastHelper.CreateBaseToastContentBuilder(nameof(this.DataEraseToast))
+                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.DataEraseToast))
                     .AddText("Application Data Erase Requested")
                     .AddText($"Deleting RP_Notify folder from [{_config.StaticConfig.ConfigBaseFolderOption}]")
                     .AddText("Deleting notification handler")
@@ -241,7 +241,7 @@ namespace RP_Notify.ToastHandler
         }
     }
 
-    internal static class PackagedToastHelper
+    internal static class ToastHelper
     {
         internal static ToastContentBuilder CreateBaseToastContentBuilder(string toastId, PlayListSong songInfo = null)
         {

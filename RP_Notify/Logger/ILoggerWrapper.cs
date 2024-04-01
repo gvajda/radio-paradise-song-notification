@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace RP_Notify.ErrorHandler
+namespace RP_Notify.Logger
 {
-    public interface ILog
+    public interface ILoggerWrapper
     {
         void Information(string sender, string message, params object[] propertyValues);
         void Error(string sender, Exception ex);

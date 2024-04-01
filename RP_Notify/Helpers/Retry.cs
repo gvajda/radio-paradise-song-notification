@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace RP_Notify.ErrorHandler
+namespace RP_Notify.Helpers
 {
     public static class Retry
     {

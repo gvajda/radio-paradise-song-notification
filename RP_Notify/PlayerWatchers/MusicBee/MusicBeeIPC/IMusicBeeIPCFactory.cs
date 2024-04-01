@@ -1,5 +1,5 @@
 ﻿
-using RP_Notify.PlayerWatcher.MusicBee.API;
+using RP_Notify.PlayerWatchers.MusicBee.API;
 
 namespace RP_Notify.PlayerWatchers.MusicBee.API
 {

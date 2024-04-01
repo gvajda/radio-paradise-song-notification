@@ -6,7 +6,7 @@
 // See LICENSE_MusicBeeIPCSDK for more information.       //
 //--------------------------------------------------------//
 
-namespace RP_Notify.PlayerWatcher.MusicBee.API
+namespace RP_Notify.PlayerWatchers.MusicBee.API
 {
     public interface IMusicBeeIPC
     {

@@ -1,5 +1,5 @@
 ﻿using RP_Notify.Config;
-using RP_Notify.ErrorHandler;
+using RP_Notify.Logger;
 using RP_Notify.RpApi.ResponseModel;
 using System;
 using System.IO;

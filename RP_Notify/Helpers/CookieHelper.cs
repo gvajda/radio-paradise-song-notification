@@ -1,4 +1,4 @@
-﻿using RP_Notify.ErrorHandler;
+﻿using RP_Notify.Logger;
 using System;
 using System.Collections;
 using System.IO;

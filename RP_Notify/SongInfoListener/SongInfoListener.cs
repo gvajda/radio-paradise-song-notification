@@ -1,5 +1,6 @@
 ﻿using RP_Notify.Config;
-using RP_Notify.ErrorHandler;
+using RP_Notify.Helpers;
+using RP_Notify.Logger;
 using RP_Notify.RpApi;
 using RP_Notify.RpApi.ResponseModel;
 using RP_Notify.ToastHandler;
@@ -15,7 +16,7 @@ namespace RP_Notify.SongInfoListener
     {
         private readonly IRpApiClientFactory _rpApiClientFactory;
         private readonly IConfigRoot _config;
-        private readonly ILog _log;
+        private readonly ILoggerWrapper _log;
         private readonly IToastHandlerFactory _toastHandlerFactory;
 
         private const int secondsBeforeSongEndsToPromptRating = 20;
@@ -24,7 +25,7 @@ namespace RP_Notify.SongInfoListener
         private CancellationTokenSource NextSongWaiterCancellationTokenSource { get; set; }
         private CancellationTokenSource ListenerCancellationTokenSource { get; }
 
-        public SongInfoListener(IRpApiClientFactory rpApiClientFactory, IConfigRoot config, ILog log, IToastHandlerFactory toastHandlerFactory)
+        public SongInfoListener(IRpApiClientFactory rpApiClientFactory, IConfigRoot config, ILoggerWrapper log, IToastHandlerFactory toastHandlerFactory)
         {
             _rpApiClientFactory = rpApiClientFactory;
             _config = config;

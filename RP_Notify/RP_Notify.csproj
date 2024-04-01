@@ -57,6 +57,10 @@
     <Compile Include="Config\StaticConfig.cs" />
     <Compile Include="Helpers\IniFileHelper.cs" />
     <Compile Include="Helpers\CookieHelper.cs" />
+    <Compile Include="Helpers\LogHelper.cs" />
+    <Compile Include="Logger\ILoggerFactory.cs" />
+    <Compile Include="Logger\LoggerFactory.cs" />
+    <Compile Include="Logger\LoggerFactoryExtensios.cs" />
     <Compile Include="LoginForm\LoginForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -69,10 +73,14 @@
     <Compile Include="PlayerWatchers\Foobar2000\BeefWebApiClient\BeefWebApiClientFactoryExtensions.cs" />
     <Compile Include="PlayerWatchers\Foobar2000\BeefWebApiClient\IBeefWebApiClient.cs" />
     <Compile Include="PlayerWatchers\Foobar2000\BeefWebApiClient\IBeefWebApiClientFactory.cs" />
+    <Compile Include="PlayerWatchers\IPlayerWatcherProvider.cs" />
     <Compile Include="PlayerWatchers\MusicBee\MusicBeeIPC\IMusicBeeIPC.cs" />
     <Compile Include="PlayerWatchers\MusicBee\MusicBeeIPC\IMusicBeeIPCFactory.cs" />
     <Compile Include="PlayerWatchers\MusicBee\MusicBeeIPC\MusicBeeIPCClientFactoryExtensions.cs" />
     <Compile Include="PlayerWatchers\MusicBee\MusicBeeIPC\MusicBeeIPCFactory.cs" />
+    <Compile Include="PlayerWatchers\PlayerWatcherProvider.cs" />
+    <Compile Include="PlayerWatchers\PlayerWatcherProviderExtensions.cs" />
+    <Compile Include="PlayerWatchers\RegisteredPlayer.cs" />
     <Compile Include="RpApi\IRpApiClient.cs" />
     <Compile Include="Config\RpConfigurationChangeEvent.cs" />
     <Compile Include="Config\IConfigRoot.cs" />
@@ -82,9 +90,9 @@
     <Compile Include="RpApi\RpApiResponseModel.cs" />
     <Compile Include="Config\ConfigRoot.cs" />
     <Compile Include="Config\State.cs" />
-    <Compile Include="ErrorHandler\ILog.cs" />
-    <Compile Include="ErrorHandler\Log.cs" />
-    <Compile Include="ErrorHandler\Retry.cs" />
+    <Compile Include="Logger\ILoggerWrapper.cs" />
+    <Compile Include="Logger\LoggerWrapper.cs" />
+    <Compile Include="Helpers\Retry.cs" />
     <Compile Include="Helpers\AlbumartFileHelper.cs" />
     <Compile Include="Helpers\ObjectSerializer.cs" />
     <Compile Include="PlayerWatchers\Foobar2000\Foobar2000Watcher.cs" />

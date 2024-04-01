@@ -1,5 +1,6 @@
 ﻿using RP_Notify.Config;
-using RP_Notify.ErrorHandler;
+using RP_Notify.Helpers;
+using RP_Notify.Logger;
 using RP_Notify.PlayerWatchers.Foobar2000.BeefWebApiClient;
 using System;
 using System.Collections.Generic;
@@ -8,19 +9,21 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RP_Notify.PlayerWatcher.Foobar2000
+namespace RP_Notify.PlayerWatchers.Foobar2000
 {
     class Foobar2000Watcher : IPlayerWatcher
     {
         private readonly IConfigRoot _config;
-        private readonly ILog _log;
+        private readonly ILoggerWrapper _log;
         private readonly IBeefWebApiClientFactory _beefWebApiClientFactory;
 
         private int CheckDelayMillisecs { get; set; }
         private Task Foobar2000WatcherTask { get; set; }
+        public RegisteredPlayer PlayerWatcherType { get => RegisteredPlayer.Foobar2000; }
+
         private CancellationTokenSource Foobar2000WatcherTaskCancellationTokenSource { get; set; }
 
-        public Foobar2000Watcher(IConfigRoot config, ILog log, IBeefWebApiClientFactory beefWebApiClientFactory)
+        public Foobar2000Watcher(IConfigRoot config, ILoggerWrapper log, IBeefWebApiClientFactory beefWebApiClientFactory)
         {
             _config = config;
             _log = log;

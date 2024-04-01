@@ -1,8 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using RP_Notify.Config;
-using RP_Notify.ErrorHandler;
-using RP_Notify.PlayerWatcher.Foobar2000;
-using RP_Notify.PlayerWatcher.MusicBee;
+using RP_Notify.Logger;
+using RP_Notify.PlayerWatchers;
 using RP_Notify.PlayerWatchers.Foobar2000.BeefWebApiClient;
 using RP_Notify.PlayerWatchers.MusicBee.API;
 using RP_Notify.RpApi;
@@ -23,14 +22,13 @@ namespace RP_Notify
 
             var serviceCollection = new ServiceCollection()
                 .AddSingleton<IConfigRoot>(rpConfig)
-                .AddSingleton<ILog, Log>()
+                .AddLogger(rpConfig)
                 .AddRpApiClient(rpConfig.State.RpCookieContainer)
                 .AddBeefWebApiClient()
                 .AddMusicBeeIPCClient()
                 .AddToastHandler()
                 .AddSingleton<LoginForm.LoginForm>()
-                .AddSingleton<Foobar2000Watcher>()
-                .AddSingleton<MusicBeeWatcher>()
+                .AddPlayerWatchers()
                 .AddSingleton<ISongInfoListener, SongInfoListener.SongInfoListener>()
                 .AddSingleton<RpTrayIconMenu>()
                 .AddSingleton<RpApplicationCore>();
