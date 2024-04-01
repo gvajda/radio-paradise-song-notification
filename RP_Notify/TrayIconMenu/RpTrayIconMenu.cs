@@ -3,6 +3,7 @@ using RP_Notify.Helpers;
 using RP_Notify.Logger;
 using RP_Notify.Properties;
 using RP_Notify.RpApi.ResponseModel;
+using RP_Notify.ToastHandler;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -17,16 +18,18 @@ namespace RP_Notify.TrayIconMenu
         private readonly IConfigRoot _config;
         private readonly ILoggerWrapper _log;
         private readonly LoginForm.LoginForm _loginForm;
+        private readonly IToastHandlerFactory _toastHandlerFactory;
 
 
         private readonly ContextMenu contextMenu;
 
         public NotifyIcon NotifyIcon { get; }
 
-        public RpTrayIconMenu(IConfigRoot config, ILoggerWrapper log, LoginForm.LoginForm loginForm)
+        public RpTrayIconMenu(IConfigRoot config, ILoggerWrapper log, LoginForm.LoginForm loginForm, IToastHandlerFactory toastHandlerFactory)
         {
             _config = config;
             _log = log;
+            _toastHandlerFactory = toastHandlerFactory;
 
             contextMenu = new ContextMenu();
             NotifyIcon = new NotifyIcon();
@@ -421,7 +424,10 @@ namespace RP_Notify.TrayIconMenu
                 if (_config.IsUserAuthenticated())
                 {
                     Retry.Do(() => { File.Delete(_config.StaticConfig.CookieCachePath); });
-                    _log.Information(LogHelper.GetMethodName(this), "Cookie cache deleted - Restart");
+                    var userName = _config.GetLoggedInUsername();
+                    _config.State.RpCookieContainer = new System.Net.CookieContainer();
+                    _toastHandlerFactory.Create().ShowLogoutRequestToast(userName);
+                    _log.Information(LogHelper.GetMethodName(this), "Cookie cache deleted");
                     Application.Restart();
                 }
                 else

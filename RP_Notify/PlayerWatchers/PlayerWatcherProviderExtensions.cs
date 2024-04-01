@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using RP_Notify.PlayerWatchers.Foobar2000.BeefWebApiClient;
+using RP_Notify.PlayerWatchers.MusicBee.API;
 using System;
 using System.Collections.Generic;
 
@@ -8,16 +10,13 @@ namespace RP_Notify.PlayerWatchers
     {
         public static IServiceCollection AddPlayerWatchers(this IServiceCollection services)
         {
-            services.AddSingleton<IPlayerWatcher, Foobar2000.Foobar2000Watcher>();
-            services.AddSingleton<IPlayerWatcher, MusicBee.MusicBeeWatcher>();
-
-
-            services.AddTransient<Func<IEnumerable<IPlayerWatcher>>>(serviceProvider => () => serviceProvider.GetServices<IPlayerWatcher>());
-
-
-            services.AddSingleton<IPlayerWatcherProvider, PlayerWatcherProvider>();
-
-            return services;
+            return services.AddBeefWebApiClient()
+                .AddMusicBeeIPCClient()
+                .AddSingleton<IPlayerWatcher, Foobar2000.Foobar2000Watcher>()
+                .AddSingleton<IPlayerWatcher, MusicBee.MusicBeeWatcher>()
+                .AddTransient<Func<IEnumerable<IPlayerWatcher>>>(serviceProvider => () =>
+                    serviceProvider.GetServices<IPlayerWatcher>())
+                .AddSingleton<IPlayerWatcherProvider, PlayerWatcherProvider>();
         }
     }
 }

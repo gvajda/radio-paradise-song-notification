@@ -10,6 +10,8 @@
 
         bool IsUserAuthenticated();
 
+        string GetLoggedInUsername();
+
         bool IsRpPlayerTrackingChannel();
 
         bool IsRpPlayerTrackingChannel(out int channel);

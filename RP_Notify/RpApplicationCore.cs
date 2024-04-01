@@ -53,7 +53,6 @@ namespace RP_Notify
         {
             _log.Information(LogHelper.GetMethodName(this), "Started ********************************************************************");
 
-
             if (_config.ExternalConfig.Channel == 99)      // Reset channel if Favourites were tracked at exit
             {
                 _config.ExternalConfig.Channel = 0;
@@ -102,7 +101,7 @@ namespace RP_Notify
             // At the very first run, ask for config folder location
             if (!_config.StaticConfig.ConfigBaseFolderExisted)
             {
-                _toastHandlerFactory.Create().ConfigFolderToast();
+                _toastHandlerFactory.Create().ShowConfigFolderToast();
             }
 
             // Start listen for song changes
@@ -218,7 +217,7 @@ namespace RP_Notify
                 catch (Exception ex)
                 {
                     _log.Error(LogHelper.GetMethodName(this), ex);
-                    _toastHandlerFactory.Create().ErrorToast(ex);
+                    _toastHandlerFactory.Create().ShowErrorToast(ex);
                     Task.Delay(10000).Wait();
                     Application.Exit();
                 }
@@ -480,7 +479,7 @@ namespace RP_Notify
                 catch (Exception ex)
                 {
                     _log.Error(LogHelper.GetMethodName(this), ex);
-                    _toastHandlerFactory.Create().ErrorToast(ex);
+                    _toastHandlerFactory.Create().ShowErrorToast(ex);
                     Task.Delay(10000).Wait();
                     Application.Exit();
                 }
@@ -569,7 +568,7 @@ namespace RP_Notify
             _log.Information(LogHelper.GetMethodName(this), $"Login input submitted for user [{loginInputEvent.UserName}]");
 
             var loginRespponse = _rpApiClientFactory.Create().GetAuth(loginInputEvent.UserName, loginInputEvent.Password);
-            _toastHandlerFactory.Create().LoginResponseToast(loginRespponse);
+            _toastHandlerFactory.Create().ShowLoginResponseToast(loginRespponse);
         }
 
         private void OnComputerWakeUp(object sender, PowerModeChangedEventArgs e)
@@ -605,7 +604,7 @@ namespace RP_Notify
             if (_config.ExternalConfig.DeleteAllData || _config.StaticConfig.CleanUpOnExit)
             {
                 _log.Information(LogHelper.GetMethodName(this), "App data delete requested");
-                _toastHandlerFactory.Create().DataEraseToast();
+                _toastHandlerFactory.Create().ShowDataEraseToast();
                 Task.Delay(5000).Wait();
                 ToastNotificationManagerCompat.History.Clear();
                 ToastNotificationManagerCompat.Uninstall();

@@ -7,11 +7,10 @@ namespace RP_Notify.ToastHandler
     {
         public static IServiceCollection AddToastHandler(this IServiceCollection services)
         {
-            services.AddTransient<IToastHandler, ToastHandler>();
-            services.AddTransient<Func<IToastHandler>>(serviceProvider => () => serviceProvider.GetService<IToastHandler>());
-            services.AddSingleton<IToastHandlerFactory, ToastHandlerFactory>();
-
-            return services;
+            return services.AddTransient<IToastHandler, ToastHandler>()
+                .AddTransient<Func<IToastHandler>>(serviceProvider => () =>
+                    serviceProvider.GetService<IToastHandler>())
+                .AddSingleton<IToastHandlerFactory, ToastHandlerFactory>();
         }
     }
 }

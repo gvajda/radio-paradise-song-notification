@@ -99,9 +99,9 @@ namespace RP_Notify.LoginForm
             string username = textBoxUsername.Text;
             string password = textBoxPassword.Text;
 
-            Dispose();
-
             LoginInputEventHandler.Invoke(this, new LoginInputEvent(username, password));
+
+            Dispose();
         }
 
         private void TextBoxUsername_Gotfocus(object sender, EventArgs e)

@@ -8,13 +8,10 @@ namespace RP_Notify.Logger
     {
         public static IServiceCollection AddLogger(this IServiceCollection services, ConfigRoot _congig)
         {
-            services.AddTransient((Func<IServiceProvider, Func<Serilog.Core.Logger>>)(serviceProvider => () => Helpers.LogHelper.GetLogger(_congig)));
-
-            services.AddSingleton<ILoggerFactory, LoggerFactory>();
-
-            services.AddSingleton<ILoggerWrapper, LoggerWrapper>();
-
-            return services;
+            return services.AddTransient((Func<IServiceProvider, Func<Serilog.Core.Logger>>)(serviceProvider => () =>
+                Helpers.LogHelper.GetLogger(_congig)))
+                .AddSingleton<ILoggerFactory, LoggerFactory>()
+                .AddSingleton<ILoggerWrapper, LoggerWrapper>();
         }
     }
 }

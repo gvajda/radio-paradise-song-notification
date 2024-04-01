@@ -119,7 +119,7 @@ namespace RP_Notify.SongInfoListener
                     catch (Exception ex)
                     {
                         _log.Error(LogHelper.GetMethodName(this), ex);
-                        _toastHandlerFactory.Create().ErrorToast(ex);
+                        _toastHandlerFactory.Create().ShowErrorToast(ex);
                         Task.Delay(10000).Wait();
                         Application.Exit();
                     }

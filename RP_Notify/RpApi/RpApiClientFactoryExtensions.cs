@@ -9,19 +9,15 @@ namespace RP_Notify.RpApi
     {
         public static IServiceCollection AddRpApiClient(this IServiceCollection services, CookieContainer cookieContainer)
         {
-            services.AddHttpClient(nameof(RpApiClient))
+            return services.AddHttpClient(nameof(RpApiClient))
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
                 {
                     CookieContainer = cookieContainer,
                     UseCookies = true
-                });
-
-            services.AddTransient<IRpApiClient, RpApiClient>();
-            services.AddTransient<Func<IRpApiClient>>(serviceProvider => () => serviceProvider.GetService<IRpApiClient>());
-
-            services.AddSingleton<IRpApiClientFactory, RpApiClientFactory>();
-
-            return services;
+                }).Services
+                .AddTransient<IRpApiClient, RpApiClient>()
+                .AddTransient<Func<IRpApiClient>>(serviceProvider => () => serviceProvider.GetService<IRpApiClient>())
+                .AddSingleton<IRpApiClientFactory, RpApiClientFactory>();
         }
     }
 }

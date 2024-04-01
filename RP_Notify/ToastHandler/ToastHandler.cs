@@ -112,13 +112,13 @@ namespace RP_Notify.ToastHandler
             }
         }
 
-        public void ConfigFolderToast()
+        public void ShowConfigFolderToast()
         {
             Task.Run(() =>
             {
                 try
                 {
-                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.ConfigFolderToast))
+                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowConfigFolderToast))
                     .AddText("You probably opened RP_Notify for the first time")
                     .AddText("You have a few options where to create the folder (named 'RP_Notify_Cache') where the app may keep its configuration file, logs, etc. You only need to do this once - unless you choose 'clean up")
                     .AddText("This action will create the 'RP_Notify_Cache' folder")
@@ -174,9 +174,9 @@ namespace RP_Notify.ToastHandler
             });
         }
 
-        public void LoginResponseToast(Auth authResp)
+        public void ShowLoginResponseToast(Auth authResp)
         {
-            string formattedStatusMessage = $"User authentication {authResp.Status}";
+            string formattedStatusMessage = $"User authentication call [{authResp.Status}]";
             string authMessage = $@"{(authResp.Status == "success"
                 ? $"Welcome {authResp.Username}!"
                 : "Please try again")}";
@@ -185,9 +185,9 @@ namespace RP_Notify.ToastHandler
             {
                 try
                 {
-                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.LoginResponseToast))
-                    .AddText(formattedStatusMessage)
+                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowLoginResponseToast))
                     .AddText(authMessage)
+                    .AddText(formattedStatusMessage)
                     .Show();
                 }
                 catch (Exception ex)
@@ -197,13 +197,31 @@ namespace RP_Notify.ToastHandler
             });
         }
 
-        public void DataEraseToast()
+        public void ShowLogoutRequestToast(string userName)
         {
             Task.Run(() =>
             {
                 try
                 {
-                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.DataEraseToast))
+                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowLogoutRequestToast))
+                    .AddText($"Farewell {userName}")
+                    .AddText("The web cookie storing your login information has been deleted from both the app data directory and the app's memory.")
+                    .Show();
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(LogHelper.GetMethodName(this), ex);
+                }
+            });
+        }
+
+        public void ShowDataEraseToast()
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowDataEraseToast))
                     .AddText("Application Data Erase Requested")
                     .AddText($"Deleting RP_Notify folder from [{_config.StaticConfig.ConfigBaseFolderOption}]")
                     .AddText("Deleting notification handler")
@@ -216,14 +234,14 @@ namespace RP_Notify.ToastHandler
             });
         }
 
-        public void ErrorToast(Exception exception)
+        public void ShowErrorToast(Exception exception)
         {
             Task.Run(() =>
             {
                 try
                 {
                     var toastBuilder = new ToastContentBuilder()
-                    .AddArgument(nameof(this.DataEraseToast))
+                    .AddArgument(nameof(this.ShowDataEraseToast))
                     .AddText(exception.Message);
 
                     if (exception.InnerException != null)

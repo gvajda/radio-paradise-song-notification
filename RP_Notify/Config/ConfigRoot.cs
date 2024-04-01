@@ -30,6 +30,20 @@ namespace RP_Notify.Config
                 && !State.RpCookieContainer.GetCookies(new Uri(StaticConfig.RpApiBaseUrl))[0].Expired;
         }
 
+        public string GetLoggedInUsername()
+        {
+            if (!IsUserAuthenticated())
+            {
+                return null;
+            }
+
+            var cookieCollection = State.RpCookieContainer.GetCookies(new Uri(StaticConfig.RpApiBaseUrl));
+
+            var usernameCookieValue = cookieCollection["C_username"].Value;
+
+            return usernameCookieValue;
+        }
+
         public bool IsRpPlayerTrackingChannel()
         {
             bool isActivePlayerIdValid = ExternalConfig.EnableRpOfficialTracking

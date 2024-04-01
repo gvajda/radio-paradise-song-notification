@@ -9,9 +9,10 @@ namespace RP_Notify.ToastHandler
         void ShowSongRatingToast(PlayListSong songInfo = null);
         void ShowSongDetailToast();
         void ShowLoginToast();
-        void ErrorToast(Exception exception);
-        void DataEraseToast();
-        void LoginResponseToast(Auth authResp);
-        void ConfigFolderToast();
+        void ShowErrorToast(Exception exception);
+        void ShowDataEraseToast();
+        void ShowLoginResponseToast(Auth authResp);
+        void ShowLogoutRequestToast(string userName);
+        void ShowConfigFolderToast();
     }
 }
