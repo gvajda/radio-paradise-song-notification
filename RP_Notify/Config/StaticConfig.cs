@@ -23,12 +23,12 @@ namespace RP_Notify.Config
             ConfigBaseFolderOption = configBaseFolder;
             configBaseFoldepath = ConfigDirectoryHelper.GetLocalPath(configBaseFolder);
 
-            ConfigFilePath = Path.Combine(configBaseFoldepath, "rp_config.ini");
-            CookieCachePath = Path.Combine(configBaseFoldepath, "rp_cookieContainer");
-            AlbumArtCacheFolder = Path.Combine(configBaseFoldepath, "AlbumArtCache");
-            LogFilePath = Path.Combine(configBaseFoldepath, "ApplicationLogs", "rpnotify.log");
-            RpApiBaseUrl = "https://api.radioparadise.com";
-            RpImageBaseUrl = "https://img.radioparadise.com";
+            ConfigFilePath = Path.Combine(configBaseFoldepath, Constants.ConfigFileName);
+            CookieCachePath = Path.Combine(configBaseFoldepath, Constants.CookieCacheFileName);
+            AlbumArtCacheFolder = Path.Combine(configBaseFoldepath, Constants.AlbumArtCacheFolderName);
+            LogFilePath = Path.Combine(configBaseFoldepath, Constants.LogFolderName, Constants.LogFileName);
+            RpApiBaseUrl = Constants.RpApiBaseUrl;
+            RpImageBaseUrl = Constants.RpImageBaseUrl;
         }
     }
 }

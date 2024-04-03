@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Polly;
 using System;
 
 namespace RP_Notify.PlayerWatchers.Foobar2000.BeefWebApiClient
@@ -7,12 +8,14 @@ namespace RP_Notify.PlayerWatchers.Foobar2000.BeefWebApiClient
     {
         public static IServiceCollection AddBeefWebApiClient(this IServiceCollection services)
         {
-            services.AddHttpClient<IBeefWebApiClient, BeefWebApiClient>();
-            services.AddTransient<IBeefWebApiClient, BeefWebApiClient>();
-            services.AddTransient<Func<IBeefWebApiClient>>(serviceProvider => () => serviceProvider.GetService<IBeefWebApiClient>());
-            services.AddSingleton<IBeefWebApiClientFactory, BeefWebApiClientFactory>();
-
-            return services;
+            return services.AddHttpClient<IBeefWebApiClient, BeefWebApiClient>()
+                .AddTransientHttpErrorPolicy(policy => policy.WaitAndRetryAsync(
+                    Constants.HttpRetryAttempts,
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
+                .Services
+                .AddTransient<IBeefWebApiClient, BeefWebApiClient>()
+                .AddTransient<Func<IBeefWebApiClient>>(serviceProvider => () => serviceProvider.GetService<IBeefWebApiClient>())
+                .AddSingleton<IBeefWebApiClientFactory, BeefWebApiClientFactory>();
         }
     }
 }

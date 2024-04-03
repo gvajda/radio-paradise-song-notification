@@ -180,8 +180,7 @@ namespace RP_Notify.Config
         public ExternalConfigIni(string iniFilePath)
         {
             _iniFilePath = iniFilePath;
-            IniFileHelper.CreateIniWithDefaultValuesIfNotExists(iniFilePath);
-            IniFileHelper.CheckIniIntegrity(iniFilePath);
+            IniFileHelper.EnsureValidIniFileExists(iniFilePath);
 
             SetupAndStartConfigWatcher();
             SyncMemoryConfig();

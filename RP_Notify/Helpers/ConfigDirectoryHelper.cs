@@ -1,12 +1,12 @@
-﻿using RP_Notify.Logger;
-using System;
+﻿using System;
 using System.IO;
 
 namespace RP_Notify.Helpers
 {
     internal static class ConfigDirectoryHelper
     {
-        private const string appConfigDirectoryName = "RP_Notify_Cache";
+        private const string appConfigDirectoryName = Constants.ConfigBaseFolder;
+        private const string obsoleteAppConfigDirectoryName = Constants.ObsoleteConfigBaseFolder;
 
         internal static bool MoveConfigToNewLocation(ConfigLocationOptions currentConfigLocationOptions, ConfigLocationOptions targetConfigLocationOptions)
         {
@@ -31,11 +31,19 @@ namespace RP_Notify.Helpers
         internal static bool TryFindConfigDirectory(out ConfigLocationOptions configLocationOptions)
         {
             var appDataPath = GetLocalPath(ConfigLocationOptions.AppData);
+            var obsoleteAppDataPath = GetLocalPath(ConfigLocationOptions.ObsoleteAppdata);
             var exeContainingDirectoryPath = GetLocalPath(ConfigLocationOptions.ExeContainingDirectory);
 
             if (Directory.Exists(exeContainingDirectoryPath))
             {
                 configLocationOptions = ConfigLocationOptions.ExeContainingDirectory;
+                return true;
+            }
+
+            if (Directory.Exists(obsoleteAppDataPath))
+            {
+                Directory.Move(obsoleteAppDataPath, appDataPath);
+                configLocationOptions = ConfigLocationOptions.AppData;
                 return true;
             }
 
@@ -66,6 +74,9 @@ namespace RP_Notify.Helpers
                 case ConfigLocationOptions.AppData:
                     return Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), appConfigDirectoryName);
+                case ConfigLocationOptions.ObsoleteAppdata:
+                    return Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), obsoleteAppConfigDirectoryName);
                 case ConfigLocationOptions.ExeContainingDirectory:
                     return Path.Combine(
                     AppDomain.CurrentDomain.BaseDirectory, appConfigDirectoryName);
@@ -78,6 +89,7 @@ namespace RP_Notify.Helpers
     public enum ConfigLocationOptions
     {
         AppData,
+        ObsoleteAppdata,
         ExeContainingDirectory
     }
 }

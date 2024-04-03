@@ -7,7 +7,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.UI.Notifications;
 
 namespace RP_Notify.ToastHandler
 {
@@ -92,6 +91,25 @@ namespace RP_Notify.ToastHandler
             });
         }
 
+        public void ShowInvalidRatingArgumentToast(string invalidinput)
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowConfigFolderChoicePromptToast))
+                    .AddText($"Invalid user rating [{invalidinput}]")
+                    .AddText("The rating value must be a number between 1-10")
+                    .AddText("Please try again")
+                    .Show();
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(LogHelper.GetMethodName(this), ex);
+                }
+            });
+        }
+
         public void ShowSongDetailToast()
         {
             try
@@ -112,59 +130,33 @@ namespace RP_Notify.ToastHandler
             }
         }
 
-        public void ShowConfigFolderToast()
+        public void ShowConfigFolderChoicePromptToast()
         {
             Task.Run(() =>
             {
                 try
                 {
-                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowConfigFolderToast))
+                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowConfigFolderChoicePromptToast))
                     .AddText("You probably opened RP_Notify for the first time")
-                    .AddText("You have a few options where to create the folder (named 'RP_Notify_Cache') where the app may keep its configuration file, logs, etc. You only need to do this once - unless you choose 'clean up")
-                    .AddText("This action will create the 'RP_Notify_Cache' folder")
-                    .AddToastInput(new ToastSelectionBox("configFolder")
+                    .AddText($"You have a few options where to create the folder (named '{Constants.ObsoleteConfigBaseFolder}') where the app may keep its configuration file, logs, etc. You only need to do this once - unless you choose 'clean up")
+                    .AddText($"This action will create the '{Constants.ConfigBaseFolder}' folder")
+                    .AddToastInput(new ToastSelectionBox(nameof(ConfigFolderChoiceOption))
                     {
-                        DefaultSelectionBoxItemId = "localCache",
+                        DefaultSelectionBoxItemId = ConfigFolderChoiceOption.localCache.ToDescriptionString(),
                         Items =
                             {
-                                new ToastSelectionBoxItem("localCache", "Next to the application (RP_Notify.exe)"),
-                                new ToastSelectionBoxItem("appdata", @"C:\users\YOURNAME\.AppData\Roaming\RP_Notify_Cache"),
-                                new ToastSelectionBoxItem("cleanonexit", "Don't keep anything (clean up on exit)")
+                                new ToastSelectionBoxItem(ConfigFolderChoiceOption.localCache.ToDescriptionString(), "Next to the application (RP_Notify.exe)"),
+                                new ToastSelectionBoxItem(ConfigFolderChoiceOption.appdata.ToDescriptionString(), $"C:\\users\\YOURNAME\\.AppData\\Roaming\\{Constants.ConfigBaseFolder}"),
+                                new ToastSelectionBoxItem(ConfigFolderChoiceOption.cleanonexit.ToDescriptionString(), "Don't keep anything (clean up on exit)")
                             }
                     })
                     .AddButton(new ToastButton()
                         .SetContent("Choose")
-                        .AddArgument("action", "ChooseFolder"))
+                        .AddArgument(nameof(RpToastUserAction), RpToastUserAction.ConfigFolderChosen))
                     .AddButton(new ToastButton()
                         .SetContent("Exit App")
-                        .AddArgument("action", "ExitApp"))
+                        .AddArgument(nameof(RpToastUserAction), RpToastUserAction.FolderChoiceRefusedExitApp))
                     .SetToastDuration(ToastDuration.Long)
-                    .Show();
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(LogHelper.GetMethodName(this), ex);
-                }
-            });
-        }
-
-        public void ShowLoginToast()
-        {
-            Task.Run(() =>
-            {
-                try
-                {
-                    ToastHelper.CreateBaseToastContentBuilder(nameof(this.ShowLoginToast))
-                    .AddText("User authentication")
-                    .AddText("Note: the applet doesn't save your password, only the same cookie as your browser")
-                    .AddInputTextBox("Username", "Username")
-                    .AddInputTextBox("Password", "Password")
-                    .AddButton(new ToastButton()
-                        .SetContent("Log in")
-                        .AddArgument("action", "LoginDataSent"))
-                    .AddButton(new ToastButton()
-                        .SetContent("Not now")
-                        .AddArgument("action", "NotNow"))
                     .Show();
                 }
                 catch (Exception ex)
@@ -273,21 +265,13 @@ namespace RP_Notify.ToastHandler
             if (songInfo != null)
             {
                 var serializedSongInfo = ObjectSerializer.SerializeToBase64(songInfo);
+
                 toastContentBuilder.Content.Actions = new ToastActionsCustom()
                 {
                     ContextMenuItems = {
-                    new ToastContextMenuItem("Display song rating tile (use from Action Center)", $"action=RateTileRequested;serializedSongInfo={serializedSongInfo}")
+                    new ToastContextMenuItem("Display song rating tile (use from Action Center)", $"{nameof(RpToastUserAction)}={RpToastUserAction.RatingToastRequested};{nameof(PlayListSong)}={serializedSongInfo}")
                     }
                 };
-            }
-
-            var content = toastContentBuilder.GetToastContent();
-            var toast = new ToastNotification(content.GetXml());
-
-            toast.Group = "RP_Notify";
-            if (songInfo != null)
-            {
-                toast.Tag = songInfo.SongId;
             }
 
             return toastContentBuilder;
@@ -303,7 +287,7 @@ namespace RP_Notify.ToastHandler
                         .Actions
                         .ContextMenuItems.FirstOrDefault()
                         .Arguments);
-            var serializedSongInfo = args["serializedSongInfo"];
+            var serializedSongInfo = args[nameof(PlayListSong)];
 
             var deserializedSongInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(serializedSongInfo);
 
@@ -476,16 +460,16 @@ namespace RP_Notify.ToastHandler
 
             return _config.IsUserAuthenticated()
                 ? toastContentBuilder
-                    .AddInputTextBox("UserRate", ratingHintText)
-                    .AddArgument("action", "RateSubmitted")
-                    .AddArgument("serializedSongInfo", ObjectSerializer.SerializeToBase64(songInfo))
+                    .AddInputTextBox(Constants.UserRatingFieldKey, ratingHintText)
+                    .AddArgument(nameof(RpToastUserAction), RpToastUserAction.RateSubmitted)
+                    .AddArgument(nameof(PlayListSong), ObjectSerializer.SerializeToBase64(songInfo))
                     .AddButton(new ToastButton()
                         .SetContent(buttonText)
-                        .SetTextBoxId("UserRate"))
+                        .SetTextBoxId(Constants.UserRatingFieldKey))
                 : toastContentBuilder
                     .AddButton(new ToastButton()
                         .SetContent("Log in to rate song")
-                        .AddArgument("action", "LoginRequested"));
+                        .AddArgument(nameof(RpToastUserAction), RpToastUserAction.LoginRequested));
         }
 
         internal static string TimeSpanToMinutes(int timeLength)

@@ -1,7 +1,7 @@
-﻿using RP_Notify.Logger;
-using System;
+﻿using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Runtime.Serialization.Formatters.Binary;
 
@@ -9,9 +9,32 @@ namespace RP_Notify.Helpers
 {
     public static class CookieHelper
     {
-        public static bool TryGetCookieFromCache(string filePath, out CookieContainer cookieContainer)
+        public static bool ReadAndValidateCookieFromDisk(string cookieFilePath, Uri cookieUri, out CookieContainer resultCookieContainer)
+        {
+            if (CookieHelper.TryGetCookieFromCache(cookieFilePath, out resultCookieContainer))
+            {
+                var cookieCollection = resultCookieContainer.GetCookies(cookieUri);
+                var cookieArray = new Cookie[cookieCollection.Count];
+                cookieCollection.CopyTo(cookieArray, 0);
+
+                if (!cookieArray.Any(c => c.Expired))
+                {
+                    return true;
+                }
+                else
+                {
+                    Retry.Do(() => File.Delete(cookieFilePath));
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryGetCookieFromCache(string filePath, out CookieContainer cookieContainer)
         {
             cookieContainer = new CookieContainer();
+
+            RenameOldCookieIfPresent(filePath);
 
             if (!File.Exists(filePath) || !(File.ReadAllText(filePath).Length > 0))
             {
@@ -27,6 +50,15 @@ namespace RP_Notify.Helpers
             {
                 Retry.Do(() => File.Delete(filePath));
                 return false;
+            }
+        }
+
+        private static void RenameOldCookieIfPresent(string filePath)
+        {
+            var oldFilePath = Path.Combine(Path.GetDirectoryName(filePath), "_cookieCache");
+            if (File.Exists(oldFilePath))
+            {
+                File.Move(oldFilePath, filePath);
             }
         }
 

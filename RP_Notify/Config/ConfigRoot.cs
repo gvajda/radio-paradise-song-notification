@@ -1,5 +1,4 @@
-﻿using RP_Notify.Helpers;
-using System;
+﻿using System;
 using System.Linq;
 
 namespace RP_Notify.Config
@@ -14,13 +13,7 @@ namespace RP_Notify.Config
         {
             StaticConfig = new StaticConfig();
             ExternalConfig = new ExternalConfigIni(StaticConfig.ConfigFilePath);
-            State = new State(StaticConfig.CookieCachePath, new Uri(StaticConfig.RpApiBaseUrl))
-            {
-                RpCookieContainer = CookieHelper.TryGetCookieFromCache(StaticConfig.CookieCachePath, out var rpCookie)
-                ? rpCookie
-                : null
-            };
-
+            State = new State(StaticConfig.CookieCachePath, new Uri(StaticConfig.RpApiBaseUrl));
         }
 
         public bool IsUserAuthenticated()

@@ -1,10 +1,7 @@
-using RP_Notify.Logger;
 using RP_Notify.Helpers;
 using RP_Notify.RpApi.ResponseModel;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
 
 namespace RP_Notify.Config
@@ -126,7 +123,7 @@ namespace RP_Notify.Config
         {
             _cookieFilePath = cookieFilePath;
 
-            if (ReadAndValidateCookieFromDisk(cookieFilePath, cookieUri, out var cookieContainer))
+            if (CookieHelper.ReadAndValidateCookieFromDisk(cookieFilePath, cookieUri, out var cookieContainer))
             {
                 rpCookieContainer = cookieContainer;
             }
@@ -144,27 +141,6 @@ namespace RP_Notify.Config
         private void RaiseFieldChangeEvent(string fieldName, object value)
         {
             StateChangeHandler.Invoke(this, new RpConfigurationChangeEvent(RpConfigurationChangeEvent.EventType.StateChange, fieldName, value));
-        }
-
-        private bool ReadAndValidateCookieFromDisk(string cookieFilePath, Uri cookieUri, out CookieContainer resultCookieContainer)
-        {
-            if (CookieHelper.TryGetCookieFromCache(cookieFilePath, out resultCookieContainer))
-            {
-                var cookieCollection = resultCookieContainer.GetCookies(cookieUri);
-                var cookieArray = new Cookie[cookieCollection.Count];
-                cookieCollection.CopyTo(cookieArray, 0);
-
-                if (!cookieArray.Any(c => c.Expired))
-                {
-                    return true;
-                }
-                else
-                {
-                    Retry.Do(() => File.Delete(cookieFilePath));
-                }
-            }
-
-            return false;
         }
     }
 

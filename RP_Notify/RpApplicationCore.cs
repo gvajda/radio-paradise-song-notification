@@ -64,8 +64,11 @@ namespace RP_Notify
                 _rpApiClientFactory.Create().GetAuth();
             }
 
+            // Refresh channel list
             _config.State.ChannelList = _rpApiClientFactory.Create().GetChannelList();
-            _songInfoListener.CheckTrackedRpPlayerStatus();     // Check if RP player is still tracked (updates State)
+
+            // Check if RP player is still tracked (updates State)
+            _songInfoListener.CheckTrackedRpPlayerStatus();
 
             if (_config.State.RpTrackingConfig.Players.Any())
             {
@@ -101,7 +104,7 @@ namespace RP_Notify
             // At the very first run, ask for config folder location
             if (!_config.StaticConfig.ConfigBaseFolderExisted)
             {
-                _toastHandlerFactory.Create().ShowConfigFolderToast();
+                _toastHandlerFactory.Create().ShowConfigFolderChoicePromptToast();
             }
 
             // Start listen for song changes
@@ -435,14 +438,10 @@ namespace RP_Notify
             // Obtain any user input (text boxes, menu selections) from the notification
             ValueSet userInput = toastArgs.UserInput;
 
-            string action;
-            try
+
+            if (!Enum.TryParse<RpToastUserAction>(toastArguments[nameof(RpToastUserAction)], out RpToastUserAction rpToasUserAction))
             {
-                action = toastArguments["action"];
-            }
-            catch
-            {
-                return;     // Skip if no action is defined
+                return;     // Only process known actions
             }
 
             EventCounter++;
@@ -455,22 +454,22 @@ namespace RP_Notify
 
                 try
                 {
-                    switch (action)
+                    switch (rpToasUserAction)
                     {
-                        case "LoginRequested":
+                        case RpToastUserAction.ConfigFolderChosen:
+                            OnConfigFolderChosenToastAction(userInput);
+                            break;
+                        case RpToastUserAction.FolderChoiceRefusedExitApp:
+                            OnFolderChoiceRefusedExitAppAction();
+                            break;
+                        case RpToastUserAction.RatingToastRequested:
+                            OnRatingToastRequestedAction(toastArguments);
+                            break;
+                        case RpToastUserAction.LoginRequested:
                             _loginForm.ShowDialog();
                             break;
-                        case "ExitApp":
-                            Application.Exit();
-                            break;
-                        case "ChooseFolder":
-                            OnChooseFolderToastAction(userInput);
-                            break;
-                        case "RateSubmitted":
+                        case RpToastUserAction.RateSubmitted:
                             OnRateSubmittedToastAction(userInput, toastArguments);
-                            break;
-                        case "RateTileRequested":
-                            OnRateTileRequestedAction(toastArguments);
                             break;
                         default:
                             throw new NotImplementedException();
@@ -489,31 +488,39 @@ namespace RP_Notify
 
         }
 
-        private void OnChooseFolderToastAction(ValueSet userInput)
+        private void OnConfigFolderChosenToastAction(ValueSet userInput)
         {
             ConfigLocationOptions startingLocation;
             ConfigLocationOptions targetLocation;
 
-            if (userInput.TryGetValue("configFolder", out object rawFolder))
+            if (userInput.TryGetValue(nameof(ConfigFolderChoiceOption), out object rawFolder))
             {
                 var folder = (string)rawFolder;
-                if (folder == "localCache" && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.AppData)
+
+                if (folder == ConfigFolderChoiceOption.localCache.ToDescriptionString()
+                    && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.AppData)
                 {
                     startingLocation = ConfigLocationOptions.AppData;
                     targetLocation = ConfigLocationOptions.ExeContainingDirectory;
                     MoveConfigFolder(startingLocation, targetLocation);
                 }
-                else if (folder == "appdata" && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.ExeContainingDirectory)
+                else if (folder == ConfigFolderChoiceOption.appdata.ToDescriptionString()
+                    && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.ExeContainingDirectory)
                 {
                     startingLocation = ConfigLocationOptions.ExeContainingDirectory;
                     targetLocation = ConfigLocationOptions.AppData;
                     MoveConfigFolder(startingLocation, targetLocation);
                 }
-                else if (folder == "cleanonexit")
+                else if (folder == ConfigFolderChoiceOption.cleanonexit.ToDescriptionString())
                 {
                     _config.StaticConfig.CleanUpOnExit = true;
                 }
             }
+        }
+
+        private void OnFolderChoiceRefusedExitAppAction()
+        {
+            _config.ExternalConfig.DeleteAllData = true;
         }
 
         private void MoveConfigFolder(ConfigLocationOptions startingLocation, ConfigLocationOptions targetLocation)
@@ -531,11 +538,15 @@ namespace RP_Notify
 
         private void OnRateSubmittedToastAction(ValueSet userInput, ToastArguments toastArguments)
         {
-            var songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(toastArguments["serializedSongInfo"]);
+            var songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(toastArguments[nameof(PlayListSong)]);
 
-            if (!userInput.TryGetValue("UserRate", out object rawUserRate)) return;
-            if (!Int32.TryParse((string)rawUserRate, out int userRate)
-                && 1 <= userRate && userRate <= 10) return;
+            if (!userInput.TryGetValue(Constants.UserRatingFieldKey, out object rawUserRate)
+                || !Int32.TryParse(rawUserRate.ToString().Trim(), out int userRate)
+                || userRate < 1 || 10 < userRate)
+            {
+                _toastHandlerFactory.Create().ShowInvalidRatingArgumentToast(rawUserRate.ToString().Trim());
+                return;
+            }
 
             var ratingResponse = _rpApiClientFactory.Create().GetRating(songInfo.SongId, userRate);
             if (ratingResponse.Status == "success")
@@ -553,9 +564,9 @@ namespace RP_Notify
             }
         }
 
-        private void OnRateTileRequestedAction(ToastArguments toastArguments)
+        private void OnRatingToastRequestedAction(ToastArguments toastArguments)
         {
-            var songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(toastArguments["serializedSongInfo"]);
+            var songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(toastArguments[nameof(PlayListSong)]);
             KeyboardSendKeyHelper.SendWinKeyN();
             Task.Delay(200).Wait();
             _toastHandlerFactory.Create().ShowSongRatingToast(songInfo);

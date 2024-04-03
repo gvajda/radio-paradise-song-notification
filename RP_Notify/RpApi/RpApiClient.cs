@@ -82,6 +82,8 @@ namespace RP_Notify.RpApi
 
         public Rating GetRating(string songId, int rating)
         {
+
+
             var requestPath = "api/rating";
 
             var parameters = new Dictionary<string, string>();

@@ -2,8 +2,6 @@
 using RP_Notify.Config;
 using RP_Notify.Logger;
 using RP_Notify.PlayerWatchers;
-using RP_Notify.PlayerWatchers.Foobar2000.BeefWebApiClient;
-using RP_Notify.PlayerWatchers.MusicBee.API;
 using RP_Notify.RpApi;
 using RP_Notify.SongInfoListener;
 using RP_Notify.ToastHandler;
@@ -24,8 +22,6 @@ namespace RP_Notify
                 .AddSingleton<IConfigRoot>(rpConfig)
                 .AddLogger(rpConfig)
                 .AddRpApiClient(rpConfig.State.RpCookieContainer)
-                .AddBeefWebApiClient()
-                .AddMusicBeeIPCClient()
                 .AddToastHandler()
                 .AddSingleton<LoginForm.LoginForm>()
                 .AddPlayerWatchers()

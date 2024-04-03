@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Polly;
 using System;
 using System.Net;
 using System.Net.Http;
@@ -14,7 +15,11 @@ namespace RP_Notify.RpApi
                 {
                     CookieContainer = cookieContainer,
                     UseCookies = true
-                }).Services
+                })
+                .AddTransientHttpErrorPolicy(policy => policy.WaitAndRetryAsync(
+                    Constants.HttpRetryAttempts,
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
+                .Services
                 .AddTransient<IRpApiClient, RpApiClient>()
                 .AddTransient<Func<IRpApiClient>>(serviceProvider => () => serviceProvider.GetService<IRpApiClient>())
                 .AddSingleton<IRpApiClientFactory, RpApiClientFactory>();
