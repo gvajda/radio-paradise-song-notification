@@ -75,26 +75,6 @@ The app will also display an icon in the Windows tray, all settings can be reach
 
 ## Under the hood
 
-### Configuration
-
-On the first start, the app will prompt you to choose the location of the RP_Notify_Data folder that will contain your saved settings, logs, cached album art and the optional cookie file if you choose to log in and send song ratings using the app.
-
-The folder options are the following:
-
-- **Next to the application (RP_Notify.exe)**
-  - The default option
-  - This is the 'portable' mode - until the *RP_Notify.exe* file and the *RP_Notify_Data* folder are in the same place, it will find it and look for the settings inside
-  - This option enables to use the app from a USB stick on a different computer or have multiple copies of the app with different settings and user logins
-- **C:\users\YOURNAME\\.AppData\Roaming\RP_Notify_Data**
-  - With this option, you can move the *RP_Notify.exe* file around, it will always start with the saved settings
-- **Don't keep anything (clean up on exit)**
-  - When you are not sure if you want the app to save anything just yet
-  - The folder will be created because the app is implemented in a way to persist the settings when it changes, but it will be deleted when the app exits
-
-*Note*: the folder location can be changed after the initial choice from the app settings
-
-<p align="center"><img src=".screenshots/ConfigFolderMigrate.gif" alt="notification-simple"/></p>
-
 ### Audio player integration
 
 Radio Paradise can be played in any audio player using the [stream links](https://radioparadise.com/listen/stream-links) and the application works with some of them to enable/disable song notification when a stream is started/stopped and change channels based on which channel is played. This feature can be enabled one-by-one for each supported audio player. Please see the details below.
@@ -118,6 +98,47 @@ The integration requires the *MusicBeeIPC* plugin for MusicBee that provides an 
 [Download MusicBeeIPC plugin](https://getmusicbee.com/forum/index.php?topic=11492.msg70007)
 
 <p align="center"><img src=".screenshots/MusicBeeIntegration.gif" alt="notification-simple"/></p>
+
+### Configuration
+
+#### Config folder location options
+
+On the first start, the app will prompt you to choose the location of the RP_Notify_Data folder that will contain your saved settings, logs, cached album art and the optional cookie file if you choose to log in and send song ratings using the app.
+
+The folder options are the following:
+
+- **Next to the application (RP_Notify.exe)**
+  - The default option
+  - This is the 'portable' mode - until the *RP_Notify.exe* file and the *RP_Notify_Data* folder are in the same place, it will find it and look for the settings inside
+  - This option enables to use the app from a USB stick on a different computer or have multiple copies of the app with different settings and user logins
+- **C:\users\YOURNAME\\.AppData\Roaming\RP_Notify_Data**
+  - With this option, you can move the *RP_Notify.exe* file around, it will always start with the saved settings
+- **Don't keep anything (clean up on exit)**
+  - When you are not sure if you want the app to save anything just yet
+  - The folder will be created because the app is implemented in a way to persist the settings when it changes, but it will be deleted when the app exits
+
+*Note*: the folder location can be changed after the initial choice from the app settings
+
+<p align="center"><img src=".screenshots/ConfigFolderMigrate.gif" alt="notification-simple"/></p>
+
+#### Config folder contents
+
+- **rp_config.ini**
+  - All settings set in the system tray menu are saved here
+  - Editing this file manually (or programmatically) has the same effect as changing the setting via the menu
+- **rp_cookiecache**
+  - The identical cookie that is stored by your browser upon logging into the official site
+  - Used to authenticate RP API requests so the app will be able to send song ratings and query what is played by the user in the browser or the official apps
+  - The cookies do NOT store user passwords
+- **AlbumArtCache**
+  - Folder to temporarily save the albumart files displayed on the notifications so they are not downloaded every time a new notification is displayed
+  - Limited to 20 files (~10MB)
+- **ApplicationLogs**
+  - Log files containing application events and arguments
+  - Can be attached when a bug is reported
+  - Limited to 10 files and 1MB per file
+
+<p align="center"><img src=".screenshots/appdata-contents.png" alt="notification-simple"/></p>
 
 ## About the project
 
