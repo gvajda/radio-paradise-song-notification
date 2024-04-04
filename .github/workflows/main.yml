@@ -29,9 +29,15 @@ jobs:
         with:
           nuget-version: "5.x"
 
+      - name: Read release properties from yaml file
+        uses: pietrobolcato/action-read-yaml@1.0.0
+        id: release_properties
+        with:
+          config: release_properties.yaml
+
       - name: Print application version
         run: |
-          echo namespace: ${{ steps.release_properties.outputs['release-version'] }}
+          echo release-version: ${{ steps.release_properties.outputs['release-version'] }}
 
       - name: Set project versions
         id: update
@@ -43,12 +49,6 @@ jobs:
 
       - name: Restore packages
         run: nuget restore RP_Notify.sln
-
-      - name: Read release properties from yaml file
-        uses: pietrobolcato/action-read-yaml@1.0.0
-        id: release_properties
-        with:
-          config: release_properties.yaml
 
       - name: Setup MSBuild Path
         uses: microsoft/setup-msbuild@v1
