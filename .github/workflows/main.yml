@@ -63,7 +63,7 @@ jobs:
         with:
           tag_name: ${{ steps.release_properties.outputs['release-version'] }}
           release_name: ${{ steps.release_properties.outputs['release-name'] }}
-          body-path: "release_notes.md"
+          body_path: "release_notes.md"
           draft: true
           prerelease: false
 
