@@ -24,16 +24,11 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v1
 
-      - name: Setup NuGet
-        uses: nuget/setup-nuget@v2
-        with:
-          nuget-version: "5.x"
-
       - name: Read release properties from yaml file
         uses: pietrobolcato/action-read-yaml@1.0.0
         id: release_properties
         with:
-          config: release_properties.yaml
+          config: ${{ github.workspace }}/release_properties.yaml
 
       - name: Print application version
         run: |
@@ -46,6 +41,11 @@ jobs:
           file: |
             "**/*.csproj", "**/*.nuspec", "**/AssemblyInfo.cs"
           version: ${{ steps.release_properties.outputs['release-version'] }}
+
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v2
+        with:
+          nuget-version: "5.x"
 
       - name: Restore packages
         run: nuget restore RP_Notify.sln
