@@ -25,21 +25,11 @@ jobs:
       - uses: actions/checkout@v1
 
       - name: Setup NuGet
-        uses: warrenbuckley/Setup-NuGet@v1
-
-      - name: Restore packages
-        run: nuget restore RP_Notify.sln
-
-      - name: Setup MSBuild Path
-        uses: warrenbuckley/Setup-MSBuild@v1
-
-      - name: Read release properties from yaml file
-        uses: pietrobolcato/action-read-yaml@1.0.0
-        id: release_properties
+        uses: nuget/setup-nuget@v2
         with:
-          config: release_properties.yaml
+          nuget-version: "5.x"
 
-      - name: Print version
+      - name: Print application version
         run: |
           echo namespace: ${{ steps.release_properties.outputs['release-version'] }}
 
@@ -50,6 +40,18 @@ jobs:
           file: |
             "**/*.csproj", "**/*.nuspec", "**/AssemblyInfo.cs"
           version: ${{ steps.release_properties.outputs['release-version'] }}
+
+      - name: Restore packages
+        run: nuget restore RP_Notify.sln
+
+      - name: Read release properties from yaml file
+        uses: pietrobolcato/action-read-yaml@1.0.0
+        id: release_properties
+        with:
+          config: release_properties.yaml
+
+      - name: Setup MSBuild Path
+        uses: microsoft/setup-msbuild@v1
 
       - name: Build
         run: msbuild RP_Notify.sln -p:Configuration=Release
