@@ -6,9 +6,11 @@ name: Build
 # events but only for the master branch
 on:
   push:
-    branches: [ master ]
+    branches:
+      - "**" # matches every branch
+      - "master" # excludes master
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -19,17 +21,58 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v1
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v1
 
-    - name: Setup NuGet
-      uses: warrenbuckley/Setup-NuGet@v1
+      - name: Setup NuGet
+        uses: warrenbuckley/Setup-NuGet@v1
 
-    - name: Restore packages
-      run: nuget restore RP_Notify.sln
+      - name: Restore packages
+        run: nuget restore RP_Notify.sln
 
-    - name: Setup MSBuild Path
-      uses: warrenbuckley/Setup-MSBuild@v1
-       
-    - name: Build
-      run: msbuild RP_Notify.sln -p:Configuration=Release
+      - name: Setup MSBuild Path
+        uses: warrenbuckley/Setup-MSBuild@v1
+
+      - name: Read release properties from yaml file
+        uses: pietrobolcato/action-read-yaml@1.0.0
+        id: release_properties
+        with:
+          config: release_properties.yaml
+
+      - name: Print version
+        run: |
+          echo namespace: ${{ steps.release_properties.outputs['release-version'] }}
+
+      - name: Set project versions
+        id: update
+        uses: vers-one/dotnet-project-version-updater@v1.5
+        with:
+          file: |
+            "**/*.csproj", "**/*.nuspec", "**/AssemblyInfo.cs"
+          version: ${{ steps.release_properties.outputs['release-version'] }}
+
+      - name: Build
+        run: msbuild RP_Notify.sln -p:Configuration=Release
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.release_properties.outputs['release-version'] }}
+          release_name: ${{ steps.release_properties.outputs['release-name'] }}
+          body-path: "release_notes.md"
+          draft: true
+          prerelease: false
+
+      - name: Upload Executable to Release
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ./RP_Notify/bin/Release/RP_Notify.exe
+          asset_name: RP_Notify.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
