@@ -8,9 +8,9 @@ Optimized for Windows 11
 
 ## Summary
 
-My goal was to receive non-intrusive but detailed updates of the currently played song in [Radio Paradise](https://radioparadise.com/) and the option to send song ratings without the need to interrupt what I was doing and open the website or search for browser tabs.
+My goal was to receive non-intrusive but detailed updates on the currently played songs in [Radio Paradise](https://radioparadise.com/) and the option to send song ratings without the need to interrupt what I was doing and open the website or search for browser tabs.
 
-<p align="center"><img src=".screenshots/notification-simple.png" alt="notification-simple"/></p>
+<p align="center"><img src=".screenshots/SongStartToast.gif" alt="notification-simple"/></p>
 
 **Disclaimer:** This is not an official Radio Paradise product. The logo is owned by Radio Paradise and the source of all displayed data - including album art - is the Radio Paradise REST API.
 
@@ -22,7 +22,7 @@ On the first start, the app will prompt you to choose the location of the RP_Not
 
 The app will also display an icon in the Windows tray, all settings can be reached by right-clicking on this icon. I recommend to drag this icon in the visible section of the Windows tray for easy access:
 
-<p align="center"><img src=".screenshots/notification-simple.png" alt="notification-simple"/></p>
+<p align="center"><img src=".screenshots/GettingStarted.gif" alt="notification-simple"/></p>
 
 ## Features
 
@@ -31,20 +31,25 @@ The app will also display an icon in the Windows tray, all settings can be reach
 - **Track official Radio Paradise players**
   - Display updates of songs played in the browser or official mobile apps, including the "My Favorites" channel
   - The app will notice if you skip a song or you switch to a different channel
-  - Due to how the Radio Paradise backend keeps track of API requests, this feature works without logging in to the app if the player/browser is on the same network (has the same IP), but login data is provided then you can track RP stream played on an official player at a remote location
+  - Only available if the user is logged in
 - **Support for all channels**
   - The channels list is updated on startup (channels added/removed in the future will display properly)
   - The 2050 channel is a bit tricky, the app will display updates when a song is played, but not during the conversation
 - **Audio player integration**
   - Track stream played in Foobar2000 or MusicBee audio players - [see below](#audio-player-integration)
 
+<p align="center"><img src=".screenshots/ChannelTracking.gif" alt="notification-simple"/></p>
+
 ### Notification visuals
 
 - **Show album art**
   - Configure image size in the menu
   - Optional RP banner
+  *Note*: only applies to the rich notification triggered by double-clicking on the tray icon
 - **Show song rating**
   - Optional - in case you prefer not to know the crowd rating before you send in your own
+
+<p align="center"><img src=".screenshots/ToastVisualOptions.gif" alt="notification-simple"/></p>
 
 ### Song rating
 
@@ -58,7 +63,7 @@ The app will also display an icon in the Windows tray, all settings can be reach
   - Like all other Windows notifications, the RP_Notify notifications will remain visible in the Windows Action Center showing a history of songs you listened to. This enables one to send a rating for a song that was played in the past.
   - This will also work when the app is not open
 
-<p align="center"><img src=".screenshots/notification-simple.png" alt="notification-simple"/></p>
+<p align="center"><img src=".screenshots/SongRating.gif" alt="notification-simple"/></p>
 
 ### Other
 
@@ -66,7 +71,7 @@ The app will also display an icon in the Windows tray, all settings can be reach
   - Activated by hovering over the tray icon
   - Quick and short song info including remaining time
 
-<p align="center"><img src=".screenshots/notification-simple.png" alt="notification-simple"/></p>
+<p align="center"><img src=".screenshots/Tooltip.gif" alt="notification-simple"/></p>
 
 ## Under the hood
 
@@ -88,7 +93,7 @@ The folder options are the following:
 
 *Note*: the folder location can be changed after the initial choice from the app settings
 
-<p align="center"><img src=".screenshots/notification-simple.png" alt="notification-simple"/></p>
+<p align="center"><img src=".screenshots/ConfigFolderMigrate.gif" alt="notification-simple"/></p>
 
 ### Audio player integration
 
@@ -102,6 +107,8 @@ The integration requires the *foo_beefweb* plugin for Foobar2000 that provides R
 
 [Download foo_beefweb plugin](https://www.foobar2000.org/components/view/foo_beefweb)
 
+<p align="center"><img src=".screenshots/Foobar2000Integration.gif" alt="notification-simple"/></p>
+
 #### MusicBee
 
 The integration requires the *MusicBeeIPC* plugin for MusicBee that provides an API and SDK for several various programming languages to the player.
@@ -110,19 +117,7 @@ The integration requires the *MusicBeeIPC* plugin for MusicBee that provides an 
 
 [Download MusicBeeIPC plugin](https://getmusicbee.com/forum/index.php?topic=11492.msg70007)
 
-## Screenshots
-
-### Simple notification when a song starts
-
-![notification-simple](.screenshots/notification-simple.png)
-
-### Detailed notification - when double-click on tray icon
-
-![notification-detailed](.screenshots/notification-detailed.png)
-
-### Tray menu
-
-![tray-menu](.screenshots/tray-menu.png)
+<p align="center"><img src=".screenshots/MusicBeeIntegration.gif" alt="notification-simple"/></p>
 
 ## About the project
 
