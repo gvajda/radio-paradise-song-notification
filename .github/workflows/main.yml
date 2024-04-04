@@ -38,8 +38,7 @@ jobs:
         id: update
         uses: vers-one/dotnet-project-version-updater@v1.5
         with:
-          file: |
-            "**/*.csproj", "**/*.nuspec", "**/AssemblyInfo.cs"
+          file: "**/AssemblyInfo.cs"
           version: ${{ steps.release_properties.outputs['release-version'] }}
 
       - name: Setup NuGet
