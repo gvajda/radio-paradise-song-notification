@@ -10,7 +10,8 @@ namespace RP_Notify.PlayerWatchers
     {
         public static IServiceCollection AddPlayerWatchers(this IServiceCollection services)
         {
-            return services.AddBeefWebApiClient()
+            return services
+                .AddBeefWebApiClient()
                 .AddMusicBeeIPCClient()
                 .AddSingleton<IPlayerWatcher, Foobar2000.Foobar2000Watcher>()
                 .AddSingleton<IPlayerWatcher, MusicBee.MusicBeeWatcher>()

@@ -461,11 +461,11 @@ namespace RP_Notify.ToastHandler
             return _config.IsUserAuthenticated(out string _)
                 ? toastContentBuilder
                     .AddInputTextBox(Constants.UserRatingFieldKey, ratingHintText)
-                    .AddArgument(nameof(RpToastUserAction), RpToastUserAction.RateSubmitted)
-                    .AddArgument(nameof(PlayListSong), ObjectSerializer.SerializeToBase64(songInfo))
                     .AddButton(new ToastButton()
                         .SetContent(buttonText)
-                        .SetTextBoxId(Constants.UserRatingFieldKey))
+                        .SetTextBoxId(Constants.UserRatingFieldKey)
+                        .AddArgument(nameof(RpToastUserAction), RpToastUserAction.RateSubmitted)
+                        .AddArgument(nameof(PlayListSong), ObjectSerializer.SerializeToBase64(songInfo)))
                 : toastContentBuilder
                     .AddButton(new ToastButton()
                         .SetContent("Log in to rate song")
