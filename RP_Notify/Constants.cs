@@ -3,7 +3,8 @@
     internal static class Constants
     {
         public const string ConfigBaseFolder = "RP_Notify_Data";
-        public const string ObsoleteConfigBaseFolder = "RP_Notify_Cache";
+        public const string ObsoleteIniFileName = "config.ini";
+        public const string ObsoleteConfigBaseFolder = "RP_Notify";
         public const string ConfigFileName = "rp_config.ini";
         public const string CookieCacheFileName = "rp_cookieContainer";
         public const string AlbumArtCacheFolderName = "AlbumArtCache";

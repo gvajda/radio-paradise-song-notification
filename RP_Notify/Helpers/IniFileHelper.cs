@@ -7,8 +7,6 @@ namespace RP_Notify.Helpers
 {
     internal static class IniFileHelper
     {
-        private const string _oldIniFileName = "config.ini";
-
         internal static IniFile ReadIniFile(string iniPath)
         {
             var iniFile = new IniFile();
@@ -16,14 +14,6 @@ namespace RP_Notify.Helpers
 
             Retry.Do(() =>
             {
-                if (!File.Exists(iniPath))
-                {
-                    var _oldIniPath = Path.Combine(Path.GetDirectoryName(iniPath), _oldIniFileName);
-                    if (File.Exists(_oldIniPath))
-                    {
-                        File.Move(_oldIniPath, iniPath);
-                    }
-                }
                 iniContent = File.ReadAllText(iniPath, Encoding.Default);
             });
 
@@ -69,11 +59,23 @@ namespace RP_Notify.Helpers
 
         private static void CreateIniWithDefaultValuesIfNotExists(string iniPath)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(iniPath));
-            if (!File.Exists(iniPath))
+
+            Retry.Do(() =>
             {
-                File.WriteAllText(iniPath, Properties.Resources.config);
-            }
+                if (!File.Exists(iniPath))
+                {
+                    var _oldIniPath = Path.Combine(Path.GetDirectoryName(iniPath), Constants.ObsoleteIniFileName);
+                    if (File.Exists(_oldIniPath))
+                    {
+                        File.Move(_oldIniPath, iniPath);
+                    }
+                    else
+                    {
+                        File.WriteAllText(iniPath, Properties.Resources.config);
+
+                    }
+                }
+            });
         }
     }
 }
