@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace RP_Notify.Config
 {
-    public class ExternalConfigIni : IExternalConfig
+    public class PersistedConfigIni : IPersistedConfig
     {
         public event EventHandler<RpConfigurationChangeEvent> ExternalConfigChangeHandler = delegate { };
 
@@ -177,7 +177,7 @@ namespace RP_Notify.Config
             }
         }
 
-        public ExternalConfigIni(string iniFilePath)
+        public PersistedConfigIni(string iniFilePath)
         {
             _iniFilePath = iniFilePath;
             IniFileHelper.EnsureValidIniFileExists(iniFilePath);

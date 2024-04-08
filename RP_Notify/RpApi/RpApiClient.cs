@@ -30,7 +30,7 @@ namespace RP_Notify.RpApi
             var requestPath = "api/nowplaying_list";
 
             var parameters = new Dictionary<string, string>();
-            parameters.Add("chan", _config.ExternalConfig.Channel.ToString());
+            parameters.Add("chan", _config.PersistedConfig.Channel.ToString());
             parameters.Add("list_num", list_num.ToString());
             if (!string.IsNullOrEmpty(_config.State.RpTrackingConfig.ActivePlayerId))
             {
@@ -133,7 +133,7 @@ namespace RP_Notify.RpApi
         {
             try
             {
-                _log.Information(LogHelper.GetMethodName(this), "Invoked - URL resource path: {Resource} - Authenticated: {IsUserAuthenticated}", requestPath, _config.IsUserAuthenticated());
+                _log.Information(LogHelper.GetMethodName(this), "Invoked - URL resource path: {Resource} - Authenticated: {IsUserAuthenticated}", requestPath, _config.IsUserAuthenticated(out string _));
 
                 var rpBaseAddressUri = new Uri(_config.StaticConfig.RpApiBaseUrl);
 

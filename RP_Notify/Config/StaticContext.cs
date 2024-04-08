@@ -3,7 +3,7 @@ using System.IO;
 
 namespace RP_Notify.Config
 {
-    public class StaticConfig
+    public class StaticContext
     {
         private readonly string configBaseFoldepath;
         public ConfigLocationOptions ConfigBaseFolderOption { get; }
@@ -16,7 +16,7 @@ namespace RP_Notify.Config
         public string RpImageBaseUrl { get; }
         public bool CleanUpOnExit { get; set; }
 
-        public StaticConfig()
+        public StaticContext()
         {
             CleanUpOnExit = false;
             ConfigBaseFolderExisted = ConfigDirectoryHelper.TryFindConfigDirectory(out ConfigLocationOptions configBaseFolder);

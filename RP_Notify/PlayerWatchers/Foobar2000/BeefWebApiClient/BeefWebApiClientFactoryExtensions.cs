@@ -10,7 +10,7 @@ namespace RP_Notify.PlayerWatchers.Foobar2000.BeefWebApiClient
         {
             return services.AddHttpClient<IBeefWebApiClient, BeefWebApiClient>()
                 .AddTransientHttpErrorPolicy(policy => policy.WaitAndRetryAsync(
-                    Constants.HttpRetryAttempts,
+                    Constants.RpApiClientHttpRetryAttempts,
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
                 .Services
                 .AddTransient<IBeefWebApiClient, BeefWebApiClient>()

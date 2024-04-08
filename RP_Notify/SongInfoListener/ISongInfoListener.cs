@@ -5,7 +5,5 @@
         void Start();
 
         void ResetListenerLoop();
-
-        void CheckTrackedRpPlayerStatus();
     }
 }

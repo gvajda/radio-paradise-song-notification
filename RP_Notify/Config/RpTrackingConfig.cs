@@ -46,6 +46,28 @@ namespace RP_Notify.Config
             Players = new List<Player>();
         }
 
+        public bool IsRpPlayerTrackingChannel(out int channel)
+        {
+            channel = -1;
+
+            if (!string.IsNullOrEmpty(ActivePlayerId)
+                && Players.Any(p => p.PlayerId == ActivePlayerId))
+            {
+                channel = Int32.Parse(
+                    Players
+                    .Where(p => p.PlayerId == ActivePlayerId)
+                    .First()
+                    .Chan
+                    );
+                return true;
+            }
+            else
+            {
+                ActivePlayerId = null;
+                return false;
+            }
+        }
+
         private void RaiseFieldChangeEvent(string fieldName, params object[] flexibleValue)
         {
             object value = flexibleValue[0] != null

@@ -51,45 +51,34 @@ namespace RP_Notify
 
         private void Init()
         {
+            // Check queued application data delete request
+            CheckQueuedDataDeleteRequest();
+
             _log.Information(LogHelper.GetMethodName(this), "Started ********************************************************************");
 
-            if (_config.ExternalConfig.Channel == 99)      // Reset channel if Favourites were tracked at exit
+            // At the very first run, ask for config folder location
+            if (!_config.StaticConfig.ConfigBaseFolderExisted)
             {
-                _config.ExternalConfig.Channel = 0;
+                _toastHandlerFactory.Create().ShowConfigFolderChoicePromptToast();
             }
 
-            // Refresh cookies
-            if (_config.IsUserAuthenticated())
+            if (_config.PersistedConfig.Channel > 9)      // Reset channel if a special channel was tracked at exit
             {
-                _rpApiClientFactory.Create().GetAuth();
+                _config.PersistedConfig.Channel = 0;
             }
 
             // Refresh channel list
             _config.State.ChannelList = _rpApiClientFactory.Create().GetChannelList();
 
-            // Check if RP player is still tracked (updates State)
-            _songInfoListener.CheckTrackedRpPlayerStatus();
-
-            if (_config.State.RpTrackingConfig.Players.Any())
+            // Refresh cookies
+            if (_config.IsUserAuthenticated(out string _))
             {
-                // if multiple officcial RP player is active then start tracking the first available
-                _config.State.RpTrackingConfig.ActivePlayerId = _config.State.RpTrackingConfig.Players.FirstOrDefault().PlayerId;
-            }
-
-            if (_config.ExternalConfig.EnableFoobar2000Watcher)
-            {
-                _playerWatcherProvider.GetWatcher(RegisteredPlayer.Foobar2000).CheckPlayerState(out bool _);
-                _playerWatcherProvider.GetWatcher(RegisteredPlayer.Foobar2000).Start();
-            }
-            else if (_config.ExternalConfig.EnableMusicBeeWatcher)
-            {
-                _playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).CheckPlayerState(out bool _);
-                _playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).Start();
+                _rpApiClientFactory.Create().GetAuth();
             }
 
             // Set up event handlers
             _log.Information(LogHelper.GetMethodName(this), "Create event listeners");
-            _config.ExternalConfig.ExternalConfigChangeHandler += OnConfigChangeEvent;
+            _config.PersistedConfig.ExternalConfigChangeHandler += OnConfigChangeEvent;
             _config.State.StateChangeHandler += OnConfigChangeEvent;
             _config.State.RpTrackingConfig.RpTrackingConfigChangeHandler += OnConfigChangeEvent;
             Application.ApplicationExit += this.OnApplicationExit;
@@ -98,14 +87,26 @@ namespace RP_Notify
             _loginForm.LoginInputEventHandler += OnLoginInputSubmitted;
 
 
-            // Check queued application data delet request
-            CheckQueuedDataDeleteRequest();
-
-            // At the very first run, ask for config folder location
-            if (!_config.StaticConfig.ConfigBaseFolderExisted)
+            // Start watching for RP stream if enabled
+            if (_config.PersistedConfig.EnableRpOfficialTracking)
             {
-                _toastHandlerFactory.Create().ShowConfigFolderChoicePromptToast();
+                _config.PersistedConfig.EnableFoobar2000Watcher = false;
+                _config.PersistedConfig.EnableMusicBeeWatcher = false;
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.RpOfficial).Start();
             }
+            else if (_config.PersistedConfig.EnableFoobar2000Watcher)
+            {
+                _config.PersistedConfig.EnableRpOfficialTracking = false;
+                _config.PersistedConfig.EnableMusicBeeWatcher = false;
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.Foobar2000).Start();
+            }
+            else if (_config.PersistedConfig.EnableMusicBeeWatcher)
+            {
+                _config.PersistedConfig.EnableRpOfficialTracking = false;
+                _config.PersistedConfig.EnableFoobar2000Watcher = false;
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).Start();
+            }
+
 
             // Start listen for song changes
             _songInfoListener.Start();
@@ -164,31 +165,34 @@ namespace RP_Notify
 
                     switch (e.ChangedFieldName)
                     {
-                        case nameof(_config.ExternalConfig.ShowOnNewSong):
+                        case nameof(_config.PersistedConfig.ShowOnNewSong):
                             OnShowOnNewSongChange();
                             break;
-                        case nameof(_config.ExternalConfig.EnableFoobar2000Watcher):
+                        case nameof(_config.PersistedConfig.EnableFoobar2000Watcher):
                             OnEnableFooBar2000WatcherChange();
                             break;
-                        case nameof(_config.ExternalConfig.EnableMusicBeeWatcher):
+                        case nameof(_config.PersistedConfig.EnableMusicBeeWatcher):
                             OnEnableMusicBeeWatcherChange();
                             break;
-                        case nameof(_config.ExternalConfig.LargeAlbumArt):
+                        case nameof(_config.PersistedConfig.EnableRpOfficialTracking):
+                            OnEnableRpOfficialTrackingChange();
+                            break;
+                        case nameof(_config.PersistedConfig.LargeAlbumArt):
                             OnLargeAlbumArtChange();
                             break;
-                        case nameof(_config.ExternalConfig.RpBannerOnDetail):
+                        case nameof(_config.PersistedConfig.RpBannerOnDetail):
                             OnRpBannerOnDetailChange();
                             break;
-                        case nameof(_config.ExternalConfig.ShowSongRating):
+                        case nameof(_config.PersistedConfig.ShowSongRating):
                             OnShowSongRatingChange();
                             break;
-                        case nameof(_config.ExternalConfig.PromptForRating):
+                        case nameof(_config.PersistedConfig.PromptForRating):
                             OnPromptForRatingChange();
                             break;
-                        case nameof(_config.ExternalConfig.Channel):
+                        case nameof(_config.PersistedConfig.Channel):
                             OnChannelChange();
                             break;
-                        case nameof(_config.ExternalConfig.DeleteAllData):
+                        case nameof(_config.PersistedConfig.DeleteAllData):
                             OnDeleteAllDataChange();
                             break;
                         case nameof(_config.State.Foobar2000IsPlayingRP):
@@ -205,9 +209,6 @@ namespace RP_Notify
                             break;
                         case nameof(_config.State.RpTrackingConfig.ActivePlayerId):
                             OnActivePlayerIdChange();
-                            break;
-                        case nameof(_config.ExternalConfig.EnableRpOfficialTracking):
-                            OnEnableRpOfficialTrackingChange();
                             break;
                         case nameof(_config.State.RpTrackingConfig.Players):
                             OnPlayersChange();
@@ -233,7 +234,7 @@ namespace RP_Notify
         {
             // USER - menu button demonstration
 
-            if (_config.ExternalConfig.ShowOnNewSong)
+            if (_config.PersistedConfig.ShowOnNewSong)
             {
                 _toastHandlerFactory.Create().ShowSongStartToast(true);
             }
@@ -243,8 +244,10 @@ namespace RP_Notify
         {
             // USER - turn on and off the Foobar2000 watching infinite loop
 
-            if (_config.ExternalConfig.EnableFoobar2000Watcher)
+            if (_config.PersistedConfig.EnableFoobar2000Watcher)
             {
+                _config.PersistedConfig.EnableRpOfficialTracking = false;
+                _config.PersistedConfig.EnableMusicBeeWatcher = false;
                 _playerWatcherProvider.GetWatcher(RegisteredPlayer.Foobar2000).Start();
             }
             else
@@ -257,13 +260,38 @@ namespace RP_Notify
         {
             // USER - turn on and off the Foobar2000 watching infinite loop
 
-            if (_config.ExternalConfig.EnableMusicBeeWatcher)
+            if (_config.PersistedConfig.EnableMusicBeeWatcher)
             {
+                _config.PersistedConfig.EnableRpOfficialTracking = false;
+                _config.PersistedConfig.EnableFoobar2000Watcher = false;
                 _playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).Start();
             }
             else
             {
                 _playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).Stop();
+            }
+        }
+
+        private void OnEnableRpOfficialTrackingChange()
+        {
+            // USER and APP - when RP tracking is started at Startup or user enables/disables RP tracking
+
+            if (_config.PersistedConfig.EnableRpOfficialTracking)
+            {
+                _config.PersistedConfig.EnableFoobar2000Watcher = false;
+                _config.PersistedConfig.EnableMusicBeeWatcher = false;
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.RpOfficial).Start();
+            }
+            else
+            {
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.RpOfficial).Stop();
+                if (_config.PersistedConfig.Channel > 9)
+                {
+                    _config.PersistedConfig.Channel = 0;
+                }
+
+                _config.State.RpTrackingConfig.ActivePlayerId = null;
+                _config.State.RpTrackingConfig.Players = new List<Player>();
             }
         }
 
@@ -292,7 +320,7 @@ namespace RP_Notify
         {
             // USER - menu button demonstration
 
-            if (_config.ExternalConfig.PromptForRating)
+            if (_config.PersistedConfig.PromptForRating)
             {
                 _toastHandlerFactory.Create().ShowSongRatingToast();
             }
@@ -302,7 +330,7 @@ namespace RP_Notify
         {
             // USER and APP - change played channel
 
-            if (!_config.IsRpPlayerTrackingChannel())
+            if (!_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
             {
                 _songInfoListener.ResetListenerLoop();
             }
@@ -321,7 +349,7 @@ namespace RP_Notify
 
             if (_config.State.Playback != null
                 && _config.State.Foobar2000IsPlayingRP
-                && !_config.IsRpPlayerTrackingChannel()
+                && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _)
                 && _playerWatcherProvider.GetWatcher(RegisteredPlayer.Foobar2000).CheckPlayerState(out bool channelChange)
                 && !channelChange)
             {
@@ -335,7 +363,7 @@ namespace RP_Notify
 
             if (_config.State.Playback != null
                 && _config.State.MusicBeeIsPlayingRP
-                && !_config.IsRpPlayerTrackingChannel()
+                && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _)
                 && _playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).CheckPlayerState(out bool channelChange)
                 && !channelChange)
             {
@@ -368,42 +396,19 @@ namespace RP_Notify
             // USER and APP - when RP tracking is started at Startup or user changes/enables/disables RP player
 
             // if player became un-tracked
-            if (!_config.IsRpPlayerTrackingChannel())
+            if (!_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
             {
                 // if channel was favourites and Foobar2000 or MusicBee doesn't change it, then reset to the main stream
-                if (_config.ExternalConfig.Channel == 99
+                if (_config.PersistedConfig.Channel == 99
                     && !(_playerWatcherProvider.GetWatcher(RegisteredPlayer.Foobar2000).CheckPlayerState(out bool channelChangedF) && channelChangedF)
                     && !(_playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).CheckPlayerState(out bool channelChangedM) && channelChangedM))
                 {
-                    _config.ExternalConfig.Channel = 0;
+                    _config.PersistedConfig.Channel = 0;
                 }
             }
             else
             {
                 _songInfoListener.ResetListenerLoop();
-            }
-        }
-
-        private void OnEnableRpOfficialTrackingChange()
-        {
-            // USER and APP - when RP tracking is started at Startup or user enables/disables RP tracking
-
-            if (_config.ExternalConfig.EnableRpOfficialTracking)
-            {
-                _config.State.RpTrackingConfig.Players = _rpApiClientFactory.Create().GetSync_v2().Players;
-            }
-            else
-            {
-                if (_config.ExternalConfig.Channel == 99
-                    && !(_playerWatcherProvider.GetWatcher(RegisteredPlayer.Foobar2000).CheckPlayerState(out bool channelChanged) && channelChanged)
-                    && !(_playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).CheckPlayerState(out bool channelChangedM) && channelChangedM))
-                {
-                    _config.ExternalConfig.Channel = 0;
-                }
-
-                _config.State.RpTrackingConfig.Players = _rpApiClientFactory.Create().GetSync_v2().Players;
-                _config.State.RpTrackingConfig.ActivePlayerId = null;
-                _config.State.RpTrackingConfig.Players = new List<Player>();
             }
         }
 
@@ -413,9 +418,7 @@ namespace RP_Notify
 
             // if Foobar2000 or MusicBee is not tracking an RP channel then start trackin without a second click
             if (_config.State.RpTrackingConfig.Players.Any()
-                && !_config.IsRpPlayerTrackingChannel()
-                && !_config.State.Foobar2000IsPlayingRP
-                && !_config.State.MusicBeeIsPlayingRP)
+                && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
             {
                 _config.State.RpTrackingConfig.ActivePlayerId = _config.State.RpTrackingConfig.Players.FirstOrDefault().PlayerId;
             }
@@ -520,7 +523,7 @@ namespace RP_Notify
 
         private void OnFolderChoiceRefusedExitAppAction()
         {
-            _config.ExternalConfig.DeleteAllData = true;
+            _config.PersistedConfig.DeleteAllData = true;
         }
 
         private void MoveConfigFolder(ConfigLocationOptions startingLocation, ConfigLocationOptions targetLocation)
@@ -595,26 +598,29 @@ namespace RP_Notify
 
         private void OnApplicationExit(object sender, EventArgs e)
         {
-            _log.Information(LogHelper.GetMethodName(this), "Exit process started");
-
             _rpTrayIcon.Dispose();
-
-            CheckQueuedDataDeleteRequest();
-
             AlbumartFileHelper.DeleteOldAlbumartImageFiles(_config);
-            _log.Information(LogHelper.GetMethodName(this), $@"Finished
+
+            _log.Information(LogHelper.GetMethodName(this), $@"Exit Application
 ********************************************************************
 ********************************************************************
 ********************************************************************
 ********************************************************************
 ********************************************************************");
+
+            CheckQueuedDataDeleteRequest();
         }
 
         private void CheckQueuedDataDeleteRequest()
         {
-            if (_config.ExternalConfig.DeleteAllData || _config.StaticConfig.CleanUpOnExit)
+            if (_config.PersistedConfig.DeleteAllData || _config.StaticConfig.CleanUpOnExit)
             {
-                _log.Information(LogHelper.GetMethodName(this), "App data delete requested");
+                _log.Information(LogHelper.GetMethodName(this), @"App data delete requested
+* *******************************************************************
+********************************************************************
+********************************************************************
+********************************************************************
+********************************************************************");
                 _toastHandlerFactory.Create().ShowDataEraseToast();
                 Task.Delay(5000).Wait();
                 ToastNotificationManagerCompat.History.Clear();

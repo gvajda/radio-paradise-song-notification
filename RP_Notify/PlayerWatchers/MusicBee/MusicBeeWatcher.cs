@@ -104,19 +104,19 @@ namespace RP_Notify.PlayerWatchers.MusicBee
         {
             channelChanged = false;
 
-            if (_config.ExternalConfig.EnableMusicBeeWatcher
+            if (_config.PersistedConfig.EnableMusicBeeWatcher
                 && RpChannelIsPlayingInMusicBee(out int matchingChannel))
             {
                 _config.State.MusicBeeIsPlayingRP = true;
 
                 CheckDelayMillisecs = 1000;
 
-                if (matchingChannel != _config.ExternalConfig.Channel
-                    && !_config.IsRpPlayerTrackingChannel())
+                if (matchingChannel != _config.PersistedConfig.Channel
+                    && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
                 {
                     channelChanged = true;
                     _log.Information(LogHelper.GetMethodName(this), $"Channel change detected");
-                    _config.ExternalConfig.Channel = matchingChannel;
+                    _config.PersistedConfig.Channel = matchingChannel;
                 }
                 return true;
             }

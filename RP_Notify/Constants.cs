@@ -14,6 +14,6 @@
 
         public const string UserRatingFieldKey = "UserRatingValue";
 
-        public const int HttpRetryAttempts = 3;
+        public const int RpApiClientHttpRetryAttempts = 4;
     }
 }

@@ -106,19 +106,19 @@ namespace RP_Notify.PlayerWatchers.Foobar2000
         {
             channelChanged = false;
 
-            if (_config.ExternalConfig.EnableFoobar2000Watcher
+            if (_config.PersistedConfig.EnableFoobar2000Watcher
                 && RpChannelIsPlayingInFB2K(out int matchingChannel))
             {
                 _config.State.Foobar2000IsPlayingRP = true;
 
                 CheckDelayMillisecs = 1000;
 
-                if (matchingChannel != _config.ExternalConfig.Channel
-                    && !_config.IsRpPlayerTrackingChannel())
+                if (matchingChannel != _config.PersistedConfig.Channel
+                    && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
                 {
                     channelChanged = true;
                     _log.Information(LogHelper.GetMethodName(this), $"Channel change detected");
-                    _config.ExternalConfig.Channel = matchingChannel;
+                    _config.PersistedConfig.Channel = matchingChannel;
                 }
                 return true;
             }

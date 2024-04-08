@@ -2,18 +2,12 @@
 {
     public interface IConfigRoot
     {
-        IExternalConfig ExternalConfig { get; set; }
+        IPersistedConfig PersistedConfig { get; set; }
 
         State State { get; set; }
 
-        StaticConfig StaticConfig { get; set; }
+        StaticContext StaticConfig { get; set; }
 
-        bool IsUserAuthenticated();
-
-        string GetLoggedInUsername();
-
-        bool IsRpPlayerTrackingChannel();
-
-        bool IsRpPlayerTrackingChannel(out int channel);
+        bool IsUserAuthenticated(out string loggedInUsername);
     }
 }

@@ -118,14 +118,14 @@ namespace RP_Notify.TrayIconMenu
         {
             bool trackingActive = _config.State.Foobar2000IsPlayingRP
                 || _config.State.MusicBeeIsPlayingRP
-                || _config.IsRpPlayerTrackingChannel();
+                || _config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _);
             var menuName = $"Show on new song{(!trackingActive ? " (Live stream)" : null)}";
 
             MenuItem showOnNewSong = new MenuItem(menuName)
             {
-                Checked = _config.ExternalConfig.ShowOnNewSong || trackingActive,
+                Checked = _config.PersistedConfig.ShowOnNewSong || trackingActive,
                 Enabled = !trackingActive,
-                DefaultItem = _config.ExternalConfig.ShowOnNewSong && !trackingActive
+                DefaultItem = _config.PersistedConfig.ShowOnNewSong && !trackingActive
 
             };
             ;
@@ -133,7 +133,7 @@ namespace RP_Notify.TrayIconMenu
             showOnNewSong.Click += (sender, e) =>
             {
                 _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
-                _config.ExternalConfig.ShowOnNewSong = !_config.ExternalConfig.ShowOnNewSong;
+                _config.PersistedConfig.ShowOnNewSong = !_config.PersistedConfig.ShowOnNewSong;
             };
 
             return showOnNewSong;
@@ -145,13 +145,13 @@ namespace RP_Notify.TrayIconMenu
 
             MenuItem largeAlbumArt = new MenuItem(menuName)
             {
-                Checked = _config.ExternalConfig.LargeAlbumArt
+                Checked = _config.PersistedConfig.LargeAlbumArt
             };
 
             largeAlbumArt.Click += (sender, e) =>
             {
                 _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
-                _config.ExternalConfig.LargeAlbumArt = !_config.ExternalConfig.LargeAlbumArt;
+                _config.PersistedConfig.LargeAlbumArt = !_config.PersistedConfig.LargeAlbumArt;
             };
 
             return largeAlbumArt;
@@ -163,14 +163,14 @@ namespace RP_Notify.TrayIconMenu
 
             MenuItem rpBannerOnDetail = new MenuItem(menuName)
             {
-                Checked = _config.ExternalConfig.RpBannerOnDetail,
-                Enabled = _config.ExternalConfig.LargeAlbumArt
+                Checked = _config.PersistedConfig.RpBannerOnDetail,
+                Enabled = _config.PersistedConfig.LargeAlbumArt
             };
 
             rpBannerOnDetail.Click += (sender, e) =>
             {
                 _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
-                _config.ExternalConfig.RpBannerOnDetail = !_config.ExternalConfig.RpBannerOnDetail;
+                _config.PersistedConfig.RpBannerOnDetail = !_config.PersistedConfig.RpBannerOnDetail;
             };
 
             return rpBannerOnDetail;
@@ -182,13 +182,13 @@ namespace RP_Notify.TrayIconMenu
 
             MenuItem showSongRating = new MenuItem(menuName)
             {
-                Checked = _config.ExternalConfig.ShowSongRating
+                Checked = _config.PersistedConfig.ShowSongRating
             };
 
             showSongRating.Click += (sender, e) =>
             {
                 _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
-                _config.ExternalConfig.ShowSongRating = !_config.ExternalConfig.ShowSongRating;
+                _config.PersistedConfig.ShowSongRating = !_config.PersistedConfig.ShowSongRating;
             };
 
             return showSongRating;
@@ -200,14 +200,14 @@ namespace RP_Notify.TrayIconMenu
 
             MenuItem promptForRating = new MenuItem(menuName)
             {
-                Checked = _config.ExternalConfig.PromptForRating,
-                Enabled = _config.IsUserAuthenticated()
+                Checked = _config.PersistedConfig.PromptForRating,
+                Enabled = _config.IsUserAuthenticated(out string _)
             };
 
             promptForRating.Click += (sender, e) =>
             {
                 _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
-                _config.ExternalConfig.PromptForRating = !_config.ExternalConfig.PromptForRating;
+                _config.PersistedConfig.PromptForRating = !_config.PersistedConfig.PromptForRating;
             };
 
             return promptForRating;
@@ -221,7 +221,7 @@ namespace RP_Notify.TrayIconMenu
             reset.Click += (sender, e) =>
             {
                 _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
-                _config.ExternalConfig.DeleteAllData = !_config.ExternalConfig.DeleteAllData;
+                _config.PersistedConfig.DeleteAllData = !_config.PersistedConfig.DeleteAllData;
             };
 
             return reset;
@@ -274,15 +274,15 @@ namespace RP_Notify.TrayIconMenu
 
             MenuItem enablePlayerWatcher = new MenuItem(menuName)
             {
-                Checked = _config.ExternalConfig.EnableFoobar2000Watcher,
+                Checked = _config.PersistedConfig.EnableFoobar2000Watcher,
                 DefaultItem = _config.State.Foobar2000IsPlayingRP
-                    && !_config.IsRpPlayerTrackingChannel()
+                    && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _)
             };
 
             enablePlayerWatcher.Click += (sender, e) =>
             {
                 _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
-                _config.ExternalConfig.EnableFoobar2000Watcher = !_config.ExternalConfig.EnableFoobar2000Watcher;
+                _config.PersistedConfig.EnableFoobar2000Watcher = !_config.PersistedConfig.EnableFoobar2000Watcher;
             };
 
             return enablePlayerWatcher;
@@ -294,15 +294,15 @@ namespace RP_Notify.TrayIconMenu
 
             MenuItem enablePlayerWatcher = new MenuItem(menuName)
             {
-                Checked = _config.ExternalConfig.EnableMusicBeeWatcher,
+                Checked = _config.PersistedConfig.EnableMusicBeeWatcher,
                 DefaultItem = _config.State.MusicBeeIsPlayingRP
-                    && !_config.IsRpPlayerTrackingChannel()
+                    && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _)
             };
 
             enablePlayerWatcher.Click += (sender, e) =>
             {
                 _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
-                _config.ExternalConfig.EnableMusicBeeWatcher = !_config.ExternalConfig.EnableMusicBeeWatcher;
+                _config.PersistedConfig.EnableMusicBeeWatcher = !_config.PersistedConfig.EnableMusicBeeWatcher;
             };
 
             return enablePlayerWatcher;
@@ -314,13 +314,13 @@ namespace RP_Notify.TrayIconMenu
 
             MenuItem rpTracking = new MenuItem(menuName)
             {
-                Checked = _config.ExternalConfig.EnableRpOfficialTracking,
+                Checked = _config.PersistedConfig.EnableRpOfficialTracking,
             };
 
             rpTracking.Click += (sender, e) =>
             {
                 _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
-                _config.ExternalConfig.EnableRpOfficialTracking = !_config.ExternalConfig.EnableRpOfficialTracking;
+                _config.PersistedConfig.EnableRpOfficialTracking = !_config.PersistedConfig.EnableRpOfficialTracking;
             };
 
             return rpTracking;
@@ -330,7 +330,7 @@ namespace RP_Notify.TrayIconMenu
         {
             List<MenuItem> TrackablePlayers = new List<MenuItem>();
 
-            if (_config.ExternalConfig.EnableRpOfficialTracking)
+            if (_config.PersistedConfig.EnableRpOfficialTracking)
             {
                 foreach (var player in _config.State.RpTrackingConfig.Players)
                 {
@@ -379,12 +379,12 @@ namespace RP_Notify.TrayIconMenu
                 MenuItem channelMenuItem = new MenuItem(menuName)
                 {
                     RadioCheck = true,
-                    Checked = _config.ExternalConfig.Channel.Equals(Int32.Parse(loopChannel.Chan)),
+                    Checked = _config.PersistedConfig.Channel.Equals(Int32.Parse(loopChannel.Chan)),
                     Tag = loopChannel,
                     Enabled = loopChannel.Chan != "99"
-                        && (!((_config.ExternalConfig.EnableFoobar2000Watcher && _config.State.Foobar2000IsPlayingRP)
-                        || (_config.ExternalConfig.EnableMusicBeeWatcher && _config.State.MusicBeeIsPlayingRP)
-                        || _config.IsRpPlayerTrackingChannel()))
+                        && (!((_config.PersistedConfig.EnableFoobar2000Watcher && _config.State.Foobar2000IsPlayingRP)
+                        || (_config.PersistedConfig.EnableMusicBeeWatcher && _config.State.MusicBeeIsPlayingRP)
+                        || _config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _)))
                 };
 
                 channelMenuItem.Click += (sender, e) =>
@@ -401,7 +401,7 @@ namespace RP_Notify.TrayIconMenu
                         menu.Checked = ((Channel)menu.Tag).Chan == loopChannel.Chan;
                     }
 
-                    _config.ExternalConfig.Channel = Int32.Parse(loopChannel.Chan);
+                    _config.PersistedConfig.Channel = Int32.Parse(loopChannel.Chan);
                 };
 
                 Channels.Add(channelMenuItem);
@@ -412,8 +412,8 @@ namespace RP_Notify.TrayIconMenu
 
         private MenuItem MenuEntryLogIn()
         {
-            var menuName = _config.IsUserAuthenticated()
-                ? "Log Out"
+            var menuName = _config.IsUserAuthenticated(out string loggedInUsername)
+                ? $"Log Out ({loggedInUsername})"
                 : "Log In";
 
             MenuItem login = new MenuItem(menuName);
@@ -421,12 +421,11 @@ namespace RP_Notify.TrayIconMenu
             {
                 _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
 
-                if (_config.IsUserAuthenticated())
+                if (_config.IsUserAuthenticated(out string _))
                 {
-                    Retry.Do(() => { File.Delete(_config.StaticConfig.CookieCachePath); });
-                    var userName = _config.GetLoggedInUsername();
                     _config.State.RpCookieContainer = new System.Net.CookieContainer();
-                    _toastHandlerFactory.Create().ShowLogoutRequestToast(userName);
+                    Retry.Do(() => { File.Delete(_config.StaticConfig.CookieCachePath); });
+                    _toastHandlerFactory.Create().ShowLogoutRequestToast(loggedInUsername);
                     _log.Information(LogHelper.GetMethodName(this), "Cookie cache deleted");
                     Application.Restart();
                 }

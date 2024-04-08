@@ -3,6 +3,7 @@
     public enum RegisteredPlayer
     {
         Foobar2000,
-        MusicBee
+        MusicBee,
+        RpOfficial
     }
 }

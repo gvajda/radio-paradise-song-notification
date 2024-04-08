@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0"
-  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -14,6 +13,21 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <FodyGenerateXsd>false</FodyGenerateXsd>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -54,9 +68,9 @@
   <ItemGroup>
     <Compile Include="Constants.cs" />
     <Compile Include="Helpers\ConfigDirectoryHelper.cs" />
-    <Compile Include="Config\ExternalConfigIni.cs" />
-    <Compile Include="Config\IExternalConfig.cs" />
-    <Compile Include="Config\StaticConfig.cs" />
+    <Compile Include="Config\PersistedConfigIni.cs" />
+    <Compile Include="Config\IPersistedConfig.cs" />
+    <Compile Include="Config\StaticContext.cs" />
     <Compile Include="Helpers\IniFileHelper.cs" />
     <Compile Include="Helpers\CookieHelper.cs" />
     <Compile Include="Helpers\LogHelper.cs" />
@@ -83,6 +97,7 @@
     <Compile Include="PlayerWatchers\PlayerWatcherProvider.cs" />
     <Compile Include="PlayerWatchers\PlayerWatcherProviderExtensions.cs" />
     <Compile Include="PlayerWatchers\RegisteredPlayer.cs" />
+    <Compile Include="PlayerWatchers\RpOfficial\RpOfficialPlayerWatcher.cs" />
     <Compile Include="RpApi\IRpApiClient.cs" />
     <Compile Include="Config\RpConfigurationChangeEvent.cs" />
     <Compile Include="Config\IConfigRoot.cs" />
@@ -155,7 +170,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Costura.Fody" Version="5.7.0" PrivateAssets="All" />
-    <PackageReference Include="Fody" Version="6.8.0" PrivateAssets="All" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive"/>
+    <PackageReference Include="Fody" Version="6.8.0" PrivateAssets="All" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
     <PackageReference Include="MadMilkman.Ini" Version="1.0.6" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
@@ -168,6 +183,17 @@
     <PackageReference Include="System.Runtime.Serialization.Json" Version="4.3.0" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.8">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.8 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -14,6 +14,7 @@ namespace RP_Notify.PlayerWatchers
                 .AddMusicBeeIPCClient()
                 .AddSingleton<IPlayerWatcher, Foobar2000.Foobar2000Watcher>()
                 .AddSingleton<IPlayerWatcher, MusicBee.MusicBeeWatcher>()
+                .AddSingleton<IPlayerWatcher, RpOfficial.RpOfficialPlayerWatcher>()
                 .AddTransient<Func<IEnumerable<IPlayerWatcher>>>(serviceProvider => () =>
                     serviceProvider.GetServices<IPlayerWatcher>())
                 .AddSingleton<IPlayerWatcherProvider, PlayerWatcherProvider>();

@@ -2,7 +2,7 @@
 
 namespace RP_Notify.Config
 {
-    public interface IExternalConfig
+    public interface IPersistedConfig
     {
         int Channel { get; set; }
         bool DeleteAllData { get; set; }

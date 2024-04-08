@@ -40,17 +40,6 @@ The app will also display an icon in the Windows tray, all settings can be reach
 
 <p align="center"><img src=".screenshots/ChannelTracking.gif" alt="notification-simple"/></p>
 
-### Notification visuals
-
-- **Show album art**
-  - Configure image size in the menu
-  - Optional RP banner
-  *Note*: only applies to the rich notification triggered by double-clicking on the tray icon
-- **Show song rating**
-  - Optional - in case you prefer not to know the crowd rating before you send in your own
-
-<p align="center"><img src=".screenshots/ToastVisualOptions.gif" alt="notification-simple"/></p>
-
 ### Song rating
 
 - **Support for rating songs**
@@ -65,7 +54,16 @@ The app will also display an icon in the Windows tray, all settings can be reach
 
 <p align="center"><img src=".screenshots/SongRating.gif" alt="notification-simple"/></p>
 
-### Other
+### Notification visuals
+
+- **Album art**
+  - Configure image size in the menu
+  - Optional RP banner
+  *Note*: only applies to the rich notification triggered by double-clicking on the tray icon
+- **Display/hide song rating**
+  - Optional - in case you prefer or not to know the crowd rating before you send in your own
+
+<p align="center"><img src=".screenshots/ToastVisualOptions.gif" alt="notification-simple"/></p>
 
 - **Tooltip**
   - Activated by hovering over the tray icon
@@ -105,7 +103,7 @@ The integration requires the *MusicBeeIPC* plugin for MusicBee that provides an 
 
 On the first start, the app will prompt you to choose the location of the RP_Notify_Data folder that will contain your saved settings, logs, cached album art and the optional cookie file if you choose to log in and send song ratings using the app.
 
-The folder options are the following:
+The folder location options are the following:
 
 - **Next to the application (RP_Notify.exe)**
   - The default option

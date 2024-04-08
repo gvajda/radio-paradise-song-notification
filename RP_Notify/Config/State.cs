@@ -135,6 +135,7 @@ namespace RP_Notify.Config
             channelList = null;
             tooltipText = null;
             foobar2000IsPlayingRP = false;
+            musicBeeIsPlayingRP = false;
             RpTrackingConfig = new RpTrackingConfig();
         }
 
@@ -146,9 +147,9 @@ namespace RP_Notify.Config
 
     public class Playback
     {
-        public NowplayingList NowplayingList { get; }
-        public PlayListSong SongInfo { get; }
         private DateTime songInfoExpiration;
+
+        public PlayListSong SongInfo { get; }
         public DateTime SongInfoExpiration
         {
             get => DateTime.Compare(DateTime.Now, songInfoExpiration) <= 0      // If expiration timestamp is in the future
@@ -161,7 +162,6 @@ namespace RP_Notify.Config
 
         public Playback(NowplayingList NowplayingList)
         {
-            this.NowplayingList = NowplayingList;
 
             if (NowplayingList.Song != null && NowplayingList.Song.TryGetValue("0", out var nowPlayingSong))
             {

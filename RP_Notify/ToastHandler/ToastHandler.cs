@@ -29,13 +29,13 @@ namespace RP_Notify.ToastHandler
                 return;
             }
 
-            // force invocation or something is tracked
+            // if force invocation or something is tracked
             if (!(
                 force
-                || (_config.ExternalConfig.ShowOnNewSong && !_config.State.Playback.ShowedOnNewSong)
+                || (_config.PersistedConfig.ShowOnNewSong && !_config.State.Playback.ShowedOnNewSong)
                     || _config.State.Foobar2000IsPlayingRP
                     || _config.State.MusicBeeIsPlayingRP
-                    || _config.IsRpPlayerTrackingChannel()
+                    || _config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _)
                 ))
             {
                 return;
@@ -325,9 +325,9 @@ namespace RP_Notify.ToastHandler
                     ? $" - User rating: {songInfo.UserRating}"
                     : " - Not rated";
 
-            string fullRatingText = $@"★ {songInfo.Rating}{(_config.IsUserAuthenticated() ? userRatingElement : null)}";
+            string fullRatingText = $@"★ {songInfo.Rating}{(_config.IsUserAuthenticated(out string _) ? userRatingElement : null)}";
 
-            return _config.ExternalConfig.ShowSongRating || userRated
+            return _config.PersistedConfig.ShowSongRating || userRated
                 ? toastContentBuilder.AddText(fullRatingText)
                 : toastContentBuilder;
         }
@@ -376,7 +376,7 @@ namespace RP_Notify.ToastHandler
 
             if (isSongDetailToast)
             {
-                if (_config.ExternalConfig.LargeAlbumArt)
+                if (_config.PersistedConfig.LargeAlbumArt)
                 {
                     toastContentBuilder.AddInlineImage(new Uri(albumartFilePath));
                 }
@@ -385,7 +385,7 @@ namespace RP_Notify.ToastHandler
                     return toastContentBuilder.AddAppLogoOverride(new Uri(albumartFilePath));
                 }
 
-                if (_config.ExternalConfig.RpBannerOnDetail)
+                if (_config.PersistedConfig.RpBannerOnDetail)
                 {
                     var rpLogoPath = Path.Combine(_config.StaticConfig.AlbumArtCacheFolder, "RP_logo.jpg");
                     if (!File.Exists(rpLogoPath))
@@ -405,7 +405,7 @@ namespace RP_Notify.ToastHandler
 
         internal static ToastContentBuilder AddSongFooterText(this ToastContentBuilder toastContentBuilder, IConfigRoot _config)
         {
-            string chanTitle = _config.State.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.ExternalConfig.Channel).First().Title;
+            string chanTitle = _config.State.ChannelList.Where<Channel>(cl => Int32.Parse(cl.Chan) == _config.PersistedConfig.Channel).First().Title;
 
             string trimmedTitle = chanTitle.Contains("RP ")
                 ? chanTitle.Split(new[] { "RP " }, StringSplitOptions.None)[1]
@@ -418,7 +418,7 @@ namespace RP_Notify.ToastHandler
 
         private static string TrackedPlayerAsSuffix(IConfigRoot _config)
         {
-            if (_config.IsRpPlayerTrackingChannel())
+            if (_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
             {
                 var activePlayer = _config.State.RpTrackingConfig.Players
                     .First(p => p.PlayerId == _config.State.RpTrackingConfig.ActivePlayerId)
@@ -458,7 +458,7 @@ namespace RP_Notify.ToastHandler
                 return toastContentBuilder;
             }
 
-            return _config.IsUserAuthenticated()
+            return _config.IsUserAuthenticated(out string _)
                 ? toastContentBuilder
                     .AddInputTextBox(Constants.UserRatingFieldKey, ratingHintText)
                     .AddArgument(nameof(RpToastUserAction), RpToastUserAction.RateSubmitted)
@@ -482,7 +482,7 @@ namespace RP_Notify.ToastHandler
 
         private static bool IsPodcastDiscussion(IConfigRoot _config)
         {
-            return _config.ExternalConfig.Channel == 2050 && _config.State.Playback.SongInfoExpiration <= DateTime.Now;
+            return _config.PersistedConfig.Channel == 2050 && _config.State.Playback.SongInfoExpiration <= DateTime.Now;
         }
     }
 }
