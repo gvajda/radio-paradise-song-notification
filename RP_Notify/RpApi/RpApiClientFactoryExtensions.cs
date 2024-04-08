@@ -17,8 +17,8 @@ namespace RP_Notify.RpApi
                     UseCookies = true
                 })
                 .AddTransientHttpErrorPolicy(policy => policy.WaitAndRetryAsync(
-                    Constants.HttpRetryAttempts,
-                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
+                    Constants.RpApiClientHttpRetryAttempts,
+                    retryAttempt => TimeSpan.FromSeconds(Math.Max(Math.Pow(2, retryAttempt), 10))))
                 .Services
                 .AddTransient<IRpApiClient, RpApiClient>()
                 .AddTransient<Func<IRpApiClient>>(serviceProvider => () => serviceProvider.GetService<IRpApiClient>())

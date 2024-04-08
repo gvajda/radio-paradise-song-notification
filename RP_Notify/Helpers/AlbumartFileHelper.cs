@@ -1,5 +1,4 @@
 ﻿using RP_Notify.Config;
-using RP_Notify.Logger;
 using RP_Notify.RpApi.ResponseModel;
 using System;
 using System.IO;
@@ -45,7 +44,7 @@ namespace RP_Notify.Helpers
             return albumartFilePath;
         }
 
-        public static void DeleteOldAlbumartImageFiles(IConfigRoot _config, int MaxAgeDays = 3, int MaxFileCount = 100)
+        public static void DeleteOldAlbumartImageFiles(IConfigRoot _config, int MaxAgeDays = 3, int MaxFileCount = 20)
         {
             try
             {

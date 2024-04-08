@@ -25,7 +25,8 @@ namespace RP_Notify.Helpers
 
         public static Serilog.Core.Logger GetLogger(IConfigRoot config)
         {
-            if (config.ExternalConfig.EnableLoggingToFile)
+            if (config.ExternalConfig.EnableLoggingToFile
+                && File.Exists(config.StaticConfig.ConfigFilePath))
             {
                 return new LoggerConfiguration()
                 .WriteTo.File(
