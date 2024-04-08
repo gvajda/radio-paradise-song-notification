@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using RP_Notify.PlayerWatchers.MusicBee.API;
 using System;
 
 namespace RP_Notify.PlayerWatchers.MusicBee.API
