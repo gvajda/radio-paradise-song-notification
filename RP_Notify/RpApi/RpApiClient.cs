@@ -133,7 +133,7 @@ namespace RP_Notify.RpApi
         {
             try
             {
-                _log.Information(LogHelper.GetMethodName(this), "Invoked - URL resource path: {Resource} - Authenticated: {IsUserAuthenticated}", requestPath, _config.IsUserAuthenticated(out string _));
+                _log.Information(this.GetMethodName(), "Invoked - URL resource path: {Resource} - Authenticated: {IsUserAuthenticated}", requestPath, _config.IsUserAuthenticated(out string _));
 
                 var rpBaseAddressUri = new Uri(_config.StaticConfig.RpApiBaseUrl);
 
@@ -164,7 +164,7 @@ namespace RP_Notify.RpApi
                     var responseContent = await response.Content.ReadAsStringAsync();
                     var result = JsonSerializer.Deserialize<T>(responseContent);
 
-                    _log.Information(LogHelper.GetMethodName(this), "Returned - Result type: {ResultType}", result.GetType());
+                    _log.Information(this.GetMethodName(), "Returned - Result type: {ResultType}", result.GetType());
 
                     if (requestPath == "api/auth" && response.Headers.TryGetValues("Set-Cookie", out var responeCookies))
                     {
@@ -175,7 +175,7 @@ namespace RP_Notify.RpApi
                             )
                         )
                         {
-                            _log.Error(LogHelper.GetMethodName(this), "Authentication failed - the returned cookie is invalid");
+                            _log.Error(this.GetMethodName(), "Authentication failed - the returned cookie is invalid");
                             return result;
                         }
 
@@ -193,13 +193,13 @@ namespace RP_Notify.RpApi
                 }
                 else
                 {
-                    _log.Error(LogHelper.GetMethodName(this), "HTTP request failed - Status code: {StatusCode} - Reason: {Reason}", response.StatusCode, response.ReasonPhrase);
+                    _log.Error(this.GetMethodName(), "HTTP request failed - Status code: {StatusCode} - Reason: {Reason}", response.StatusCode, response.ReasonPhrase);
                     return default;
                 }
             }
             catch (Exception ex)
             {
-                _log.Error(LogHelper.GetMethodName(this), ex);
+                _log.Error(this.GetMethodName(), ex);
                 throw;
             }
         }

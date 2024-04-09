@@ -54,7 +54,7 @@ namespace RP_Notify
             // Check queued application data delete request
             CheckQueuedDataDeleteRequest();
 
-            _log.Information(LogHelper.GetMethodName(this), "Started ********************************************************************");
+            _log.Information(this.GetMethodName(), "Started ********************************************************************");
 
             // At the very first run, ask for config folder location
             if (!_config.StaticConfig.ConfigBaseFolderExisted)
@@ -77,13 +77,13 @@ namespace RP_Notify
             }
 
             // Set up event handlers
-            _log.Information(LogHelper.GetMethodName(this), "Create event listeners");
+            _log.Information(this.GetMethodName(), "Create event listeners");
             _config.PersistedConfig.ExternalConfigChangeHandler += OnConfigChangeEvent;
             _config.State.StateChangeHandler += OnConfigChangeEvent;
             _config.State.RpTrackingConfig.RpTrackingConfigChangeHandler += OnConfigChangeEvent;
             Application.ApplicationExit += this.OnApplicationExit;
             SystemEvents.PowerModeChanged += OnComputerWakeUp;
-            ToastNotificationManagerCompat.OnActivated += toastArgs => OnToastActivatedEvent(toastArgs);
+            ToastNotificationManagerCompat.OnActivated += OnToastActivatedEvent;
             _loginForm.LoginInputEventHandler += OnLoginInputSubmitted;
 
 
@@ -112,7 +112,7 @@ namespace RP_Notify
             _songInfoListener.Start();
 
             // Add context menu
-            _log.Information(LogHelper.GetMethodName(this), "Create tray icon");
+            _log.Information(this.GetMethodName(), "Create tray icon");
             _rpTrayIcon.Init();
             _rpTrayIcon.NotifyIcon.MouseDoubleClick += TrayIconDoubleClickHandler;
         }
@@ -127,7 +127,7 @@ namespace RP_Notify
 
         private void TrayIconDoubleClickHandler(object sender, MouseEventArgs e)
         {
-            _log.Information(LogHelper.GetMethodName(this), "Invoked - Sender: {Sender}", sender.GetType());
+            _log.Information(this.GetMethodName(), "Invoked - Sender: {Sender}", sender.GetType());
             _toastHandlerFactory.Create().ShowSongDetailToast();
 
         }
@@ -157,7 +157,7 @@ namespace RP_Notify
                     ? $"Object[{e.Content.ToString()}]"
                     : e.Content.ToString();
 
-                _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Received - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                _log.Information(this.GetMethodName(), $"Event [{EventCounter}] - Received - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
 
                 try
                 {
@@ -214,19 +214,19 @@ namespace RP_Notify
                             OnPlayersChange();
                             break;
                         default:
-                            _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Exit without action - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                            _log.Information(this.GetMethodName(), $"Event [{EventCounter}] - Exit without action - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
                             break;
                     }
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(LogHelper.GetMethodName(this), ex);
+                    _log.Error(this.GetMethodName(), ex);
                     _toastHandlerFactory.Create().ShowErrorToast(ex);
                     Task.Delay(10000).Wait();
                     Application.Exit();
                 }
 
-                _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Finished - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                _log.Information(this.GetMethodName(), $"Event [{EventCounter}] - Finished - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
             }).Wait();
         }
 
@@ -398,7 +398,7 @@ namespace RP_Notify
             // if player became un-tracked
             if (!_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
             {
-                // if channel was favourites and Foobar2000 or MusicBee doesn't change it, then reset to the main stream
+                // if channel was favorites and Foobar2000 or MusicBee doesn't change it, then reset to the main stream
                 if (_config.PersistedConfig.Channel == 99
                     && !(_playerWatcherProvider.GetWatcher(RegisteredPlayer.Foobar2000).CheckPlayerState(out bool channelChangedF) && channelChangedF)
                     && !(_playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).CheckPlayerState(out bool channelChangedM) && channelChangedM))
@@ -414,9 +414,9 @@ namespace RP_Notify
 
         private void OnPlayersChange()
         {
-            // APP - availablable RP player list is refreshed
+            // APP - available RP player list is refreshed
 
-            // if Foobar2000 or MusicBee is not tracking an RP channel then start trackin without a second click
+            // if Foobar2000 or MusicBee is not tracking an RP channel then start tracking without a second click
             if (_config.State.RpTrackingConfig.Players.Any()
                 && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
             {
@@ -442,7 +442,7 @@ namespace RP_Notify
             ValueSet userInput = toastArgs.UserInput;
 
 
-            if (!Enum.TryParse<RpToastUserAction>(toastArguments[nameof(RpToastUserAction)], out RpToastUserAction rpToasUserAction))
+            if (!Enum.TryParse<RpToastUserAction>(toastArguments[nameof(RpToastUserAction)], out RpToastUserAction rpToastUserAction))
             {
                 return;     // Only process known actions
             }
@@ -453,11 +453,11 @@ namespace RP_Notify
             {
                 var formattedArgumentsForLogging = string.Join("&", toastArguments.Select(kvp => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}"));
 
-                _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Toast event - eventArguments: {formattedArgumentsForLogging}");
+                _log.Information(this.GetMethodName(), $"Event [{EventCounter}] - Toast event - eventArguments: {formattedArgumentsForLogging}");
 
                 try
                 {
-                    switch (rpToasUserAction)
+                    switch (rpToastUserAction)
                     {
                         case RpToastUserAction.ConfigFolderChosen:
                             OnConfigFolderChosenToastAction(userInput);
@@ -480,44 +480,43 @@ namespace RP_Notify
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(LogHelper.GetMethodName(this), ex);
+                    _log.Error(this.GetMethodName(), ex);
                     _toastHandlerFactory.Create().ShowErrorToast(ex);
                     Task.Delay(10000).Wait();
                     Application.Exit();
                 }
 
-                _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Toast event Finished");
+                _log.Information(this.GetMethodName(), $"Event [{EventCounter}] - Toast event Finished");
             }).Wait();
 
         }
 
         private void OnConfigFolderChosenToastAction(ValueSet userInput)
         {
+            if (!userInput.TryGetValue(nameof(ConfigFolderChoiceOption), out var rawFolder)) return;
+            
+            var folder = (string)rawFolder;
+
             ConfigLocationOptions startingLocation;
             ConfigLocationOptions targetLocation;
-
-            if (userInput.TryGetValue(nameof(ConfigFolderChoiceOption), out object rawFolder))
+                
+            if (folder == ConfigFolderChoiceOption.localCache.ToDescriptionString()
+                && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.AppData)
             {
-                var folder = (string)rawFolder;
-
-                if (folder == ConfigFolderChoiceOption.localCache.ToDescriptionString()
-                    && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.AppData)
-                {
-                    startingLocation = ConfigLocationOptions.AppData;
-                    targetLocation = ConfigLocationOptions.ExeContainingDirectory;
-                    MoveConfigFolder(startingLocation, targetLocation);
-                }
-                else if (folder == ConfigFolderChoiceOption.appdata.ToDescriptionString()
-                    && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.ExeContainingDirectory)
-                {
-                    startingLocation = ConfigLocationOptions.ExeContainingDirectory;
-                    targetLocation = ConfigLocationOptions.AppData;
-                    MoveConfigFolder(startingLocation, targetLocation);
-                }
-                else if (folder == ConfigFolderChoiceOption.cleanonexit.ToDescriptionString())
-                {
-                    _config.StaticConfig.CleanUpOnExit = true;
-                }
+                startingLocation = ConfigLocationOptions.AppData;
+                targetLocation = ConfigLocationOptions.ExeContainingDirectory;
+                MoveConfigFolder(startingLocation, targetLocation);
+            }
+            else if (folder == ConfigFolderChoiceOption.appdata.ToDescriptionString()
+                     && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.ExeContainingDirectory)
+            {
+                startingLocation = ConfigLocationOptions.ExeContainingDirectory;
+                targetLocation = ConfigLocationOptions.AppData;
+                MoveConfigFolder(startingLocation, targetLocation);
+            }
+            else if (folder == ConfigFolderChoiceOption.cleanonexit.ToDescriptionString())
+            {
+                _config.StaticConfig.CleanUpOnExit = true;
             }
         }
 
@@ -528,8 +527,8 @@ namespace RP_Notify
 
         private void MoveConfigFolder(ConfigLocationOptions startingLocation, ConfigLocationOptions targetLocation)
         {
-            _log.Information(LogHelper.GetMethodName(this), $"The application will attempt to move the Config folder from [{ConfigDirectoryHelper.GetLocalPath(startingLocation)}] to [{ConfigDirectoryHelper.GetLocalPath(targetLocation)}]");
-            _log.Information(LogHelper.GetMethodName(this), $@"
+            _log.Information(this.GetMethodName(), $"The application will attempt to move the Config folder from [{ConfigDirectoryHelper.GetLocalPath(startingLocation)}] to [{ConfigDirectoryHelper.GetLocalPath(targetLocation)}]");
+            _log.Information(this.GetMethodName(), $@"
 //********************************************************************
 //********************************************************************
 //********************************************************************
@@ -579,19 +578,19 @@ namespace RP_Notify
 
         private void OnLoginInputSubmitted(object sender, LoginInputEvent loginInputEvent)
         {
-            _log.Information(LogHelper.GetMethodName(this), $"Login input submitted for user [{loginInputEvent.UserName}]");
+            _log.Information(this.GetMethodName(), $"Login input submitted for user [{loginInputEvent.UserName}]");
 
-            var loginRespponse = _rpApiClientFactory.Create().GetAuth(loginInputEvent.UserName, loginInputEvent.Password);
-            _toastHandlerFactory.Create().ShowLoginResponseToast(loginRespponse);
+            var loginResponse = _rpApiClientFactory.Create().GetAuth(loginInputEvent.UserName, loginInputEvent.Password);
+            _toastHandlerFactory.Create().ShowLoginResponseToast(loginResponse);
         }
 
         private void OnComputerWakeUp(object sender, PowerModeChangedEventArgs e)
         {
-            // clean up potentially stuck threads / reinitiate app
+            // clean up potentially stuck threads / re-initiate app
 
             if (e.Mode == PowerModes.Resume)
             {
-                _log.Information(LogHelper.GetMethodName(this), "PC woke up - RESTART");
+                _log.Information(this.GetMethodName(), "PC woke up - RESTART");
                 Application.Restart();
             }
         }
@@ -601,7 +600,7 @@ namespace RP_Notify
             _rpTrayIcon.Dispose();
             AlbumartFileHelper.DeleteOldAlbumartImageFiles(_config);
 
-            _log.Information(LogHelper.GetMethodName(this), $@"Exit Application
+            _log.Information(this.GetMethodName(), $@"Exit Application
 ********************************************************************
 ********************************************************************
 ********************************************************************
@@ -615,7 +614,7 @@ namespace RP_Notify
         {
             if (_config.PersistedConfig.DeleteAllData || _config.StaticConfig.CleanUpOnExit)
             {
-                _log.Information(LogHelper.GetMethodName(this), @"App data delete requested
+                _log.Information(this.GetMethodName(), @"App data delete requested
 * *******************************************************************
 ********************************************************************
 ********************************************************************

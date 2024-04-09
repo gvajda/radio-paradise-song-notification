@@ -41,12 +41,12 @@ namespace RP_Notify.PlayerWatchers.RpOfficial
         {
             if (IsRpOfficialWatcherTaskRunning())
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Shutdown initiated");
+                _log.Information(this.GetMethodName(), $"Shutdown initiated");
                 RpOfficialWatcherTaskCancellationTokenSource.Cancel();
             }
             else
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Not running");
+                _log.Information(this.GetMethodName(), $"Not running");
             }
         }
 
@@ -54,18 +54,18 @@ namespace RP_Notify.PlayerWatchers.RpOfficial
         {
             if (!IsRpOfficialWatcherTaskRunning())
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Invoked");
+                _log.Information(this.GetMethodName(), $"Invoked");
                 Run();
             }
             else
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Alreay running");
+                _log.Information(this.GetMethodName(), $"Alreay running");
             }
         }
 
         private void Run()
         {
-            _log.Information(LogHelper.GetMethodName(this), $"Starting");
+            _log.Information(this.GetMethodName(), $"Starting");
 
             RpOfficialWatcherTaskCancellationTokenSource = new CancellationTokenSource();
             RpOfficialWatcherTask = Task.Run(async () =>
@@ -85,24 +85,24 @@ namespace RP_Notify.PlayerWatchers.RpOfficial
                     }
                     catch (Exception ex)
                     {
-                        _log.Error(LogHelper.GetMethodName(this), ex);
+                        _log.Error(this.GetMethodName(), ex);
                         Task.Delay(10000).Wait();
                         Application.Exit();
                     }
                 }
 
-                _log.Information(LogHelper.GetMethodName(this), $"Stopped");
+                _log.Information(this.GetMethodName(), $"Stopped");
 
             }, RpOfficialWatcherTaskCancellationTokenSource.Token);
 
-            _log.Information(LogHelper.GetMethodName(this), $"Running in background");
+            _log.Information(this.GetMethodName(), $"Running in background");
         }
 
         public bool CheckPlayerState(out bool channelChanged)
         {
             channelChanged = false;
 
-            _log.Information(LogHelper.GetMethodName(this), "Refresh available players");
+            _log.Information(this.GetMethodName(), "Refresh available players");
 
             _config.State.RpTrackingConfig.Players = _rpApiClientFactory.Create().GetSync_v2().Players;
 
@@ -111,7 +111,7 @@ namespace RP_Notify.PlayerWatchers.RpOfficial
                 if (_config.PersistedConfig.Channel != trackedChannel)
                 {
                     channelChanged = true;
-                    _log.Information(LogHelper.GetMethodName(this), $"Tracking is active - Tracked channel: {trackedChannel}");
+                    _log.Information(this.GetMethodName(), $"Tracking is active - Tracked channel: {trackedChannel}");
 
                     _config.PersistedConfig.Channel = trackedChannel;
                 }

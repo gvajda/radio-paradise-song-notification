@@ -41,12 +41,12 @@ namespace RP_Notify.PlayerWatchers.MusicBee
         {
             if (IsMusicBeeWatcherTaskRunning())
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Shutdown initiated");
+                _log.Information(this.GetMethodName(), $"Shutdown initiated");
                 MusicBeeWatcherTaskCancellationTokenSource.Cancel();
             }
             else
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Not running");
+                _log.Information(this.GetMethodName(), $"Not running");
             }
         }
 
@@ -54,18 +54,18 @@ namespace RP_Notify.PlayerWatchers.MusicBee
         {
             if (!IsMusicBeeWatcherTaskRunning())
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Invoked");
+                _log.Information(this.GetMethodName(), $"Invoked");
                 Run();
             }
             else
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Alreay running");
+                _log.Information(this.GetMethodName(), $"Alreay running");
             }
         }
 
         private void Run()
         {
-            _log.Information(LogHelper.GetMethodName(this), $"Starting");
+            _log.Information(this.GetMethodName(), $"Starting");
 
             MusicBeeWatcherTaskCancellationTokenSource = new CancellationTokenSource();
 
@@ -85,7 +85,7 @@ namespace RP_Notify.PlayerWatchers.MusicBee
                     }
                     catch (Exception ex)
                     {
-                        _log.Error(LogHelper.GetMethodName(this), ex);
+                        _log.Error(this.GetMethodName(), ex);
                         Task.Delay(10000).Wait();
                         Application.Exit();
                     }
@@ -93,11 +93,11 @@ namespace RP_Notify.PlayerWatchers.MusicBee
 
                 _config.State.MusicBeeIsPlayingRP = false;
 
-                _log.Information(LogHelper.GetMethodName(this), $"Stopped");
+                _log.Information(this.GetMethodName(), $"Stopped");
 
             }, MusicBeeWatcherTaskCancellationTokenSource.Token);
 
-            _log.Information(LogHelper.GetMethodName(this), $"Running in background");
+            _log.Information(this.GetMethodName(), $"Running in background");
         }
 
         public bool CheckPlayerState(out bool channelChanged)
@@ -115,7 +115,7 @@ namespace RP_Notify.PlayerWatchers.MusicBee
                     && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
                 {
                     channelChanged = true;
-                    _log.Information(LogHelper.GetMethodName(this), $"Channel change detected");
+                    _log.Information(this.GetMethodName(), $"Channel change detected");
                     _config.PersistedConfig.Channel = matchingChannel;
                 }
                 return true;

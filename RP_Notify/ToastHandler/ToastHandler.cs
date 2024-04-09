@@ -59,7 +59,7 @@ namespace RP_Notify.ToastHandler
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(LogHelper.GetMethodName(this), ex);
+                    _log.Error(this.GetMethodName(), ex);
                 }
             });
 
@@ -86,7 +86,7 @@ namespace RP_Notify.ToastHandler
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(LogHelper.GetMethodName(this), ex);
+                    _log.Error(this.GetMethodName(), ex);
                 }
             });
         }
@@ -105,7 +105,7 @@ namespace RP_Notify.ToastHandler
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(LogHelper.GetMethodName(this), ex);
+                    _log.Error(this.GetMethodName(), ex);
                 }
             });
         }
@@ -126,7 +126,7 @@ namespace RP_Notify.ToastHandler
             }
             catch (Exception ex)
             {
-                _log.Error(LogHelper.GetMethodName(this), ex);
+                _log.Error(this.GetMethodName(), ex);
             }
         }
 
@@ -161,7 +161,7 @@ namespace RP_Notify.ToastHandler
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(LogHelper.GetMethodName(this), ex);
+                    _log.Error(this.GetMethodName(), ex);
                 }
             });
         }
@@ -184,7 +184,7 @@ namespace RP_Notify.ToastHandler
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(LogHelper.GetMethodName(this), ex);
+                    _log.Error(this.GetMethodName(), ex);
                 }
             });
         }
@@ -202,7 +202,7 @@ namespace RP_Notify.ToastHandler
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(LogHelper.GetMethodName(this), ex);
+                    _log.Error(this.GetMethodName(), ex);
                 }
             });
         }
@@ -221,7 +221,7 @@ namespace RP_Notify.ToastHandler
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(LogHelper.GetMethodName(this), ex);
+                    _log.Error(this.GetMethodName(), ex);
                 }
             });
         }
@@ -245,7 +245,7 @@ namespace RP_Notify.ToastHandler
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(LogHelper.GetMethodName(this), ex);
+                    _log.Error(this.GetMethodName(), ex);
                 }
             });
         }
