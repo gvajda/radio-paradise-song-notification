@@ -1,4 +1,4 @@
-﻿using RP_Notify.API.ResponseModel;
+﻿using RP_Notify.RpApi.ResponseModel;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -9,7 +9,7 @@ namespace RP_Notify.Config
 {
     public class RpTrackingConfig
     {
-        public event EventHandler<RpEvent> RpTrackingConfigChangeHandler = delegate { };
+        public event EventHandler<RpConfigurationChangeEvent> RpTrackingConfigChangeHandler = delegate { };
 
         private string activePlayerId;
         private IList<Player> players;
@@ -46,13 +46,35 @@ namespace RP_Notify.Config
             Players = new List<Player>();
         }
 
+        public bool IsRpPlayerTrackingChannel(out int channel)
+        {
+            channel = -1;
+
+            if (!string.IsNullOrEmpty(ActivePlayerId)
+                && Players.Any(p => p.PlayerId == ActivePlayerId))
+            {
+                channel = Int32.Parse(
+                    Players
+                    .Where(p => p.PlayerId == ActivePlayerId)
+                    .First()
+                    .Chan
+                    );
+                return true;
+            }
+            else
+            {
+                ActivePlayerId = null;
+                return false;
+            }
+        }
+
         private void RaiseFieldChangeEvent(string fieldName, params object[] flexibleValue)
         {
             object value = flexibleValue[0] != null
                 ? flexibleValue[0]
                 : "null";
 
-            RpTrackingConfigChangeHandler.Invoke(this, new RpEvent(RpEvent.EventType.RpTrackingConfigChange, fieldName, value));
+            RpTrackingConfigChangeHandler.Invoke(this, new RpConfigurationChangeEvent(RpConfigurationChangeEvent.EventType.RpTrackingConfigChange, fieldName, value));
         }
 
         private bool ComparePlayerList(IList<Player> oldPlayerList, IList<Player> newPlayerList)

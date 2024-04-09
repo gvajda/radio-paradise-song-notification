@@ -1,49 +1,48 @@
-﻿using Microsoft.Win32;
-using RP_Notify.API;
-using RP_Notify.API.ResponseModel;
+﻿using Microsoft.Toolkit.Uwp.Notifications;
+using Microsoft.Win32;
 using RP_Notify.Config;
-using RP_Notify.ErrorHandler;
-using RP_Notify.PlayerWatcher;
-using RP_Notify.PlayerWatcher.Foobar2000;
-using RP_Notify.PlayerWatcher.MusicBee;
-using RP_Notify.SongInfoUpdater;
-using RP_Notify.StartMenuShortcut;
-using RP_Notify.Toast;
-using RP_Notify.TrayIcon;
+using RP_Notify.Helpers;
+using RP_Notify.Logger;
+using RP_Notify.LoginForm;
+using RP_Notify.PlayerWatchers;
+using RP_Notify.RpApi;
+using RP_Notify.RpApi.ResponseModel;
+using RP_Notify.SongInfoListener;
+using RP_Notify.ToastHandler;
+using RP_Notify.TrayIconMenu;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using System.Windows.Forms;
+using Windows.Foundation.Collections;
 
 namespace RP_Notify
 {
     class RpApplicationCore : ApplicationContext
     {
-        private readonly IRpApiHandler _apihandler;
-        private readonly IConfig _config;
-        private readonly IToastHandler _toastHandler;
-        private readonly ShortcutHelper _shortcutHelper;
-        private readonly IPlayerWatcher _foobar2000Watcher;
-        private readonly IPlayerWatcher _musicBeeWatcher;
+        private readonly IRpApiClientFactory _rpApiClientFactory;
+        private readonly IConfigRoot _config;
+        private readonly IToastHandlerFactory _toastHandlerFactory;
+        private readonly IPlayerWatcherProvider _playerWatcherProvider;
         private readonly ISongInfoListener _songInfoListener;
-        private readonly ILog _log;
-        private readonly RpTrayIcon _rpTrayIcon;
+        private readonly ILoggerWrapper _log;
+        private readonly RpTrayIconMenu _rpTrayIcon;
+        private readonly LoginForm.LoginForm _loginForm;
 
         private int EventCounter { get; set; }
 
-        public RpApplicationCore(IConfig config, IRpApiHandler apiHandler, IToastHandler toastHandler, Foobar2000Watcher foobar2000Watcher, MusicBeeWatcher musicBeeWatcher, ISongInfoListener songInfoListener, ILog log, RpTrayIcon rpTrayIcon, ShortcutHelper shortcutHelper)
+        public RpApplicationCore(IConfigRoot config, IRpApiClientFactory rpApiClientFactory, IToastHandlerFactory toastHandlerFactory, IPlayerWatcherProvider playerWatcherProvider, ISongInfoListener songInfoListener, ILoggerWrapper log, RpTrayIconMenu rpTrayIcon, LoginForm.LoginForm loginForm)
         {
             _log = log;
-            _apihandler = apiHandler;
             _config = config;
-            _toastHandler = toastHandler;
+            _rpApiClientFactory = rpApiClientFactory;
+            _toastHandlerFactory = toastHandlerFactory;
             _songInfoListener = songInfoListener;
-            _foobar2000Watcher = foobar2000Watcher;
-            _musicBeeWatcher = musicBeeWatcher;
+            _playerWatcherProvider = playerWatcherProvider;
             _rpTrayIcon = rpTrayIcon;
-            _shortcutHelper = shortcutHelper;
+            _loginForm = loginForm;
 
             EventCounter = 0;
 
@@ -52,62 +51,96 @@ namespace RP_Notify
 
         private void Init()
         {
-            _log.Information(LogHelper.GetMethodName(this), "Started ********************************************************************");
+            // Check queued application data delete request
+            CheckQueuedDataDeleteRequest();
 
-            if (_config.ExternalConfig.Channel == 99)      // Reset channel if Favourites were tracked at exit
+            _log.Information(this.GetMethodName(), "Started ********************************************************************");
+
+            // At the very first run, ask for config folder location
+            if (!_config.StaticConfig.ConfigBaseFolderExisted)
             {
-                _config.ExternalConfig.Channel = 0;
+                _toastHandlerFactory.Create().ShowConfigFolderChoicePromptToast();
             }
 
-            _songInfoListener.CheckTrackedRpPlayerStatus();
-            if (_config.State.RpTrackingConfig.Players.Any())
+            if (_config.PersistedConfig.Channel > 9)      // Reset channel if a special channel was tracked at exit
             {
-                _config.State.RpTrackingConfig.ActivePlayerId = _config.State.RpTrackingConfig.Players.FirstOrDefault().PlayerId;
+                _config.PersistedConfig.Channel = 0;
             }
 
-            if (_config.ExternalConfig.EnableFoobar2000Watcher)
-            {
-                _foobar2000Watcher.CheckPlayerState(out bool notUsedHere);
-                _foobar2000Watcher.Start();
-            }
-            else if (_config.ExternalConfig.EnableMusicBeeWatcher)
-            {
-                _musicBeeWatcher.CheckPlayerState(out bool notUsedHere);
-                _musicBeeWatcher.Start();
-            }
+            // Refresh channel list
+            _config.State.ChannelList = _rpApiClientFactory.Create().GetChannelList();
 
-            // Init fields
-            _shortcutHelper.TryCreateShortcut();    // Add shortcut to Start menu (required for Toast Notifications)
+            // Refresh cookies
+            if (_config.IsUserAuthenticated(out string _))
+            {
+                _rpApiClientFactory.Create().GetAuth();
+            }
 
             // Set up event handlers
-            _log.Information(LogHelper.GetMethodName(this), "Create event listeners");
-            _config.ExternalConfig.ExternalConfigChangeHandler += OnChange;
-            _config.State.StateChangeHandler += OnChange;
-            _config.State.RpTrackingConfig.RpTrackingConfigChangeHandler += OnChange;
-            Application.ApplicationExit += this.ApplicationExitHandler;
-            SystemEvents.PowerModeChanged += WakeUpHandler;
+            _log.Information(this.GetMethodName(), "Create event listeners");
+            _config.PersistedConfig.ExternalConfigChangeHandler += OnConfigChangeEvent;
+            _config.State.StateChangeHandler += OnConfigChangeEvent;
+            _config.State.RpTrackingConfig.RpTrackingConfigChangeHandler += OnConfigChangeEvent;
+            Application.ApplicationExit += this.OnApplicationExit;
+            SystemEvents.PowerModeChanged += OnComputerWakeUp;
+            ToastNotificationManagerCompat.OnActivated += OnToastActivatedEvent;
+            _loginForm.LoginInputEventHandler += OnLoginInputSubmitted;
 
-            // Check queued application data delet request
-            CheckQueuedDataDeleteRequest();
+
+            // Start watching for RP stream if enabled
+            if (_config.PersistedConfig.EnableRpOfficialTracking)
+            {
+                _config.PersistedConfig.EnableFoobar2000Watcher = false;
+                _config.PersistedConfig.EnableMusicBeeWatcher = false;
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.RpOfficial).Start();
+            }
+            else if (_config.PersistedConfig.EnableFoobar2000Watcher)
+            {
+                _config.PersistedConfig.EnableRpOfficialTracking = false;
+                _config.PersistedConfig.EnableMusicBeeWatcher = false;
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.Foobar2000).Start();
+            }
+            else if (_config.PersistedConfig.EnableMusicBeeWatcher)
+            {
+                _config.PersistedConfig.EnableRpOfficialTracking = false;
+                _config.PersistedConfig.EnableFoobar2000Watcher = false;
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).Start();
+            }
+
 
             // Start listen for song changes
             _songInfoListener.Start();
 
             // Add context menu
-            _log.Information(LogHelper.GetMethodName(this), "Create tray icon");
+            _log.Information(this.GetMethodName(), "Create tray icon");
             _rpTrayIcon.Init();
             _rpTrayIcon.NotifyIcon.MouseDoubleClick += TrayIconDoubleClickHandler;
         }
 
 
+        //
+        //
+        // Event handlers
+        //
+        //
+
+
         private void TrayIconDoubleClickHandler(object sender, MouseEventArgs e)
         {
-            _log.Information(LogHelper.GetMethodName(this), "Invoked - Sender: {Sender}", sender.GetType());
-            _toastHandler.ShowSongDetailToast();
+            _log.Information(this.GetMethodName(), "Invoked - Sender: {Sender}", sender.GetType());
+            _toastHandlerFactory.Create().ShowSongDetailToast();
 
         }
 
-        private void OnChange(object sender, RpEvent e)
+        /** The following methods are event handlers for the configuration change events.
+         ** They are triggered by the event handlers in the Config class.
+         ** The methods are responsible for updating the application state based on the configuration changes.
+         ** The methods are also responsible for updating the UI based on the configuration changes.
+         **/
+
+        #region Config change event handlers
+
+        private void OnConfigChangeEvent(object sender, RpConfigurationChangeEvent e)
         {
             if (e.ChangedFieldName.Equals(nameof(_config.State.TooltipText)))
             {
@@ -124,7 +157,7 @@ namespace RP_Notify
                     ? $"Object[{e.Content.ToString()}]"
                     : e.Content.ToString();
 
-                _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Received - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                _log.Information(this.GetMethodName(), $"Event [{EventCounter}] - Received - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
 
                 try
                 {
@@ -132,28 +165,34 @@ namespace RP_Notify
 
                     switch (e.ChangedFieldName)
                     {
-                        case nameof(_config.ExternalConfig.ShowOnNewSong):
+                        case nameof(_config.PersistedConfig.ShowOnNewSong):
                             OnShowOnNewSongChange();
                             break;
-                        case nameof(_config.ExternalConfig.EnableFoobar2000Watcher):
+                        case nameof(_config.PersistedConfig.EnableFoobar2000Watcher):
                             OnEnableFooBar2000WatcherChange();
                             break;
-                        case nameof(_config.ExternalConfig.EnableMusicBeeWatcher):
+                        case nameof(_config.PersistedConfig.EnableMusicBeeWatcher):
                             OnEnableMusicBeeWatcherChange();
                             break;
-                        case nameof(_config.ExternalConfig.LargeAlbumArt):
+                        case nameof(_config.PersistedConfig.EnableRpOfficialTracking):
+                            OnEnableRpOfficialTrackingChange();
+                            break;
+                        case nameof(_config.PersistedConfig.LargeAlbumArt):
                             OnLargeAlbumArtChange();
                             break;
-                        case nameof(_config.ExternalConfig.ShowSongRating):
+                        case nameof(_config.PersistedConfig.RpBannerOnDetail):
+                            OnRpBannerOnDetailChange();
+                            break;
+                        case nameof(_config.PersistedConfig.ShowSongRating):
                             OnShowSongRatingChange();
                             break;
-                        case nameof(_config.ExternalConfig.PromptForRating):
+                        case nameof(_config.PersistedConfig.PromptForRating):
                             OnPromptForRatingChange();
                             break;
-                        case nameof(_config.ExternalConfig.Channel):
+                        case nameof(_config.PersistedConfig.Channel):
                             OnChannelChange();
                             break;
-                        case nameof(_config.ExternalConfig.DeleteAllData):
+                        case nameof(_config.PersistedConfig.DeleteAllData):
                             OnDeleteAllDataChange();
                             break;
                         case nameof(_config.State.Foobar2000IsPlayingRP):
@@ -162,8 +201,8 @@ namespace RP_Notify
                         case nameof(_config.State.MusicBeeIsPlayingRP):
                             OnMusicBeeIsPlayingRPChange();
                             break;
-                        case nameof(_config.State.IsUserAuthenticated):
-                            OnIsUserAuthenticatedChange();
+                        case nameof(_config.State.RpCookieContainer):
+                            OnIsCookieChange();
                             break;
                         case nameof(_config.State.Playback):
                             OnPlaybackChange();
@@ -171,26 +210,23 @@ namespace RP_Notify
                         case nameof(_config.State.RpTrackingConfig.ActivePlayerId):
                             OnActivePlayerIdChange();
                             break;
-                        case nameof(_config.ExternalConfig.EnableRpOfficialTracking):
-                            OnEnableRpOfficialTrackingChange();
-                            break;
                         case nameof(_config.State.RpTrackingConfig.Players):
                             OnPlayersChange();
                             break;
                         default:
-                            _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Exit without action - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                            _log.Information(this.GetMethodName(), $"Event [{EventCounter}] - Exit without action - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
                             break;
                     }
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(LogHelper.GetMethodName(this), ex);
-                    _toastHandler.ErrorToast(ex);
+                    _log.Error(this.GetMethodName(), ex);
+                    _toastHandlerFactory.Create().ShowErrorToast(ex);
                     Task.Delay(10000).Wait();
                     Application.Exit();
                 }
 
-                _log.Information(LogHelper.GetMethodName(this), $"Event [{EventCounter}] - Finished - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
+                _log.Information(this.GetMethodName(), $"Event [{EventCounter}] - Finished - Type: {{ChangedType}} - Changed field: {{ChannelChanged}} - Value: {{ValueMessageComponent}}", e.SentEventType, e.ChangedFieldName, valueMessageComponent);
             }).Wait();
         }
 
@@ -198,9 +234,9 @@ namespace RP_Notify
         {
             // USER - menu button demonstration
 
-            if (_config.ExternalConfig.ShowOnNewSong)
+            if (_config.PersistedConfig.ShowOnNewSong)
             {
-                _toastHandler.ShowSongStartToast(true);
+                _toastHandlerFactory.Create().ShowSongStartToast(true);
             }
         }
 
@@ -208,13 +244,15 @@ namespace RP_Notify
         {
             // USER - turn on and off the Foobar2000 watching infinite loop
 
-            if (_config.ExternalConfig.EnableFoobar2000Watcher)
+            if (_config.PersistedConfig.EnableFoobar2000Watcher)
             {
-                _foobar2000Watcher.Start();
+                _config.PersistedConfig.EnableRpOfficialTracking = false;
+                _config.PersistedConfig.EnableMusicBeeWatcher = false;
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.Foobar2000).Start();
             }
             else
             {
-                _foobar2000Watcher.Stop();
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.Foobar2000).Stop();
             }
         }
 
@@ -222,13 +260,38 @@ namespace RP_Notify
         {
             // USER - turn on and off the Foobar2000 watching infinite loop
 
-            if (_config.ExternalConfig.EnableMusicBeeWatcher)
+            if (_config.PersistedConfig.EnableMusicBeeWatcher)
             {
-                _musicBeeWatcher.Start();
+                _config.PersistedConfig.EnableRpOfficialTracking = false;
+                _config.PersistedConfig.EnableFoobar2000Watcher = false;
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).Start();
             }
             else
             {
-                _musicBeeWatcher.Stop();
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).Stop();
+            }
+        }
+
+        private void OnEnableRpOfficialTrackingChange()
+        {
+            // USER and APP - when RP tracking is started at Startup or user enables/disables RP tracking
+
+            if (_config.PersistedConfig.EnableRpOfficialTracking)
+            {
+                _config.PersistedConfig.EnableFoobar2000Watcher = false;
+                _config.PersistedConfig.EnableMusicBeeWatcher = false;
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.RpOfficial).Start();
+            }
+            else
+            {
+                _playerWatcherProvider.GetWatcher(RegisteredPlayer.RpOfficial).Stop();
+                if (_config.PersistedConfig.Channel > 9)
+                {
+                    _config.PersistedConfig.Channel = 0;
+                }
+
+                _config.State.RpTrackingConfig.ActivePlayerId = null;
+                _config.State.RpTrackingConfig.Players = new List<Player>();
             }
         }
 
@@ -236,23 +299,30 @@ namespace RP_Notify
         {
             // USER - menu button demonstration
 
-            _toastHandler.ShowSongDetailToast();
+            _toastHandlerFactory.Create().ShowSongDetailToast();
+        }
+
+        private void OnRpBannerOnDetailChange()
+        {
+            // USER - menu button demonstration
+
+            _toastHandlerFactory.Create().ShowSongDetailToast();
         }
 
         private void OnShowSongRatingChange()
         {
             // USER - menu button demonstration
 
-            _toastHandler.ShowSongStartToast(true);
+            _toastHandlerFactory.Create().ShowSongStartToast(true);
         }
 
         private void OnPromptForRatingChange()
         {
             // USER - menu button demonstration
 
-            if (_config.ExternalConfig.PromptForRating)
+            if (_config.PersistedConfig.PromptForRating)
             {
-                _toastHandler.ShowSongRatingToast();
+                _toastHandlerFactory.Create().ShowSongRatingToast();
             }
         }
 
@@ -260,7 +330,7 @@ namespace RP_Notify
         {
             // USER and APP - change played channel
 
-            if (!_config.IsRpPlayerTrackingChannel())
+            if (!_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
             {
                 _songInfoListener.ResetListenerLoop();
             }
@@ -279,11 +349,11 @@ namespace RP_Notify
 
             if (_config.State.Playback != null
                 && _config.State.Foobar2000IsPlayingRP
-                && !_config.IsRpPlayerTrackingChannel()
-                && _foobar2000Watcher.CheckPlayerState(out bool channelChange)
+                && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _)
+                && _playerWatcherProvider.GetWatcher(RegisteredPlayer.Foobar2000).CheckPlayerState(out bool channelChange)
                 && !channelChange)
             {
-                _toastHandler.ShowSongStartToast();
+                _toastHandlerFactory.Create().ShowSongStartToast();
             }
         }
 
@@ -293,11 +363,11 @@ namespace RP_Notify
 
             if (_config.State.Playback != null
                 && _config.State.MusicBeeIsPlayingRP
-                && !_config.IsRpPlayerTrackingChannel()
-                && _musicBeeWatcher.CheckPlayerState(out bool channelChange)
+                && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _)
+                && _playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).CheckPlayerState(out bool channelChange)
                 && !channelChange)
             {
-                _toastHandler.ShowSongStartToast();
+                _toastHandlerFactory.Create().ShowSongStartToast();
             }
         }
 
@@ -308,7 +378,7 @@ namespace RP_Notify
             _rpTrayIcon.NotifyIcon.Text = _config.State.TooltipText;
         }
 
-        private void OnIsUserAuthenticatedChange()
+        private void OnIsCookieChange()
         {
             // APP - when user logs in
 
@@ -318,13 +388,7 @@ namespace RP_Notify
         private void OnPlaybackChange()
         {
             // APP - song is updated in State
-
-            if (!_config.State.Playback.SameSongOnlyInternalUpdate)
-            {
-                Retry.Do(() => { File.Delete(_config.StaticConfig.AlbumArtImagePath); });
-            }
-
-            _toastHandler.ShowSongStartToast();
+            _toastHandlerFactory.Create().ShowSongStartToast();
         }
 
         private void OnActivePlayerIdChange()
@@ -332,14 +396,14 @@ namespace RP_Notify
             // USER and APP - when RP tracking is started at Startup or user changes/enables/disables RP player
 
             // if player became un-tracked
-            if (!_config.IsRpPlayerTrackingChannel())
+            if (!_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
             {
-                // if channel was favourites and Foobar2000 or MusicBee doesn't change it, then reset to the main stream
-                if (_config.ExternalConfig.Channel == 99
-                    && !(_foobar2000Watcher.CheckPlayerState(out bool channelChangedF) && channelChangedF)
-                    && !(_musicBeeWatcher.CheckPlayerState(out bool channelChangedM) && channelChangedM))
+                // if channel was favorites and Foobar2000 or MusicBee doesn't change it, then reset to the main stream
+                if (_config.PersistedConfig.Channel == 99
+                    && !(_playerWatcherProvider.GetWatcher(RegisteredPlayer.Foobar2000).CheckPlayerState(out bool channelChangedF) && channelChangedF)
+                    && !(_playerWatcherProvider.GetWatcher(RegisteredPlayer.MusicBee).CheckPlayerState(out bool channelChangedM) && channelChangedM))
                 {
-                    _config.ExternalConfig.Channel = 0;
+                    _config.PersistedConfig.Channel = 0;
                 }
             }
             else
@@ -348,96 +412,219 @@ namespace RP_Notify
             }
         }
 
-        private void OnEnableRpOfficialTrackingChange()
-        {
-            // USER and APP - when RP tracking is started at Startup or user enables/disables RP tracking
-
-            if (_config.ExternalConfig.EnableRpOfficialTracking)
-            {
-                _config.State.RpTrackingConfig.Players = _apihandler.GetSync_v2().Players;
-            }
-            else
-            {
-                if (_config.ExternalConfig.Channel == 99
-                    && !(_foobar2000Watcher.CheckPlayerState(out bool channelChanged) && channelChanged)
-                    && !(_musicBeeWatcher.CheckPlayerState(out bool channelChangedM) && channelChangedM))
-                {
-                    _config.ExternalConfig.Channel = 0;
-                }
-
-                _config.State.RpTrackingConfig.Players = _apihandler.GetSync_v2().Players;
-                _config.State.RpTrackingConfig.ActivePlayerId = null;
-                _config.State.RpTrackingConfig.Players = new List<Player>();
-            }
-        }
-
         private void OnPlayersChange()
         {
-            // APP - availablable RP player list is refreshed
+            // APP - available RP player list is refreshed
 
-            // if Foobar2000 or MusicBee is not tracking an RP channel then start trackin without a second click
+            // if Foobar2000 or MusicBee is not tracking an RP channel then start tracking without a second click
             if (_config.State.RpTrackingConfig.Players.Any()
-                && !_config.IsRpPlayerTrackingChannel()
-                && !_config.State.Foobar2000IsPlayingRP
-                && !_config.State.MusicBeeIsPlayingRP)
+                && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
             {
                 _config.State.RpTrackingConfig.ActivePlayerId = _config.State.RpTrackingConfig.Players.FirstOrDefault().PlayerId;
             }
         }
 
-        private void WakeUpHandler(object sender, PowerModeChangedEventArgs e)
+        #endregion
+
+        /** The following methods are event handlers for the toast action events.
+         ** They are triggered by the event handlers in the ToastHandler class.
+         ** The methods are responsible for handling the user input from the toast notifications.
+         **/
+
+        #region Toas action event handlers
+
+        private void OnToastActivatedEvent(ToastNotificationActivatedEventArgsCompat toastArgs)
         {
-            // clean up potentially stuck threads / reinitiate app
+            // Obtain the arguments from the notification
+            ToastArguments toastArguments = ToastArguments.Parse(toastArgs.Argument);
+
+            // Obtain any user input (text boxes, menu selections) from the notification
+            ValueSet userInput = toastArgs.UserInput;
+
+
+            if (!Enum.TryParse<RpToastUserAction>(toastArguments[nameof(RpToastUserAction)], out RpToastUserAction rpToastUserAction))
+            {
+                return;     // Only process known actions
+            }
+
+            EventCounter++;
+
+            Task.Run(() =>
+            {
+                var formattedArgumentsForLogging = string.Join("&", toastArguments.Select(kvp => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}"));
+
+                _log.Information(this.GetMethodName(), $"Event [{EventCounter}] - Toast event - eventArguments: {formattedArgumentsForLogging}");
+
+                try
+                {
+                    switch (rpToastUserAction)
+                    {
+                        case RpToastUserAction.ConfigFolderChosen:
+                            OnConfigFolderChosenToastAction(userInput);
+                            break;
+                        case RpToastUserAction.FolderChoiceRefusedExitApp:
+                            OnFolderChoiceRefusedExitAppAction();
+                            break;
+                        case RpToastUserAction.RatingToastRequested:
+                            OnRatingToastRequestedAction(toastArguments);
+                            break;
+                        case RpToastUserAction.LoginRequested:
+                            _loginForm.ShowDialog();
+                            break;
+                        case RpToastUserAction.RateSubmitted:
+                            OnRateSubmittedToastAction(userInput, toastArguments);
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(this.GetMethodName(), ex);
+                    _toastHandlerFactory.Create().ShowErrorToast(ex);
+                    Task.Delay(10000).Wait();
+                    Application.Exit();
+                }
+
+                _log.Information(this.GetMethodName(), $"Event [{EventCounter}] - Toast event Finished");
+            }).Wait();
+
+        }
+
+        private void OnConfigFolderChosenToastAction(ValueSet userInput)
+        {
+            if (!userInput.TryGetValue(nameof(ConfigFolderChoiceOption), out var rawFolder)) return;
+            
+            var folder = (string)rawFolder;
+
+            ConfigLocationOptions startingLocation;
+            ConfigLocationOptions targetLocation;
+                
+            if (folder == ConfigFolderChoiceOption.localCache.ToDescriptionString()
+                && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.AppData)
+            {
+                startingLocation = ConfigLocationOptions.AppData;
+                targetLocation = ConfigLocationOptions.ExeContainingDirectory;
+                MoveConfigFolder(startingLocation, targetLocation);
+            }
+            else if (folder == ConfigFolderChoiceOption.appdata.ToDescriptionString()
+                     && _config.StaticConfig.ConfigBaseFolderOption == ConfigLocationOptions.ExeContainingDirectory)
+            {
+                startingLocation = ConfigLocationOptions.ExeContainingDirectory;
+                targetLocation = ConfigLocationOptions.AppData;
+                MoveConfigFolder(startingLocation, targetLocation);
+            }
+            else if (folder == ConfigFolderChoiceOption.cleanonexit.ToDescriptionString())
+            {
+                _config.StaticConfig.CleanUpOnExit = true;
+            }
+        }
+
+        private void OnFolderChoiceRefusedExitAppAction()
+        {
+            _config.PersistedConfig.DeleteAllData = true;
+        }
+
+        private void MoveConfigFolder(ConfigLocationOptions startingLocation, ConfigLocationOptions targetLocation)
+        {
+            _log.Information(this.GetMethodName(), $"The application will attempt to move the Config folder from [{ConfigDirectoryHelper.GetLocalPath(startingLocation)}] to [{ConfigDirectoryHelper.GetLocalPath(targetLocation)}]");
+            _log.Information(this.GetMethodName(), $@"
+//********************************************************************
+//********************************************************************
+//********************************************************************
+//********************************************************************
+//********************************************************************");
+            ConfigDirectoryHelper.MoveConfigToNewLocation(startingLocation, targetLocation);
+            Application.Restart();
+        }
+
+        private void OnRateSubmittedToastAction(ValueSet userInput, ToastArguments toastArguments)
+        {
+            var songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(toastArguments[nameof(PlayListSong)]);
+
+            if (!userInput.TryGetValue(Constants.UserRatingFieldKey, out object rawUserRate)
+                || !Int32.TryParse(rawUserRate.ToString().Trim(), out int userRate)
+                || userRate < 1 || 10 < userRate)
+            {
+                _toastHandlerFactory.Create().ShowInvalidRatingArgumentToast(rawUserRate.ToString().Trim());
+                return;
+            }
+
+            var ratingResponse = _rpApiClientFactory.Create().GetRating(songInfo.SongId, userRate);
+            if (ratingResponse.Status == "success")
+            {
+                if (songInfo.SongId == _config.State.Playback.SongInfo.SongId)
+                {
+                    _config.State.Playback = new Playback(_rpApiClientFactory.Create().GetNowplayingList());
+                }
+                else
+                {
+                    var newRating = _rpApiClientFactory.Create().GetInfo(songInfo.SongId).UserRating.ToString();
+                    songInfo.UserRating = newRating;
+                    _toastHandlerFactory.Create().ShowSongStartToast(true, songInfo);
+                }
+            }
+        }
+
+        private void OnRatingToastRequestedAction(ToastArguments toastArguments)
+        {
+            var songInfo = ObjectSerializer.DeserializeFromBase64<PlayListSong>(toastArguments[nameof(PlayListSong)]);
+            KeyboardSendKeyHelper.SendWinKeyN();
+            Task.Delay(200).Wait();
+            _toastHandlerFactory.Create().ShowSongRatingToast(songInfo);
+        }
+
+        #endregion
+
+        private void OnLoginInputSubmitted(object sender, LoginInputEvent loginInputEvent)
+        {
+            _log.Information(this.GetMethodName(), $"Login input submitted for user [{loginInputEvent.UserName}]");
+
+            var loginResponse = _rpApiClientFactory.Create().GetAuth(loginInputEvent.UserName, loginInputEvent.Password);
+            _toastHandlerFactory.Create().ShowLoginResponseToast(loginResponse);
+        }
+
+        private void OnComputerWakeUp(object sender, PowerModeChangedEventArgs e)
+        {
+            // clean up potentially stuck threads / re-initiate app
 
             if (e.Mode == PowerModes.Resume)
             {
-                _log.Information(LogHelper.GetMethodName(this), "PC woke up - RESTART");
+                _log.Information(this.GetMethodName(), "PC woke up - RESTART");
                 Application.Restart();
             }
         }
 
-        private void ApplicationExitHandler(object sender, EventArgs e)
+        private void OnApplicationExit(object sender, EventArgs e)
         {
-            _log.Information(LogHelper.GetMethodName(this), "Exit process started");
-
-            if (File.Exists(_config.StaticConfig.AlbumArtImagePath))
-            {
-                _log.Information(LogHelper.GetMethodName(this), $"Delete album art");
-                File.Delete(_config.StaticConfig.AlbumArtImagePath);
-            }
-
-            if (!_config.ExternalConfig.LeaveShorcutInStartMenu)
-            {
-                _shortcutHelper.DeleteShortcut();
-                _log.Information(LogHelper.GetMethodName(this), $"Shortcut removed from start menu");
-            }
-
             _rpTrayIcon.Dispose();
+            AlbumartFileHelper.DeleteOldAlbumartImageFiles(_config);
 
-            if (_config.ExternalConfig.DeleteAllData)
-            {
-                _shortcutHelper.DeleteShortcut();
-                _config.ExternalConfig.DeleteConfigRootFolder();
-            }
-            else
-            {
-                _log.Information(LogHelper.GetMethodName(this), $@"Finished
+            _log.Information(this.GetMethodName(), $@"Exit Application
 ********************************************************************
 ********************************************************************
 ********************************************************************
 ********************************************************************
 ********************************************************************");
-            }
+
+            CheckQueuedDataDeleteRequest();
         }
 
         private void CheckQueuedDataDeleteRequest()
         {
-            if (_config.ExternalConfig.DeleteAllData)
+            if (_config.PersistedConfig.DeleteAllData || _config.StaticConfig.CleanUpOnExit)
             {
-                _log.Information(LogHelper.GetMethodName(this), "App data delete requested");
-                _log.Dispose();
-                _toastHandler.DataEraseToast();
-                Task.Delay(1000).Wait();
+                _log.Information(this.GetMethodName(), @"App data delete requested
+* *******************************************************************
+********************************************************************
+********************************************************************
+********************************************************************
+********************************************************************");
+                _toastHandlerFactory.Create().ShowDataEraseToast();
+                Task.Delay(5000).Wait();
+                ToastNotificationManagerCompat.History.Clear();
+                ToastNotificationManagerCompat.Uninstall();
+                ConfigDirectoryHelper.DeleteConfigDirectory(_config.StaticConfig.ConfigBaseFolderOption);
                 Application.Exit();
             }
         }

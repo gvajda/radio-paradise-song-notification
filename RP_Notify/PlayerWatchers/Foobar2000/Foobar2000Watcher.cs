@@ -1,6 +1,7 @@
-﻿using Foobar2000.RESTClient.Api;
-using RP_Notify.Config;
-using RP_Notify.ErrorHandler;
+﻿using RP_Notify.Config;
+using RP_Notify.Helpers;
+using RP_Notify.Logger;
+using RP_Notify.PlayerWatchers.Foobar2000.BeefWebApiClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,23 +9,25 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RP_Notify.PlayerWatcher.Foobar2000
+namespace RP_Notify.PlayerWatchers.Foobar2000
 {
     class Foobar2000Watcher : IPlayerWatcher
     {
-        private readonly IConfig _config;
-        private readonly ILog _log;
-        private readonly PlayerApi _playerApi;
+        private readonly IConfigRoot _config;
+        private readonly ILoggerWrapper _log;
+        private readonly IBeefWebApiClientFactory _beefWebApiClientFactory;
 
         private int CheckDelayMillisecs { get; set; }
         private Task Foobar2000WatcherTask { get; set; }
+        public RegisteredPlayer PlayerWatcherType { get => RegisteredPlayer.Foobar2000; }
+
         private CancellationTokenSource Foobar2000WatcherTaskCancellationTokenSource { get; set; }
 
-        public Foobar2000Watcher(IConfig config, ILog log, PlayerApi playerApi)
+        public Foobar2000Watcher(IConfigRoot config, ILoggerWrapper log, IBeefWebApiClientFactory beefWebApiClientFactory)
         {
             _config = config;
             _log = log;
-            _playerApi = playerApi;
+            _beefWebApiClientFactory = beefWebApiClientFactory;
 
             Init();
         }
@@ -40,12 +43,12 @@ namespace RP_Notify.PlayerWatcher.Foobar2000
         {
             if (IsFoobar2000WatcherTaskRunning())
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Shutdown initiated");
+                _log.Information(this.GetMethodName(), $"Shutdown initiated");
                 Foobar2000WatcherTaskCancellationTokenSource.Cancel();
             }
             else
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Not running");
+                _log.Information(this.GetMethodName(), $"Not running");
             }
         }
 
@@ -53,18 +56,18 @@ namespace RP_Notify.PlayerWatcher.Foobar2000
         {
             if (!IsFoobar2000WatcherTaskRunning())
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Invoked");
+                _log.Information(this.GetMethodName(), $"Invoked");
                 Run();
             }
             else
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Alreay running");
+                _log.Information(this.GetMethodName(), $"Alreay running");
             }
         }
 
         private void Run()
         {
-            _log.Information(LogHelper.GetMethodName(this), $"Starting");
+            _log.Information(this.GetMethodName(), $"Starting");
 
             Foobar2000WatcherTaskCancellationTokenSource = new CancellationTokenSource();
 
@@ -74,7 +77,7 @@ namespace RP_Notify.PlayerWatcher.Foobar2000
                 {
                     try
                     {
-                        CheckPlayerState(out bool notUsedHere);
+                        CheckPlayerState(out bool _);
 
                         await Task.Delay(CheckDelayMillisecs);
                     }
@@ -84,7 +87,7 @@ namespace RP_Notify.PlayerWatcher.Foobar2000
                     }
                     catch (Exception ex)
                     {
-                        _log.Error(LogHelper.GetMethodName(this), ex);
+                        _log.Error(this.GetMethodName(), ex);
                         Task.Delay(10000).Wait();
                         Application.Exit();
                     }
@@ -92,30 +95,30 @@ namespace RP_Notify.PlayerWatcher.Foobar2000
 
                 _config.State.Foobar2000IsPlayingRP = false;
 
-                _log.Information(LogHelper.GetMethodName(this), $"Stopped");
+                _log.Information(this.GetMethodName(), $"Stopped");
 
             }, Foobar2000WatcherTaskCancellationTokenSource.Token);
 
-            _log.Information(LogHelper.GetMethodName(this), $"Running in background");
+            _log.Information(this.GetMethodName(), $"Running in background");
         }
 
         public bool CheckPlayerState(out bool channelChanged)
         {
             channelChanged = false;
 
-            if (_config.ExternalConfig.EnableFoobar2000Watcher
+            if (_config.PersistedConfig.EnableFoobar2000Watcher
                 && RpChannelIsPlayingInFB2K(out int matchingChannel))
             {
                 _config.State.Foobar2000IsPlayingRP = true;
 
                 CheckDelayMillisecs = 1000;
 
-                if (matchingChannel != _config.ExternalConfig.Channel
-                    && !_config.IsRpPlayerTrackingChannel())
+                if (matchingChannel != _config.PersistedConfig.Channel
+                    && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
                 {
                     channelChanged = true;
-                    _log.Information(LogHelper.GetMethodName(this), $"Channel change detected");
-                    _config.ExternalConfig.Channel = matchingChannel;
+                    _log.Information(this.GetMethodName(), $"Channel change detected");
+                    _config.PersistedConfig.Channel = matchingChannel;
                 }
                 return true;
             }
@@ -161,7 +164,7 @@ namespace RP_Notify.PlayerWatcher.Foobar2000
 
             try
             {
-                var foobarApiResp = _playerApi.GetPlayerStateAsync(columns).Result;
+                var foobarApiResp = _beefWebApiClientFactory.Create().GetPlayerStateAsync(columns).Result;
                 playedFilePath = foobarApiResp.Player.ActiveItem.Columns.First();
                 return true;
             }

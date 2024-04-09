@@ -1,29 +1,38 @@
-﻿using RP_Notify.API.ResponseModel;
+using RP_Notify.Helpers;
+using RP_Notify.RpApi.ResponseModel;
 using System;
 using System.Collections.Generic;
+using System.Net;
 
 namespace RP_Notify.Config
 {
     public class State
     {
-        public event EventHandler<RpEvent> StateChangeHandler = delegate { };
+        private readonly string _cookieFilePath;
 
-        private bool isUserAuthenticated;
+        public event EventHandler<RpConfigurationChangeEvent> StateChangeHandler = delegate { };
+
+        private CookieContainer rpCookieContainer;
         private List<Channel> channelList;
         private Playback playback;
         private string tooltipText;
         private bool foobar2000IsPlayingRP;
         private bool musicBeeIsPlayingRP;
 
-        public bool IsUserAuthenticated
+
+
+        public CookieContainer RpCookieContainer
         {
-            get => isUserAuthenticated;
+            get => rpCookieContainer != null
+                ? rpCookieContainer
+                : new CookieContainer();
             set
             {
-                if (isUserAuthenticated != value)
+                if (rpCookieContainer != value)
                 {
-                    isUserAuthenticated = value;
-                    RaiseFieldChangeEvent(nameof(IsUserAuthenticated), value);
+                    rpCookieContainer = value;
+                    CookieHelper.TryWriteCookieToDisk(_cookieFilePath, value);
+                    RaiseFieldChangeEvent(nameof(RpCookieContainer), value);
                 }
             }
         }
@@ -47,6 +56,7 @@ namespace RP_Notify.Config
             set
             {
                 if (playback == null
+                    || playback.SongInfo == null
                     || string.IsNullOrEmpty(playback.SongInfo.SongId)
                     || playback.SongInfo.SongId != value.SongInfo.SongId
                     || playback.SongInfo.Event != value.SongInfo.Event)
@@ -109,26 +119,37 @@ namespace RP_Notify.Config
 
         public RpTrackingConfig RpTrackingConfig { get; set; }
 
-        public State()
+        public State(string cookieFilePath, Uri cookieUri)
         {
-            IsUserAuthenticated = false;
-            ChannelList = null;
-            TooltipText = null;
-            Foobar2000IsPlayingRP = false;
+            _cookieFilePath = cookieFilePath;
+
+            if (CookieHelper.ReadAndValidateCookieFromDisk(cookieFilePath, cookieUri, out var cookieContainer))
+            {
+                rpCookieContainer = cookieContainer;
+            }
+            else
+            {
+                rpCookieContainer = new CookieContainer();
+            }
+
+            channelList = null;
+            tooltipText = null;
+            foobar2000IsPlayingRP = false;
+            musicBeeIsPlayingRP = false;
             RpTrackingConfig = new RpTrackingConfig();
         }
 
         private void RaiseFieldChangeEvent(string fieldName, object value)
         {
-            StateChangeHandler.Invoke(this, new RpEvent(RpEvent.EventType.StateChange, fieldName, value));
+            StateChangeHandler.Invoke(this, new RpConfigurationChangeEvent(RpConfigurationChangeEvent.EventType.StateChange, fieldName, value));
         }
     }
 
     public class Playback
     {
-        public NowplayingList NowplayingList { get; }
-        public PlayListSong SongInfo { get; }
         private DateTime songInfoExpiration;
+
+        public PlayListSong SongInfo { get; }
         public DateTime SongInfoExpiration
         {
             get => DateTime.Compare(DateTime.Now, songInfoExpiration) <= 0      // If expiration timestamp is in the future
@@ -141,13 +162,18 @@ namespace RP_Notify.Config
 
         public Playback(NowplayingList NowplayingList)
         {
-            this.NowplayingList = NowplayingList;
 
-            SongInfo = NowplayingList.Song.TryGetValue("0", out var nowPlayingSong)
-                ? nowPlayingSong
-                : null;
+            if (NowplayingList.Song != null && NowplayingList.Song.TryGetValue("0", out var nowPlayingSong))
+            {
+                SongInfo = nowPlayingSong;
+                SongInfoExpiration = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(nowPlayingSong.SchedTime + "000") + long.Parse(nowPlayingSong.Duration)).LocalDateTime;
+            }
+            else
+            {
+                SongInfo = null;
+                SongInfoExpiration = DateTime.Now;
+            }
 
-            SongInfoExpiration = DateTime.Now.Add(TimeSpan.FromSeconds(NowplayingList.Refresh));
             SameSongOnlyInternalUpdate = false;
             ShowedOnNewSong = false;
         }

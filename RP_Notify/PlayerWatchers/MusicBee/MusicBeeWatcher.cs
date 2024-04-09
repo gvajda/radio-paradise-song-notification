@@ -1,29 +1,31 @@
 ﻿using RP_Notify.Config;
-using RP_Notify.ErrorHandler;
-using RP_Notify.PlayerWatcher.MusicBee.API;
+using RP_Notify.Helpers;
+using RP_Notify.Logger;
+using RP_Notify.PlayerWatchers.MusicBee.API;
 using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RP_Notify.PlayerWatcher.MusicBee
+namespace RP_Notify.PlayerWatchers.MusicBee
 {
     class MusicBeeWatcher : IPlayerWatcher
     {
-        private readonly IConfig _config;
-        private readonly ILog _log;
-        private readonly MusicBeeIPC _playerApi;
+        private readonly IConfigRoot _config;
+        private readonly ILoggerWrapper _log;
+        private readonly IMusicBeeIPCFactory _musicBeeIPCFactory;
 
         private int CheckDelayMillisecs { get; set; }
         private Task MusicBeeWatcherTask { get; set; }
         private CancellationTokenSource MusicBeeWatcherTaskCancellationTokenSource { get; set; }
+        public RegisteredPlayer PlayerWatcherType { get => RegisteredPlayer.MusicBee; }
 
-        public MusicBeeWatcher(IConfig config, ILog log, MusicBeeIPC playerApi)
+        public MusicBeeWatcher(IConfigRoot config, ILoggerWrapper log, IMusicBeeIPCFactory musicBeeIPCFactory)
         {
             _config = config;
             _log = log;
-            _playerApi = playerApi;
+            _musicBeeIPCFactory = musicBeeIPCFactory;
 
             Init();
         }
@@ -39,12 +41,12 @@ namespace RP_Notify.PlayerWatcher.MusicBee
         {
             if (IsMusicBeeWatcherTaskRunning())
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Shutdown initiated");
+                _log.Information(this.GetMethodName(), $"Shutdown initiated");
                 MusicBeeWatcherTaskCancellationTokenSource.Cancel();
             }
             else
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Not running");
+                _log.Information(this.GetMethodName(), $"Not running");
             }
         }
 
@@ -52,18 +54,18 @@ namespace RP_Notify.PlayerWatcher.MusicBee
         {
             if (!IsMusicBeeWatcherTaskRunning())
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Invoked");
+                _log.Information(this.GetMethodName(), $"Invoked");
                 Run();
             }
             else
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Alreay running");
+                _log.Information(this.GetMethodName(), $"Alreay running");
             }
         }
 
         private void Run()
         {
-            _log.Information(LogHelper.GetMethodName(this), $"Starting");
+            _log.Information(this.GetMethodName(), $"Starting");
 
             MusicBeeWatcherTaskCancellationTokenSource = new CancellationTokenSource();
 
@@ -73,7 +75,7 @@ namespace RP_Notify.PlayerWatcher.MusicBee
                 {
                     try
                     {
-                        CheckPlayerState(out bool notUsedHere);
+                        CheckPlayerState(out bool _);
 
                         await Task.Delay(CheckDelayMillisecs);
                     }
@@ -83,7 +85,7 @@ namespace RP_Notify.PlayerWatcher.MusicBee
                     }
                     catch (Exception ex)
                     {
-                        _log.Error(LogHelper.GetMethodName(this), ex);
+                        _log.Error(this.GetMethodName(), ex);
                         Task.Delay(10000).Wait();
                         Application.Exit();
                     }
@@ -91,30 +93,30 @@ namespace RP_Notify.PlayerWatcher.MusicBee
 
                 _config.State.MusicBeeIsPlayingRP = false;
 
-                _log.Information(LogHelper.GetMethodName(this), $"Stopped");
+                _log.Information(this.GetMethodName(), $"Stopped");
 
             }, MusicBeeWatcherTaskCancellationTokenSource.Token);
 
-            _log.Information(LogHelper.GetMethodName(this), $"Running in background");
+            _log.Information(this.GetMethodName(), $"Running in background");
         }
 
         public bool CheckPlayerState(out bool channelChanged)
         {
             channelChanged = false;
 
-            if (_config.ExternalConfig.EnableMusicBeeWatcher
+            if (_config.PersistedConfig.EnableMusicBeeWatcher
                 && RpChannelIsPlayingInMusicBee(out int matchingChannel))
             {
                 _config.State.MusicBeeIsPlayingRP = true;
 
                 CheckDelayMillisecs = 1000;
 
-                if (matchingChannel != _config.ExternalConfig.Channel
-                    && !_config.IsRpPlayerTrackingChannel())
+                if (matchingChannel != _config.PersistedConfig.Channel
+                    && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
                 {
                     channelChanged = true;
-                    _log.Information(LogHelper.GetMethodName(this), $"Channel change detected");
-                    _config.ExternalConfig.Channel = matchingChannel;
+                    _log.Information(this.GetMethodName(), $"Channel change detected");
+                    _config.PersistedConfig.Channel = matchingChannel;
                 }
                 return true;
             }
@@ -135,7 +137,7 @@ namespace RP_Notify.PlayerWatcher.MusicBee
         {
             if (TryGetPlayedFilePath(out string playedFilePath)
                 && playedFilePath.Contains("radioparadise")
-                && _playerApi.GetPlayState() == MusicBeeIPC.PlayState.Playing)
+                && _musicBeeIPCFactory.Create().GetPlayState() == MusicBeeIPC.PlayState.Playing)
             {
                 matchingChannel = Int32.Parse(
                     _config.State.ChannelList
@@ -161,12 +163,12 @@ namespace RP_Notify.PlayerWatcher.MusicBee
 
             try
             {
-                if (!_playerApi.Probe())
+                if (!_musicBeeIPCFactory.Create().Probe())
                 {
                     return false;
                 }
 
-                playedFilePath = _playerApi.GetFileUrl();
+                playedFilePath = _musicBeeIPCFactory.Create().GetFileUrl();
                 return true;
             }
             catch

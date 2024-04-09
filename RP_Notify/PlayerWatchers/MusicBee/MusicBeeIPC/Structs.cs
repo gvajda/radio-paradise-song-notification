@@ -11,20 +11,12 @@ using System.Runtime.InteropServices;
 
 
 
-namespace RP_Notify.PlayerWatcher.MusicBee.API
+namespace RP_Notify.PlayerWatchers.MusicBee.API
 {
 
     [System.Security.Permissions.PermissionSet(System.Security.Permissions.SecurityAction.Demand, Name = "FullTrust")]
     public partial class MusicBeeIPC
     {
-        [StructLayout(LayoutKind.Sequential)]
-        private struct COPYDATASTRUCT
-        {
-            public IntPtr dwData;
-            public UInt32 cbData;
-            public IntPtr lpData;
-        }
-
         [StructLayout(LayoutKind.Explicit)]
         private struct FloatInt
         {
@@ -48,7 +40,6 @@ namespace RP_Notify.PlayerWatcher.MusicBee.API
             public ushort high;
 
             public LRUShort(IntPtr ptr) { this.low = this.high = 0; this.lr = ptr; }
-            public LRUShort(ushort low, ushort high) { this.lr = IntPtr.Zero; this.low = low; this.high = high; }
         }
     }
 }
