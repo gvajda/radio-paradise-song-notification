@@ -15,12 +15,14 @@ namespace RP_Notify.Helpers
                 throw new ArgumentNullException(nameof(type));
             }
 
-            var name = type.GetType().Name;     // name of class
-            name = name.Length < 17             // add leading space if short
-                ? $" {name}"
-                : name;
+            var className = type.GetType().Name;     // name of class
+            className = className.Length < 23             // add leading space if short
+                ? $" {className}"
+                : className;
 
-            return $"{name.PadLeft(17, '-')}.{(caller)}()";
+            var functionName = $"{caller}() ";
+
+            return $"{className.PadLeft(23, '-')}.{functionName.PadRight(22, '-')}";
         }
 
         public static Serilog.Core.Logger GetLogger(IConfigRoot config)

@@ -32,7 +32,7 @@ namespace RP_Notify.PlayerWatchers.RpOfficial
 
         private void Init()
         {
-            CheckDelayMillisecs = 10000;
+            CheckDelayMillisecs = 20000;
             RpOfficialWatcherTaskCancellationTokenSource = new CancellationTokenSource();
             Application.ApplicationExit += (sender, e) => RpOfficialWatcherTaskCancellationTokenSource.Cancel();
         }
@@ -116,9 +116,11 @@ namespace RP_Notify.PlayerWatchers.RpOfficial
                     _config.PersistedConfig.Channel = trackedChannel;
                 }
 
+                CheckDelayMillisecs = 10000;
                 return true;
             }
 
+            CheckDelayMillisecs = 20000;
             return false;
         }
 
