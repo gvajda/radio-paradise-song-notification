@@ -2,10 +2,11 @@
 
 See details in README
 
-- Send rating on past song from Windows Action Center
+- Send rating on past songs from Windows Action Center
 - Added login form with masked out password field
 - Updated icons
-- Choose app data folder location
+- Handle 2050 channel
+- Option to choose app data folder location
 
 ## Features
 
@@ -22,6 +23,7 @@ See details in README
 - Reduced .exe size and memory usage
 - Cleaned up NuGet packages (completely removed Newtonsoft.Json and RestSharp)
 - Updated all to packages to latest version
+- Log file readability improvements
 - Moved RP tracking into an IPlayerWatcher implementation
 - Implemented factory pattern for RpApiClient
 - Added HTTP retry policy
@@ -32,6 +34,7 @@ See details in README
 - Organized event handlers in RpApplicationCore
 - Handled corrupt cookies
 - Extended GitHub workflow with release draft creation
+- Disposed Logger after each write (don't lock the log files)
 
 ## Miscellaneous
 
@@ -41,5 +44,4 @@ See details in README
 - Renamed to cleanup various parts of the code
 - Cleaned up NuGet packages and using statements
 - Cleaned up bloated generated code for Beefweb client
-- Disposed Logger after each write
 - Moved all event handlers in RpApplicationCore and organized them

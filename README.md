@@ -12,7 +12,8 @@ My goal was to receive non-intrusive but detailed updates on the currently playe
 
 <p align="center"><img src=".screenshots/SongStartToast.gif" alt="notification-simple"/></p>
 
-**Disclaimer:** This is not an official Radio Paradise product. The logo is owned by Radio Paradise and the source of all displayed data - including album art - is the Radio Paradise REST API.
+> **Disclaimer**
+> This is not an official Radio Paradise product. The logo is owned by Radio Paradise and the source of all displayed data - including album art - is the Radio Paradise REST API.
 
 ## Getting started
 
@@ -29,22 +30,25 @@ The app will also display an icon in the Windows tray, all settings can be reach
 ### Radio Paradise stream tracking
 
 - **Track official Radio Paradise players**
-  - Display updates of songs played in the browser or official mobile apps, including the "My Favorites" channel
-  - The app will notice if you skip a song or you switch to a different channel
-  - Only available if the user is logged in
+  - Display updates of songs played in the browser or official mobile apps (not including the cached playback)
+  - The app will notice if you skip a song or switch channel
+  - Only available if the user is logged in  
+  *Note*: Your password is not saved or logged - [learn more](#rest-api-request-authentication)  
+  *Note*: The official player tracking may be a little bit laggy because it requires polling the RP API and I tried to avoid spamming it.
 - **Support for all channels**
+  - Including the Favorites and 2050 channels
   - The channels list is updated on startup (channels added/removed in the future will display properly)
   - The 2050 channel is a bit tricky, the app will display updates when a song is played, but not during the conversation
 - **Audio player integration**
-  - Track stream played in Foobar2000 or MusicBee audio players - [see below](#audio-player-integration)
+  - Track the RP stream played in Foobar2000 or MusicBee audio players  - [see below](#audio-player-integration)
 
 <p align="center"><img src=".screenshots/ChannelTracking.gif" alt="notification-simple"/></p>
 
 ### Song rating
 
 - **Support for rating songs**
-  - Only available if the user is logged in
-  *Note*: The RP_Notify app does NOT save or log your password. The app retains only the identical cookie that is stored by your browser upon logging into the official site. You have the option to erase all stored information through the menu in the system tray (App Settings/Delete app data)
+  - Only available if the user is logged in  
+  *Note*: Your password is not saved or logged - [learn more](#rest-api-request-authentication)
 - **Prompt for song rating**
   - Display a toast notification with the song rating input field 20 seconds before the song ends or if the channel is changed
   - Optional - *Tip*: very useful to grow the song pool of the "My Favorites" channel
@@ -58,7 +62,7 @@ The app will also display an icon in the Windows tray, all settings can be reach
 
 - **Album art**
   - Configure image size in the menu
-  - Optional RP banner
+  - Optional RP banner  
   *Note*: only applies to the rich notification triggered by double-clicking on the tray icon
 - **Display/hide song rating**
   - Optional - in case you prefer or not to know the crowd rating before you send in your own
@@ -75,7 +79,7 @@ The app will also display an icon in the Windows tray, all settings can be reach
 
 ### Audio player integration
 
-Radio Paradise can be played in any audio player using the [stream links](https://radioparadise.com/listen/stream-links) and the application works with some of them to enable/disable song notification when a stream is started/stopped and change channels based on which channel is played. This feature can be enabled one-by-one for each supported audio player. Please see the details below.
+Radio Paradise can be played in any audio player using the [stream links](https://radioparadise.com/listen/stream-links) and the application works with some of them to enable/disable song notification when a stream is started/stopped and change channels based on which channel is played. This feature can be enabled one by one for each supported audio player. Please see the details below.
 
 #### Foobar2000
 
@@ -115,7 +119,7 @@ The folder location options are the following:
   - When you are not sure if you want the app to save anything just yet
   - The folder will be created because the app is implemented in a way to persist the settings when it changes, but it will be deleted when the app exits
 
-*Note*: the folder location can be changed after the initial choice from the app settings
+**Note**: the folder location can be changed after the initial choice from the app settings
 
 <p align="center"><img src=".screenshots/ConfigFolderMigrate.gif" alt="notification-simple"/></p>
 
@@ -127,7 +131,7 @@ The folder location options are the following:
 - **rp_cookiecache**
   - The identical cookie that is stored by your browser upon logging into the official site
   - Used to authenticate RP API requests so the app will be able to send song ratings and query what is played by the user in the browser or the official apps
-  - The cookies do NOT store user passwords
+  - **`The cookies do NOT store user passwords`**
 - **AlbumArtCache**
   - Folder to temporarily save the albumart files displayed on the notifications so they are not downloaded every time a new notification is displayed
   - Limited to 20 files (~10MB)
@@ -137,6 +141,13 @@ The folder location options are the following:
   - Limited to 10 files and 1MB per file
 
 <p align="center"><img src=".screenshots/appdata-contents.png" alt="notification-simple"/></p>
+
+#### REST API request authentication
+
+If available, the RP REST API requests are authenticated using the HTTP cookie sthat is saved after the user provides login info.
+
+> [!NOTE]  
+> The app retains only the identical cookie that is stored by your browser upon logging into the official site. **The RP_Notify app does NOT save or log your password**. You have the option to delete the cookie by logging out or erase all stored app data (including the cookie) through the menu in the system tray.
 
 ## About the project
 
