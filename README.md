@@ -12,7 +12,7 @@ My goal was to receive non-intrusive but detailed updates on the currently playe
 
 <p align="center"><img src=".screenshots/SongStartToast.gif" alt="notification-simple"/></p>
 
-> **Disclaimer**
+> **Disclaimer**  
 > This is not an official Radio Paradise product. The logo is owned by Radio Paradise and the source of all displayed data - including album art - is the Radio Paradise REST API.
 
 ## Getting started
@@ -101,6 +101,15 @@ The integration requires the *MusicBeeIPC* plugin for MusicBee that provides an 
 
 <p align="center"><img src=".screenshots/MusicBeeIntegration.gif" alt="notification-simple"/></p>
 
+### REST API request authentication
+
+If available, the HTTP cookie is used to authenticate the RP REST API requests. Otherwise, the requests are not authenticated in which case the song rating and official RP Channel tracking features are not available. The HTTP cookie is saved after the user provides login info.
+
+> [!NOTE]  
+> The app retains only the identical cookie that is stored by your browser upon logging into the official site. **The RP_Notify app does NOT save or log your password**. You have the option to delete the cookie by logging out or erase all stored app data (including the cookie) through the menu in the system tray.
+
+<p align="center"><img src=".screenshots/LoginLogoutCycle.gif" alt="notification-simple"/></p>
+
 ### Configuration
 
 #### Config folder location options
@@ -141,13 +150,6 @@ The folder location options are the following:
   - Limited to 10 files and 1MB per file
 
 <p align="center"><img src=".screenshots/appdata-contents.png" alt="notification-simple"/></p>
-
-#### REST API request authentication
-
-If available, the RP REST API requests are authenticated using the HTTP cookie sthat is saved after the user provides login info.
-
-> [!NOTE]  
-> The app retains only the identical cookie that is stored by your browser upon logging into the official site. **The RP_Notify app does NOT save or log your password**. You have the option to delete the cookie by logging out or erase all stored app data (including the cookie) through the menu in the system tray.
 
 ## About the project
 
