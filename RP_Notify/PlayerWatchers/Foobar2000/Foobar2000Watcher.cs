@@ -43,12 +43,12 @@ namespace RP_Notify.PlayerWatchers.Foobar2000
         {
             if (IsFoobar2000WatcherTaskRunning())
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Shutdown initiated");
+                _log.Information(this.GetMethodName(), $"Shutdown initiated");
                 Foobar2000WatcherTaskCancellationTokenSource.Cancel();
             }
             else
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Not running");
+                _log.Information(this.GetMethodName(), $"Not running");
             }
         }
 
@@ -56,18 +56,18 @@ namespace RP_Notify.PlayerWatchers.Foobar2000
         {
             if (!IsFoobar2000WatcherTaskRunning())
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Invoked");
+                _log.Information(this.GetMethodName(), $"Invoked");
                 Run();
             }
             else
             {
-                _log.Information(LogHelper.GetMethodName(this), $"Alreay running");
+                _log.Information(this.GetMethodName(), $"Alreay running");
             }
         }
 
         private void Run()
         {
-            _log.Information(LogHelper.GetMethodName(this), $"Starting");
+            _log.Information(this.GetMethodName(), $"Starting");
 
             Foobar2000WatcherTaskCancellationTokenSource = new CancellationTokenSource();
 
@@ -87,7 +87,7 @@ namespace RP_Notify.PlayerWatchers.Foobar2000
                     }
                     catch (Exception ex)
                     {
-                        _log.Error(LogHelper.GetMethodName(this), ex);
+                        _log.Error(this.GetMethodName(), ex);
                         Task.Delay(10000).Wait();
                         Application.Exit();
                     }
@@ -95,11 +95,11 @@ namespace RP_Notify.PlayerWatchers.Foobar2000
 
                 _config.State.Foobar2000IsPlayingRP = false;
 
-                _log.Information(LogHelper.GetMethodName(this), $"Stopped");
+                _log.Information(this.GetMethodName(), $"Stopped");
 
             }, Foobar2000WatcherTaskCancellationTokenSource.Token);
 
-            _log.Information(LogHelper.GetMethodName(this), $"Running in background");
+            _log.Information(this.GetMethodName(), $"Running in background");
         }
 
         public bool CheckPlayerState(out bool channelChanged)
@@ -117,7 +117,7 @@ namespace RP_Notify.PlayerWatchers.Foobar2000
                     && !_config.State.RpTrackingConfig.IsRpPlayerTrackingChannel(out int _))
                 {
                     channelChanged = true;
-                    _log.Information(LogHelper.GetMethodName(this), $"Channel change detected");
+                    _log.Information(this.GetMethodName(), $"Channel change detected");
                     _config.PersistedConfig.Channel = matchingChannel;
                 }
                 return true;

@@ -48,7 +48,7 @@ namespace RP_Notify.TrayIconMenu
 
         public void Dispose()
         {
-            _log.Information(LogHelper.GetMethodName(this), "Started");
+            _log.Information(this.GetMethodName(), "Started");
 
             if (contextMenu != null)
             {
@@ -61,11 +61,11 @@ namespace RP_Notify.TrayIconMenu
                 NotifyIcon.Dispose();
             }
 
-            _log.Information(LogHelper.GetMethodName(this), "Finished");
+            _log.Information(this.GetMethodName(), "Finished");
         }
         public void BuildContextMenu()
         {
-            _log.Information(LogHelper.GetMethodName(this), "Started");
+            _log.Information(this.GetMethodName(), "Started");
 
             var menuEntryShowOnNewSong = MenuEntryShowOnNewSong();
             var menuEntryLargeAlbumArt = MenuEntryLargeAlbumArt();
@@ -111,7 +111,7 @@ namespace RP_Notify.TrayIconMenu
             contextMenu.MenuItems.Add(menuEntryAbout);
             contextMenu.MenuItems.Add(menuEntryExit);
 
-            _log.Information(LogHelper.GetMethodName(this), "Finished");
+            _log.Information(this.GetMethodName(), "Finished");
         }
 
         private MenuItem MenuEntryShowOnNewSong()
@@ -132,7 +132,7 @@ namespace RP_Notify.TrayIconMenu
 
             showOnNewSong.Click += (sender, e) =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
                 _config.PersistedConfig.ShowOnNewSong = !_config.PersistedConfig.ShowOnNewSong;
             };
 
@@ -150,7 +150,7 @@ namespace RP_Notify.TrayIconMenu
 
             largeAlbumArt.Click += (sender, e) =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
                 _config.PersistedConfig.LargeAlbumArt = !_config.PersistedConfig.LargeAlbumArt;
             };
 
@@ -169,7 +169,7 @@ namespace RP_Notify.TrayIconMenu
 
             rpBannerOnDetail.Click += (sender, e) =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
                 _config.PersistedConfig.RpBannerOnDetail = !_config.PersistedConfig.RpBannerOnDetail;
             };
 
@@ -187,7 +187,7 @@ namespace RP_Notify.TrayIconMenu
 
             showSongRating.Click += (sender, e) =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
                 _config.PersistedConfig.ShowSongRating = !_config.PersistedConfig.ShowSongRating;
             };
 
@@ -206,7 +206,7 @@ namespace RP_Notify.TrayIconMenu
 
             promptForRating.Click += (sender, e) =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
                 _config.PersistedConfig.PromptForRating = !_config.PersistedConfig.PromptForRating;
             };
 
@@ -220,7 +220,7 @@ namespace RP_Notify.TrayIconMenu
             MenuItem reset = new MenuItem(menuName);
             reset.Click += (sender, e) =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
                 _config.PersistedConfig.DeleteAllData = !_config.PersistedConfig.DeleteAllData;
             };
 
@@ -253,9 +253,9 @@ namespace RP_Notify.TrayIconMenu
             MenuItem migrateCache = new MenuItem(menuName);
             migrateCache.Click += (sender, e) =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
-                _log.Information(LogHelper.GetMethodName(this), $"The application will attempt to move the Config folder from [{ConfigDirectoryHelper.GetLocalPath(startingLocation)}] to [{ConfigDirectoryHelper.GetLocalPath(targetLocation)}]");
-                _log.Information(LogHelper.GetMethodName(this), $@"
+                _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
+                _log.Information(this.GetMethodName(), $"The application will attempt to move the Config folder from [{ConfigDirectoryHelper.GetLocalPath(startingLocation)}] to [{ConfigDirectoryHelper.GetLocalPath(targetLocation)}]");
+                _log.Information(this.GetMethodName(), $@"
 //********************************************************************
 //********************************************************************
 //********************************************************************
@@ -281,7 +281,7 @@ namespace RP_Notify.TrayIconMenu
 
             enablePlayerWatcher.Click += (sender, e) =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
                 _config.PersistedConfig.EnableFoobar2000Watcher = !_config.PersistedConfig.EnableFoobar2000Watcher;
             };
 
@@ -301,7 +301,7 @@ namespace RP_Notify.TrayIconMenu
 
             enablePlayerWatcher.Click += (sender, e) =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
                 _config.PersistedConfig.EnableMusicBeeWatcher = !_config.PersistedConfig.EnableMusicBeeWatcher;
             };
 
@@ -319,7 +319,7 @@ namespace RP_Notify.TrayIconMenu
 
             rpTracking.Click += (sender, e) =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
                 _config.PersistedConfig.EnableRpOfficialTracking = !_config.PersistedConfig.EnableRpOfficialTracking;
             };
 
@@ -348,7 +348,7 @@ namespace RP_Notify.TrayIconMenu
 
                     trackedPlayer.Click += (sender, e) =>
                     {
-                        _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                        _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
 
                         if (_config.State.RpTrackingConfig.ActivePlayerId == player.PlayerId)
                         {
@@ -389,7 +389,7 @@ namespace RP_Notify.TrayIconMenu
 
                 channelMenuItem.Click += (sender, e) =>
                 {
-                    _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                    _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
 
                     foreach (MenuItem menu in contextMenu.MenuItems)
                     {
@@ -419,14 +419,14 @@ namespace RP_Notify.TrayIconMenu
             MenuItem login = new MenuItem(menuName);
             login.Click += (sender, e) =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
 
                 if (_config.IsUserAuthenticated(out string _))
                 {
                     _config.State.RpCookieContainer = new System.Net.CookieContainer();
                     Retry.Do(() => { File.Delete(_config.StaticConfig.CookieCachePath); });
                     _toastHandlerFactory.Create().ShowLogoutRequestToast(loggedInUsername);
-                    _log.Information(LogHelper.GetMethodName(this), "Cookie cache deleted");
+                    _log.Information(this.GetMethodName(), "Cookie cache deleted");
                     Application.Restart();
                 }
                 else
@@ -445,7 +445,7 @@ namespace RP_Notify.TrayIconMenu
             MenuItem about = new MenuItem(menuName);
             about.Click += (sender, e) =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
                 System.Diagnostics.Process.Start("https://github.com/gvajda/radio-paradise-song-notification");
             };
 
@@ -459,7 +459,7 @@ namespace RP_Notify.TrayIconMenu
             MenuItem exit = new MenuItem(menuName);
             exit.Click += (sender, e) =>
             {
-                _log.Information(LogHelper.GetMethodName(this), $"User clicked menu: '{menuName}'");
+                _log.Information(this.GetMethodName(), $"User clicked menu: '{menuName}'");
                 Application.Exit();
             };
 

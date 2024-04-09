@@ -47,24 +47,24 @@ namespace RP_Notify.SongInfoListener
         {
             if (SongInfoListenerTask == null || SongInfoListenerTask.IsCompleted)
             {
-                _log.Information(LogHelper.GetMethodName(this), "Invoked");
+                _log.Information(this.GetMethodName(), "Invoked");
                 Run();
             }
             else
             {
-                _log.Information(LogHelper.GetMethodName(this), "Alreay running");
+                _log.Information(this.GetMethodName(), "Alreay running");
             }
         }
 
         private void Run()
         {
-            _log.Information(LogHelper.GetMethodName(this), "Invoked");
+            _log.Information(this.GetMethodName(), "Invoked");
 
             SongInfoListenerTask = Task.Run(async () =>
             {
                 while (!ListenerCancellationTokenSource.Token.IsCancellationRequested)     // keep getting new song info
                 {
-                    _log.Information(LogHelper.GetMethodName(this), "Start loop *****************");
+                    _log.Information(this.GetMethodName(), "Start loop *****************");
 
                     try
                     {
@@ -98,12 +98,12 @@ namespace RP_Notify.SongInfoListener
                         catch (TaskCanceledException)
                         {
                             PromptRatingAtTheEndOfSongOrIfCanceled();
-                            _log.Information(LogHelper.GetMethodName(this), "Restart loop");
+                            _log.Information(this.GetMethodName(), "Restart loop");
                         }
                     }
                     catch (Exception ex)
                     {
-                        _log.Error(LogHelper.GetMethodName(this), ex);
+                        _log.Error(this.GetMethodName(), ex);
                         _toastHandlerFactory.Create().ShowErrorToast(ex);
                         Task.Delay(10000).Wait();
                         Application.Exit();
@@ -111,7 +111,7 @@ namespace RP_Notify.SongInfoListener
                 }
             }, ListenerCancellationTokenSource.Token);
 
-            _log.Information(LogHelper.GetMethodName(this), "Running in background");
+            _log.Information(this.GetMethodName(), "Running in background");
         }
 
         private void PromptRatingAtTheEndOfSongOrIfCanceled()
@@ -129,11 +129,11 @@ namespace RP_Notify.SongInfoListener
             {
                 if (0 < millisecsLeftToPrompt && millisecsLeftToPrompt < 1000)
                 {
-                    _log.Information(LogHelper.GetMethodName(this), "Prompt at the end of song");
+                    _log.Information(this.GetMethodName(), "Prompt at the end of song");
                 }
                 else if (1000 < millisecsLeftToPrompt && NextSongWaiterCancellationTokenSource.IsCancellationRequested)
                 {
-                    _log.Information(LogHelper.GetMethodName(this), "Prompt due to song cancellation");
+                    _log.Information(this.GetMethodName(), "Prompt due to song cancellation");
                 }
                 else
                 {
@@ -174,7 +174,7 @@ namespace RP_Notify.SongInfoListener
                 ? $"RP Player ID: [{player_id}]"
                 : $"Channel: [{_config.PersistedConfig.Channel}]";
 
-            _log.Information(LogHelper.GetMethodName(this), $"Invoked - Get song info for {logMessageDetail}");
+            _log.Information(this.GetMethodName(), $"Invoked - Get song info for {logMessageDetail}");
 
             var oldPlayback = _config.State.Playback;
             var nowPlayingList = _rpApiClientFactory.Create().GetNowplayingList();
@@ -210,7 +210,7 @@ namespace RP_Notify.SongInfoListener
 
             _config.State.Playback = new Playback(nowPlayingList);
 
-            _log.Information(LogHelper.GetMethodName(this), "RP API call returned successfully - SongId: {@songId}", _config.State.Playback.SongInfo.SongId);
+            _log.Information(this.GetMethodName(), "RP API call returned successfully - SongId: {@songId}", _config.State.Playback.SongInfo.SongId);
 
 
 
@@ -226,15 +226,15 @@ namespace RP_Notify.SongInfoListener
                         ? $" - New expiration: {_config.State.Playback.SongInfoExpiration}"
                         : null;
 
-                    _log.Information(LogHelper.GetMethodName(this), $"Same song - Only properties changed{newRatinText}{newExpirationText}");
+                    _log.Information(this.GetMethodName(), $"Same song - Only properties changed{newRatinText}{newExpirationText}");
                 }
                 else
                 {
-                    _log.Information(LogHelper.GetMethodName(this), $"Same song: albumart and expiration is not updated - Seconds left: {nowPlayingList.Refresh}");
+                    _log.Information(this.GetMethodName(), $"Same song: albumart and expiration is not updated - Seconds left: {nowPlayingList.Refresh}");
                 }
             }
 
-            _log.Information(LogHelper.GetMethodName(this), "Finished");
+            _log.Information(this.GetMethodName(), "Finished");
         }
     }
 }
